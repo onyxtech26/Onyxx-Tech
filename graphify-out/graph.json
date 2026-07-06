@@ -1,0 +1,240 @@
+{
+  "directed": false,
+  "multigraph": false,
+  "graph": {},
+  "nodes": [
+    {
+      "label": "README.md",
+      "file_type": "document",
+      "source_file": "README.md",
+      "source_location": "L1",
+      "_origin": "ast",
+      "id": "readme",
+      "community": 0,
+      "norm_label": "readme.md"
+    },
+    {
+      "label": "Onyxx Tech \u2014 Website",
+      "file_type": "document",
+      "source_file": "README.md",
+      "source_location": "L1",
+      "_origin": "ast",
+      "id": "readme_onyxx_tech_website",
+      "community": 0,
+      "norm_label": "onyxx tech \u2014 website"
+    },
+    {
+      "label": "\ud83d\ude80 Deploy to GitHub Pages (5 minutes)",
+      "file_type": "document",
+      "source_file": "README.md",
+      "source_location": "L7",
+      "_origin": "ast",
+      "id": "readme_deploy_to_github_pages_5_minutes",
+      "community": 1,
+      "norm_label": "\ud83d\ude80 deploy to github pages (5 minutes)"
+    },
+    {
+      "label": "Step 1: Create the GitHub repo",
+      "file_type": "document",
+      "source_file": "README.md",
+      "source_location": "L9",
+      "_origin": "ast",
+      "id": "readme_step_1_create_the_github_repo",
+      "community": 1,
+      "norm_label": "step 1: create the github repo"
+    },
+    {
+      "label": "Step 2: Upload the files",
+      "file_type": "document",
+      "source_file": "README.md",
+      "source_location": "L15",
+      "_origin": "ast",
+      "id": "readme_step_2_upload_the_files",
+      "community": 1,
+      "norm_label": "step 2: upload the files"
+    },
+    {
+      "label": "Step 3: Enable GitHub Pages",
+      "file_type": "document",
+      "source_file": "README.md",
+      "source_location": "L31",
+      "_origin": "ast",
+      "id": "readme_step_3_enable_github_pages",
+      "community": 1,
+      "norm_label": "step 3: enable github pages"
+    },
+    {
+      "label": "Step 4: Get your URL",
+      "file_type": "document",
+      "source_file": "README.md",
+      "source_location": "L37",
+      "_origin": "ast",
+      "id": "readme_step_4_get_your_url",
+      "community": 1,
+      "norm_label": "step 4: get your url"
+    },
+    {
+      "label": "\u270f\ufe0f Editing Later",
+      "file_type": "document",
+      "source_file": "README.md",
+      "source_location": "L46",
+      "_origin": "ast",
+      "id": "readme_editing_later",
+      "community": 2,
+      "norm_label": "\u270f\ufe0f editing later"
+    },
+    {
+      "label": "Common edits:",
+      "file_type": "document",
+      "source_file": "README.md",
+      "source_location": "L50",
+      "_origin": "ast",
+      "id": "readme_common_edits",
+      "community": 2,
+      "norm_label": "common edits:"
+    },
+    {
+      "label": "\ud83c\udfa8 What's Included",
+      "file_type": "document",
+      "source_file": "README.md",
+      "source_location": "L71",
+      "_origin": "ast",
+      "id": "readme_what_s_included",
+      "community": 0,
+      "norm_label": "\ud83c\udfa8 what's included"
+    },
+    {
+      "label": "\ud83d\udcde Pre-Configured Contact",
+      "file_type": "document",
+      "source_file": "README.md",
+      "source_location": "L88",
+      "_origin": "ast",
+      "id": "readme_pre_configured_contact",
+      "community": 0,
+      "norm_label": "\ud83d\udcde pre-configured contact"
+    },
+    {
+      "label": "\ud83d\udd27 Tech Notes",
+      "file_type": "document",
+      "source_file": "README.md",
+      "source_location": "L96",
+      "_origin": "ast",
+      "id": "readme_tech_notes",
+      "community": 0,
+      "norm_label": "\ud83d\udd27 tech notes"
+    }
+  ],
+  "links": [
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "README.md",
+      "source_location": "L1",
+      "weight": 1.0,
+      "source": "readme",
+      "target": "readme_onyxx_tech_website",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "README.md",
+      "source_location": "L7",
+      "weight": 1.0,
+      "source": "readme_onyxx_tech_website",
+      "target": "readme_deploy_to_github_pages_5_minutes",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "README.md",
+      "source_location": "L46",
+      "weight": 1.0,
+      "source": "readme_onyxx_tech_website",
+      "target": "readme_editing_later",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "README.md",
+      "source_location": "L88",
+      "weight": 1.0,
+      "source": "readme_onyxx_tech_website",
+      "target": "readme_pre_configured_contact",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "README.md",
+      "source_location": "L96",
+      "weight": 1.0,
+      "source": "readme_onyxx_tech_website",
+      "target": "readme_tech_notes",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "README.md",
+      "source_location": "L71",
+      "weight": 1.0,
+      "source": "readme_onyxx_tech_website",
+      "target": "readme_what_s_included",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "README.md",
+      "source_location": "L9",
+      "weight": 1.0,
+      "source": "readme_deploy_to_github_pages_5_minutes",
+      "target": "readme_step_1_create_the_github_repo",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "README.md",
+      "source_location": "L15",
+      "weight": 1.0,
+      "source": "readme_deploy_to_github_pages_5_minutes",
+      "target": "readme_step_2_upload_the_files",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "README.md",
+      "source_location": "L31",
+      "weight": 1.0,
+      "source": "readme_deploy_to_github_pages_5_minutes",
+      "target": "readme_step_3_enable_github_pages",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "README.md",
+      "source_location": "L37",
+      "weight": 1.0,
+      "source": "readme_deploy_to_github_pages_5_minutes",
+      "target": "readme_step_4_get_your_url",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "README.md",
+      "source_location": "L50",
+      "weight": 1.0,
+      "source": "readme_editing_later",
+      "target": "readme_common_edits",
+      "confidence_score": 1.0
+    }
+  ],
+  "hyperedges": []
+}

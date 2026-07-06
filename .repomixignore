@@ -1,0 +1,69 @@
+# --- .repomixignore : keep the AI snapshot small (token-saving) ---
+# Safe generic rules. Excludes dependencies, build output, caches, generated
+# graphs, lockfiles and binary/media. Does NOT touch source dirs (lib/ src/ web/).
+
+# Dependencies
+node_modules/
+.pnpm-store/
+.venv/
+venv/
+env/
+__pycache__/
+vendor/
+.dart_tool/
+
+# Build / generated output
+build/
+dist/
+out/
+.next/
+.nuxt/
+.output/
+.gradle/
+coverage/
+*.g.dart
+*.freezed.dart
+
+# Flutter native wrappers (auto-generated, not hand-written)
+android/
+ios/
+macos/
+linux/
+windows/
+
+# IDE / tooling
+.idea/
+.vscode/
+*.iml
+
+# Graphify + Repomix own outputs (never pack these back in)
+graphify-out/
+graphify-docs/
+repomix-output.xml
+
+# Lockfiles (huge, low value)
+package-lock.json
+pnpm-lock.yaml
+yarn.lock
+pubspec.lock
+poetry.lock
+
+# Media & binaries — Repomix is text-only; images go to Graphify digests instead
+assets/
+*.png
+*.jpg
+*.jpeg
+*.gif
+*.webp
+*.svg
+*.pdf
+*.ico
+*.mp3
+*.mp4
+*.zip
+*.exe
+*.ttf
+*.otf
+
+# One-off patch / diff scripts (not real source)
+*.patch
