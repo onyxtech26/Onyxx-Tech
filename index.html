@@ -26,7 +26,7 @@
 <link rel="icon" type="image/png" href="images/favicon-white.png" />
 <link rel="icon" type="image/png" href="images/favicon-black.png" media="(prefers-color-scheme: light)" />
 <link rel="icon" type="image/png" href="images/favicon-white.png" media="(prefers-color-scheme: dark)" />
-<link rel="preload" as="image" href="images/onyxx_logo_transparent.webp" type="image/webp" />
+<link rel="preload" as="image" href="images/onyxx_logo_transparent.png" type="image/png" />
 
 <!-- Supabase JS Client -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -1706,8 +1706,8 @@ footer a:hover { color: var(--accent); }
 
   <div class="hero-content">
     <picture>
-      <source srcset="onyxx_logo_&amp;_name_transparent.webp" type="image/webp" />
-      <img src="onyxx_logo_&amp;_name_transparent.png" alt="Onyxx Tech" class="hero-logo" fetchpriority="high" />
+      <source srcset="images/onyxx_logo_&amp;_name_transparent.webp" type="image/webp" />
+      <img src="images/onyxx_logo_&amp;_name_transparent.png" alt="Onyxx Tech" class="hero-logo" fetchpriority="high" />
     </picture>
 
     <div class="hero-tag">
@@ -2490,6 +2490,17 @@ async function loadLandingPageData() {
 
     renderLandingServices(loadedServices);
     renderLandingShowcase();
+
+    // Scroll to dynamic section if URL hash is present
+    if (window.location.hash) {
+      const targetId = window.location.hash.substring(1);
+      const targetEl = document.getElementById(targetId);
+      if (targetEl) {
+        setTimeout(() => {
+          targetEl.scrollIntoView({ behavior: 'auto' });
+        }, 100);
+      }
+    }
   } catch (err) {
     console.error("Error loading landing page data:", err);
   }
@@ -2561,6 +2572,29 @@ function renderLandingServices(services) {
   });
 }
 
+function getProjectImageUrl(p) {
+  if (!p || !p.image_url) return '';
+  const url = p.image_url;
+  
+  if (url.includes('1783223293991_9suav.png')) {
+    return 'images/Policy_Snap.png';
+  }
+  if (url.includes('1783223786542_nzlr5n.png')) {
+    return 'images/Carousel_Maker.png';
+  }
+  if (url.includes('1783223573215_jmhlwn.png')) {
+    return 'images/xcraft.png';
+  }
+  if (url.includes('1783223485403_rkdjse.png')) {
+    return 'images/Mpt.jpg';
+  }
+  if (url.includes('1783223367629_bkbf9k.png')) {
+    return 'images/Watch_bot.png';
+  }
+  
+  return url;
+}
+
 function renderLandingShowcase() {
   const grid = document.getElementById('projectsGrid');
   if (!grid) return;
@@ -2596,10 +2630,11 @@ function renderLandingShowcase() {
 
     let thumbHtml = '';
     if (p.image_url) {
-      card.setAttribute('data-img', p.image_url);
+      const imgUrl = getProjectImageUrl(p);
+      card.setAttribute('data-img', imgUrl);
       const isContain = p.title.toLowerCase().includes('portal') || p.title.toLowerCase().includes('mpt');
       thumbHtml = `<div class="project-thumb ${isContain ? 'project-thumb--contain' : ''}" style="background: ${grad}">
-        <img src="${p.image_url}" alt="${p.title}" loading="lazy" decoding="async">
+        <img src="${imgUrl}" alt="${p.title}" loading="lazy" decoding="async" onerror="this.onerror=null; this.src='images/onyxx_logo_transparent.png';">
       </div>`;
     } else {
       thumbHtml = `<div class="project-thumb">

@@ -2035,6 +2035,10 @@
         await loadAllData();
         updateThemeToggleIcons();
         
+        // Restore active tab
+        const savedTab = localStorage.getItem('activeTab') || 'overview';
+        switchTab(savedTab);
+        
         document.getElementById('loadingOverlay').classList.add('hidden');
       } catch (err) {
         console.error("Auth initialization failed:", err);
@@ -2052,6 +2056,7 @@
     
     // Tab Switching Logic
     function switchTab(tabId) {
+      localStorage.setItem('activeTab', tabId);
       document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
       document.querySelectorAll('.submenu-item').forEach(el => el.classList.remove('active'));
       document.querySelectorAll('.tab-section').forEach(el => el.classList.remove('active'));
@@ -2094,6 +2099,29 @@
       }
     }
 
+function getProjectImageUrl(p) {
+  if (!p || !p.image_url) return '';
+  const url = p.image_url;
+  
+  if (url.includes('1783223293991_9suav.png')) {
+    return 'images/Policy_Snap.png';
+  }
+  if (url.includes('1783223786542_nzlr5n.png')) {
+    return 'images/Carousel_Maker.png';
+  }
+  if (url.includes('1783223573215_jmhlwn.png')) {
+    return 'images/xcraft.png';
+  }
+  if (url.includes('1783223485403_rkdjse.png')) {
+    return 'images/Mpt.jpg';
+  }
+  if (url.includes('1783223367629_bkbf9k.png')) {
+    return 'images/Watch_bot.png';
+  }
+  
+  return url;
+}
+
     // Render Project Showcase Portfolio cards
     function renderProjectShowcase() {
       const grid = document.getElementById('projectShowcaseGrid');
@@ -2108,7 +2136,8 @@
       showcaseData.forEach(p => {
         const desc = p.description || '';
         const tags = Array.isArray(p.tech_stack) ? p.tech_stack : (p.tech_stack ? String(p.tech_stack).split(',').map(t => t.trim()) : []);
-        const imgMarkup = p.image_url ? `<div style="width: 100%; height: 160px; border-radius: 12px; overflow: hidden; margin-bottom: 1rem; border: 1px solid var(--glass-border);"><img src="${p.image_url}" style="width: 100%; height: 100%; object-fit: cover;" /></div>` : '';
+        const imgUrl = getProjectImageUrl(p);
+        const imgMarkup = imgUrl ? `<div style="width: 100%; height: 160px; border-radius: 12px; overflow: hidden; margin-bottom: 1rem; border: 1px solid var(--glass-border);"><img src="${imgUrl}" style="width: 100%; height: 100%; object-fit: cover;" onerror="this.onerror=null; this.src='images/onyxx_logo_transparent.png';" /></div>` : '';
         const tagSpans = tags.map(t => `<span class="project-tag" style="background: rgba(56, 224, 255, 0.08); color: var(--accent); border: 1px solid rgba(56, 224, 255, 0.15); padding: 0.2rem 0.5rem; border-radius: 4px; font-size: 0.72rem; font-family: var(--font-mono);">${t}</span>`).join(' ');
 
         const card = document.createElement('div');
@@ -2175,9 +2204,10 @@
           document.getElementById('showcaseGithub').value = p.github_url || '';
           document.getElementById('showcaseLive').value = p.live_url || '';
           
+          const imgUrl = getProjectImageUrl(p);
           document.getElementById('showcaseExistingImageUrl').value = p.image_url || '';
-          if (p.image_url) {
-            previewEl.innerHTML = `<img src="${p.image_url}" style="width: 50px; height: 50px; border-radius: 8px; object-fit: cover;" /> <span style="font-size: 0.8rem; color: var(--bone-dim);">Current Image</span>`;
+          if (imgUrl) {
+            previewEl.innerHTML = `<img src="${imgUrl}" style="width: 50px; height: 50px; border-radius: 8px; object-fit: cover;" onerror="this.onerror=null; this.src='images/onyxx_logo_transparent.png';" /> <span style="font-size: 0.8rem; color: var(--bone-dim);">Current Image</span>`;
           }
         }
       } else {
