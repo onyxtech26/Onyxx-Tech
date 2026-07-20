@@ -59,6 +59,19 @@
 
 * { margin: 0; padding: 0; box-sizing: border-box; }
 
+/* Hide scrollbars across the entire website */
+html, body, * {
+  scrollbar-width: none !important;
+  -ms-overflow-style: none !important;
+}
+html::-webkit-scrollbar,
+body::-webkit-scrollbar,
+*::-webkit-scrollbar {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+}
+
 :focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 3px;

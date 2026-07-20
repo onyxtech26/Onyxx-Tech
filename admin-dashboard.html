@@ -9,7 +9,7 @@
   </script>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Onyxx Tech — Admin Dashboard</title>
+  <title>Onyxx Tech Hub — Admin Dashboard</title>
   
   <link rel="icon" type="image/png" href="images/favicon-white.png" />
   <link rel="icon" type="image/png" href="images/favicon-black.png" media="(prefers-color-scheme: light)" />
@@ -85,6 +85,19 @@
     }
 
     * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    /* Hide scrollbars across the entire website/dashboard */
+    html, body, * {
+      scrollbar-width: none !important;
+      -ms-overflow-style: none !important;
+    }
+    html::-webkit-scrollbar,
+    body::-webkit-scrollbar,
+    *::-webkit-scrollbar {
+      display: none !important;
+      width: 0 !important;
+      height: 0 !important;
+    }
 
     body {
       background: var(--onyx);
@@ -1058,8 +1071,8 @@
     <aside class="sidebar">
       <div class="sidebar-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 3rem;">
         <div class="logo-container" style="display: flex; align-items: center; justify-content: flex-start; height: 40px;">
-          <img src="images/onyxx_logo_transparent.png" alt="Onyxx Tech" class="sidebar-logo logo-icon" />
-          <img src="images/onyxx_logo_&_name_transparent.png" alt="Onyxx Tech" class="sidebar-logo logo-full" />
+          <img src="images/onyxx_logo_transparent.png" alt="Onyxx Tech Hub" class="sidebar-logo logo-icon" />
+          <img src="images/onyxx_logo_&_name_transparent.png" alt="Onyxx Tech Hub" class="sidebar-logo logo-full" />
         </div>
         <button id="themeToggleBtn" onclick="toggleTheme()" aria-label="Toggle Theme" style="background: transparent; border: none; color: var(--bone-dim); cursor: pointer; display: flex; align-items: center; justify-content: center; padding: 5px; transition: all 0.3s ease;">
           <svg class="sun-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 20px; height: 20px;">
@@ -1109,7 +1122,7 @@
       <!-- OVERVIEW TAB -->
       <section id="tab-overview" class="tab-section active">
         <div class="section-header">
-          <h1 class="section-title">Onyxx's Dashboard</h1>
+          <h1 class="section-title">Onyxx Tech Hub Dashboard</h1>
         </div>
 
         <div class="overview-layout">
@@ -1339,8 +1352,7 @@
                 <th>Recurring?</th>
                 <th>Recurring Type</th>
                 <th>Linked Project</th>
-                <th>Invoice/Receipt</th>
-                <th>Notes</th>
+                <th style="text-align: center;">Invoice/Receipt</th>
                 <th>Actions</th>
               </tr>
             </thead>
@@ -1819,10 +1831,6 @@
               <div id="expenseInvoicePreview" style="margin-top: 0.5rem; font-size: 0.8rem;"></div>
             </div>
           </div>
-          <div class="form-group" style="margin-top: 1rem;">
-            <label class="form-label" for="expenseNotes">Notes (Optional)</label>
-            <textarea id="expenseNotes" class="form-control" rows="2" placeholder="Any extra remarks..."></textarea>
-          </div>
           <div class="modal-footer">
             <button type="button" class="btn-outline" style="margin-top: 0;" onclick="closeModal('expenseModal')">Cancel</button>
             <button type="submit" class="btn-primary">Save</button>
@@ -1963,7 +1971,7 @@
           <div class="form-group" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
             <div>
               <label class="form-label" for="showcaseClient">Client</label>
-              <input type="text" id="showcaseClient" class="form-control" placeholder="e.g. Onyxx Tech Product" required />
+              <input type="text" id="showcaseClient" class="form-control" placeholder="e.g. Onyxx Tech Hub Product" required />
             </div>
             <div>
               <label class="form-label" for="showcaseTechStack">Tech Stack (Comma-separated)</label>
@@ -2013,7 +2021,7 @@
     let showcaseData = [];
     let withdrawalsData = [];
     let systemSettings = {
-      company_profile: { name: "Onyxx Tech", sst_rate: 8, currency: "MYR" },
+      company_profile: { name: "Onyxx Tech Hub", sst_rate: 8, currency: "MYR" },
       partner_split: { Kunacosta: 50, Rooben: 50 },
       financial_targets: { revenue_target: 15000, expense_target: 5000 }
     };
@@ -2151,11 +2159,11 @@ function getProjectImageUrl(p) {
           <div>
             ${imgMarkup}
             <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.6rem;">
-              <span class="status-badge" style="background: rgba(255, 255, 255, 0.05); color: var(--bone-dim); border-color: rgba(255, 255, 255, 0.1); font-size: 0.7rem; padding: 0.2rem 0.6rem;">${p.category || 'Product'}</span>
-              <span style="font-size: 0.75rem; color: var(--bone-dim); font-family: var(--font-mono);">${p.client || 'Onyxx Product'}</span>
+              <span class="status-badge" style="background: var(--nav-item-hover-bg); color: var(--bone-dim); border-color: var(--glass-border); font-size: 0.7rem; padding: 0.2rem 0.6rem;">${p.category || 'Product'}</span>
+              <span style="font-size: 0.75rem; color: var(--bone-dim); font-family: var(--font-mono);">${p.client || 'Onyxx Tech Hub Product'}</span>
             </div>
             
-            <h3 style="font-family: var(--font-display); font-size: 1.4rem; margin-bottom: 0.5rem; font-weight: 400; color: #ffffff;">${p.title}</h3>
+            <h3 style="font-family: var(--font-display); font-size: 1.4rem; margin-bottom: 0.5rem; font-weight: 400; color: var(--bone);">${p.title}</h3>
             
             <p style="font-size: 0.85rem; color: var(--bone-dim); line-height: 1.5; margin-bottom: 1.2rem;">${desc}</p>
           </div>
@@ -2334,7 +2342,7 @@ function getProjectImageUrl(p) {
     // Settings logic and handlers
     function populateSettingsFields() {
       // Company Profile
-      document.getElementById('setCompanyName').value = systemSettings.company_profile?.name || 'Onyxx Tech';
+      document.getElementById('setCompanyName').value = systemSettings.company_profile?.name || 'Onyxx Tech Hub';
       document.getElementById('setTaxRate').value = systemSettings.company_profile?.sst_rate ?? 8;
       
       // Partner Split
@@ -2463,6 +2471,30 @@ function getProjectImageUrl(p) {
     function closeModal(modalId) {
       document.getElementById(modalId).classList.remove('active');
     }
+
+    // Close any modal when clicking backdrop / outside
+    document.addEventListener('click', function(e) {
+      if (e.target && e.target.classList && e.target.classList.contains('modal-backdrop')) {
+        if (e.target.id === 'depositPromptModal') {
+          closeDepositPrompt(false);
+        } else {
+          closeModal(e.target.id);
+        }
+      }
+    });
+
+    // Close any modal when pressing Escape key
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape') {
+        document.querySelectorAll('.modal-backdrop.active').forEach(modal => {
+          if (modal.id === 'depositPromptModal') {
+            closeDepositPrompt(false);
+          } else {
+            closeModal(modal.id);
+          }
+        });
+      }
+    });
 
     // Fetch All Data
     async function loadAllData() {
@@ -3329,7 +3361,7 @@ function getProjectImageUrl(p) {
       });
 
       if (filtered.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="11" style="text-align: center; color: var(--bone-dim);">No expenses match the filters.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="10" style="text-align: center; color: var(--bone-dim);">No expenses match the filters.</td></tr>`;
         return;
       }
 
@@ -3341,8 +3373,7 @@ function getProjectImageUrl(p) {
 
         const proj = projectsData.find(p => p.id === e.linked_project_id);
         const projName = proj ? proj.name : 'None';
-        const invoiceLink = e.invoice_link ? `<a href="${e.invoice_link}" target="_blank" class="action-btn edit-btn" style="text-decoration: none; padding: 0.1rem 0.4rem; font-size: 0.7rem;">View</a>` : '<span style="color: var(--bone-faint);">None</span>';
-        const notes = e.notes || '';
+        const invoiceLink = e.invoice_link ? `<a href="${e.invoice_link}" target="_blank" style="color: var(--accent); text-decoration: underline; font-weight: 500; font-size: 0.85rem;">View</a>` : '<span style="color: var(--bone-faint); font-size: 0.85rem;">None</span>';
 
         const tr = document.createElement('tr');
         tr.innerHTML = `
@@ -3354,8 +3385,7 @@ function getProjectImageUrl(p) {
           <td>${e.recurring ? 'Yes' : 'No'}</td>
           <td>${e.recurring_type || 'None'}</td>
           <td>${projName}</td>
-          <td>${invoiceLink}</td>
-          <td><span style="font-size: 0.8rem; color: var(--bone-dim); max-width: 150px; display: inline-block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${notes}">${notes}</span></td>
+          <td style="text-align: center;">${invoiceLink}</td>
           <td>
             <div class="actions-cell">
               <button class="action-btn edit-btn" title="Edit" onclick="openExpenseModal('${e.id}')"><svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>
@@ -3371,7 +3401,7 @@ function getProjectImageUrl(p) {
         <tr style="font-weight: bold; background: var(--table-header-bg);">
           <td colspan="3">Total</td>
           <td style="color: #fbbf24;">${formatMYR(totalSpent)}</td>
-          <td colspan="7"></td>
+          <td colspan="6"></td>
         </tr>
       `;
     }
@@ -4062,7 +4092,8 @@ function getProjectImageUrl(p) {
           document.getElementById('expenseRecurringType').value = exp.recurring_type || 'None';
           document.getElementById('expenseLinkedProject').value = exp.linked_project_id || '';
           document.getElementById('expenseExistingInvoiceLink').value = exp.invoice_link || '';
-          document.getElementById('expenseNotes').value = exp.notes || '';
+          const notesEl = document.getElementById('expenseNotes');
+          if (notesEl) notesEl.value = exp.notes || '';
           
           const previewEl = document.getElementById('expenseInvoicePreview');
           if (exp.invoice_link) {
@@ -4094,7 +4125,7 @@ function getProjectImageUrl(p) {
       const recurring_type = document.getElementById('expenseRecurringType').value || 'None';
       const linked_project_id = document.getElementById('expenseLinkedProject').value || null;
       let invoice_link = document.getElementById('expenseExistingInvoiceLink').value || null;
-      const notes = document.getElementById('expenseNotes').value || null;
+      const notes = document.getElementById('expenseNotes')?.value || null;
 
       const fileInput = document.getElementById('expenseInvoiceLink');
 

@@ -1,6 +1,6 @@
-# Onyxx Tech — Website
+# Onyxx Tech Hub — Website
 
-Multi-page site for Onyxx Tech, ready to deploy on GitHub Pages. No build step — plain HTML/CSS/JS, `<link>`/`<script src>` shared assets.
+Multi-page site for Onyxx Tech Hub, ready to deploy on GitHub Pages. No build step — plain HTML/CSS/JS, `<link>`/`<script src>` shared assets.
 
 **Pages:** `index.html` (Home/Hero), `services.html`, `why.html`, `work.html`, `process.html`, `founders.html`, `contact.html`.
 **Shared assets:** `styles.css` (all site CSS), `common.js` (shared chrome: nav, theme toggle, cursor glow, reveal-on-scroll, etc — loaded by every page). Page-specific behavior (the hero starfield canvas, live Supabase data for Services/Work) lives in an inline `<script>` at the bottom of that page only.
@@ -105,4 +105,4 @@ In `index.html`, search for `We build the` to find the hero headline. Edit the t
 - **Accessible** — respects `prefers-reduced-motion`
 - **No tracking** — clean and private out of the box
 
-Built with ❤️ for the Onyxx Tech launch.
+Built with ❤️ for the Onyxx Tech Hub launch.
