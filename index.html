@@ -157,15 +157,17 @@ body {
 /* Custom cursor glow */
 .cursor-glow {
   position: fixed;
+  top: 0;
+  left: 0;
   width: 400px;
   height: 400px;
   border-radius: 50%;
   background: radial-gradient(circle, rgba(0, 212, 255, 0.08) 0%, transparent 70%);
   pointer-events: none;
-  transform: translate(-50%, -50%);
   z-index: 1;
   transition: opacity 0.3s ease;
   mix-blend-mode: screen;
+  will-change: transform;
 }
 
 /* Grid background */
@@ -559,6 +561,10 @@ nav {
   transition: transform 0.3s ease;
 }
 
+.btn.is-dragging {
+  transition: transform 0.1s ease, background 0.3s ease, border-color 0.3s ease, color 0.3s ease, box-shadow 0.3s ease;
+}
+
 .btn:hover .arrow { transform: translateX(4px); }
 
 /* Scroll indicator */
@@ -678,7 +684,7 @@ section {
 
 .service-card {
   background: var(--glass-bg);
-  backdrop-filter: blur(16px) saturate(150%);
+  backdrop-filter: blur(10px) saturate(150%);
   border: 1px solid var(--glass-border);
   border-top: 1px solid var(--glass-border-top);
   box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.2);
@@ -688,6 +694,7 @@ section {
   cursor: pointer;
   overflow: hidden;
   border-radius: 16px;
+  contain: layout paint style;
 }
 
 .service-card::before {
@@ -989,7 +996,7 @@ section {
 
 .founder-card {
   background: rgba(255, 255, 255, 0.03);
-  backdrop-filter: blur(16px) saturate(150%);
+  backdrop-filter: blur(10px) saturate(150%);
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-top: 1px solid rgba(255, 255, 255, 0.15);
   box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.2);
@@ -998,6 +1005,7 @@ section {
   position: relative;
   overflow: hidden;
   border-radius: 16px;
+  contain: layout paint style;
 }
 
 .founder-card::before {
@@ -1309,7 +1317,7 @@ footer a:hover { color: var(--accent); }
 
 .project-card {
   background: var(--glass-bg);
-  backdrop-filter: blur(16px) saturate(150%);
+  backdrop-filter: blur(10px) saturate(150%);
   border: 1px solid var(--glass-border);
   border-top: 1px solid var(--glass-border-top);
   box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.2);
@@ -1319,14 +1327,17 @@ footer a:hover { color: var(--accent); }
   display: flex;
   flex-direction: column;
   border-radius: 16px;
+  contain: layout paint style;
 }
 
-.project-card:hover { 
+.project-card:hover {
   background: var(--glass-bg);
   border-color: var(--accent);
   transform: translateY(-5px);
   box-shadow: 0 0 25px var(--accent-dim), 0 8px 32px rgba(0, 0, 0, 0.25);
 }
+
+.project-card.is-tilting { transition: transform 0.1s ease, background 0.4s ease; }
 
 .project-thumb {
   position: relative;
@@ -1963,40 +1974,80 @@ footer a:hover { color: var(--accent); }
 </div>
 
 <script>
+// ============ MOTION PREFERENCES ============
+const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+const hasFinePointer = window.matchMedia('(pointer: fine)').matches;
+
 // ============ CURSOR GLOW ============
 const cursorGlow = document.getElementById('cursorGlow');
 let mouseX = 0, mouseY = 0, currentX = 0, currentY = 0;
 
-document.addEventListener('mousemove', (e) => {
-  mouseX = e.clientX;
-  mouseY = e.clientY;
-});
+if (cursorGlow && !prefersReducedMotion && hasFinePointer) {
+  document.addEventListener('mousemove', (e) => {
+    mouseX = e.clientX;
+    mouseY = e.clientY;
+  }, { passive: true });
 
-function animateCursor() {
-  currentX += (mouseX - currentX) * 0.15;
-  currentY += (mouseY - currentY) * 0.15;
-  cursorGlow.style.left = currentX + 'px';
-  cursorGlow.style.top = currentY + 'px';
+  function animateCursor() {
+    currentX += (mouseX - currentX) * 0.15;
+    currentY += (mouseY - currentY) * 0.15;
+    cursorGlow.style.transform = `translate3d(${currentX - 200}px, ${currentY - 200}px, 0)`;
+    requestAnimationFrame(animateCursor);
+  }
   requestAnimationFrame(animateCursor);
+} else if (cursorGlow) {
+  cursorGlow.style.display = 'none';
 }
-animateCursor();
 
 // ============ SERVICE CARD GLOW (follows cursor inside card) ============
-document.querySelectorAll('[data-service]').forEach(card => {
-  card.addEventListener('mousemove', (e) => {
-    const rect = card.getBoundingClientRect();
-    const x = ((e.clientX - rect.left) / rect.width) * 100;
-    const y = ((e.clientY - rect.top) / rect.height) * 100;
-    card.style.setProperty('--mx', x + '%');
-    card.style.setProperty('--my', y + '%');
-  });
-});
+// Delegated + rAF-throttled so cards added later (dynamic services) are covered
+// and rapid mousemove events collapse to one DOM write per frame.
+let serviceGlowPending = false;
+let serviceGlowEvent = null;
 
-// ============ NAV SCROLL STATE ============
+document.addEventListener('mousemove', (e) => {
+  const card = e.target.closest('[data-service]');
+  if (!card) return;
+  serviceGlowEvent = { card, clientX: e.clientX, clientY: e.clientY };
+  if (!serviceGlowPending) {
+    serviceGlowPending = true;
+    requestAnimationFrame(() => {
+      serviceGlowPending = false;
+      if (!serviceGlowEvent) return;
+      const { card, clientX, clientY } = serviceGlowEvent;
+      const rect = card.getBoundingClientRect();
+      const x = ((clientX - rect.left) / rect.width) * 100;
+      const y = ((clientY - rect.top) / rect.height) * 100;
+      card.style.setProperty('--mx', x + '%');
+      card.style.setProperty('--my', y + '%');
+    });
+  }
+}, { passive: true });
+
+// ============ NAV SCROLL STATE + GALAXY CANVAS FADE (single rAF-batched scroll handler) ============
 const nav = document.getElementById('nav');
+let heroHeight = 0;
+const heroEl = document.getElementById('hero');
+
+function measureHeroHeight() {
+  heroHeight = heroEl ? heroEl.offsetHeight : 0;
+}
+measureHeroHeight();
+
+let scrollTicking = false;
 window.addEventListener('scroll', () => {
-  nav.classList.toggle('scrolled', window.scrollY > 50);
-});
+  if (scrollTicking) return;
+  scrollTicking = true;
+  requestAnimationFrame(() => {
+    scrollTicking = false;
+    const scrolled = window.scrollY;
+    nav.classList.toggle('scrolled', scrolled > 50);
+    if (canvas && heroHeight) {
+      const fade = Math.max(0, 1 - scrolled / (heroHeight * 0.5));
+      canvas.style.opacity = fade * 0.85;
+    }
+  });
+}, { passive: true });
 
 // ============ MOBILE NAV ============
 const navToggle = document.getElementById('navToggle');
@@ -2114,16 +2165,24 @@ document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
 const canvas = document.getElementById('circuitCanvas');
 const ctx = canvas.getContext('2d');
 
+// Cap the backing-store resolution — an uncapped devicePixelRatio (3x on many
+// phones) quadruples the pixels the canvas has to fill every frame for no
+// visible benefit on a soft, blurred starfield.
+function getCanvasDpr() {
+  return Math.min(window.devicePixelRatio || 1, 2);
+}
+
 function resizeCanvas() {
-  canvas.width = canvas.offsetWidth * window.devicePixelRatio;
-  canvas.height = canvas.offsetHeight * window.devicePixelRatio;
-  ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+  const dpr = getCanvasDpr();
+  canvas.width = canvas.offsetWidth * dpr;
+  canvas.height = canvas.offsetHeight * dpr;
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 }
 
 let stars = [];
 let dustClouds = [];
 let shootingStars = [];
-let galaxyAngle = 0;
+let coreGlowGradient = null;
 
 function initGalaxy() {
   stars = [];
@@ -2132,8 +2191,14 @@ function initGalaxy() {
   const w = canvas.offsetWidth;
   const h = canvas.offsetHeight;
 
+  // Scale star counts to viewport area so small/mobile screens draw less,
+  // instead of always paying for a fixed 530-star desktop-sized scene.
+  const areaScale = Math.min(1, Math.max(0.4, (w * h) / (1600 * 800)));
+  const bgStarCount = Math.round(350 * areaScale);
+  const coreStarCount = Math.round(180 * areaScale);
+
   // Background stars — scattered across full canvas
-  for (let i = 0; i < 350; i++) {
+  for (let i = 0; i < bgStarCount; i++) {
     stars.push({
       x: Math.random() * w,
       y: Math.random() * h,
@@ -2148,7 +2213,7 @@ function initGalaxy() {
   // Galaxy core stars — clustered spiral in top-right area
   const cx = w * 0.78;
   const cy = h * 0.32;
-  for (let i = 0; i < 180; i++) {
+  for (let i = 0; i < coreStarCount; i++) {
     const arm = Math.floor(Math.random() * 2); // 2 spiral arms
     const t = Math.random();
     const angle = arm * Math.PI + t * Math.PI * 3 + (Math.random() - 0.5) * 0.7;
@@ -2166,17 +2231,29 @@ function initGalaxy() {
     });
   }
 
-  // Nebula dust clouds
+  // Nebula dust clouds — static shapes, so their gradients are built once
+  // here instead of being recreated on every animation frame.
   for (let i = 0; i < 6; i++) {
-    dustClouds.push({
-      x: Math.random() * w,
-      y: Math.random() * h * 0.9,
-      rx: 60 + Math.random() * 120,
-      ry: 40 + Math.random() * 80,
-      hue: Math.random() < 0.5 ? '185' : '270',
-      alpha: 0.025 + Math.random() * 0.04
-    });
+    const x = Math.random() * w;
+    const y = Math.random() * h * 0.9;
+    const rx = 60 + Math.random() * 120;
+    const ry = 40 + Math.random() * 80;
+    const hue = Math.random() < 0.5 ? '185' : '270';
+    const alpha = 0.025 + Math.random() * 0.04;
+    const gradient = ctx.createRadialGradient(x, y, 0, x, y, Math.max(rx, ry));
+    gradient.addColorStop(0, `hsla(${hue}, 100%, 65%, ${alpha})`);
+    gradient.addColorStop(0.5, `hsla(${hue}, 80%, 50%, ${alpha * 0.5})`);
+    gradient.addColorStop(1, 'transparent');
+    dustClouds.push({ x, y, rx, ry, gradient });
   }
+
+  // Core glow — fixed position/size relative to canvas, doesn't animate,
+  // so it's also built once per init/resize rather than every frame.
+  const coreR = w * 0.14;
+  coreGlowGradient = ctx.createRadialGradient(cx, cy, 0, cx, cy, coreR);
+  coreGlowGradient.addColorStop(0, 'rgba(0, 212, 255, 0.12)');
+  coreGlowGradient.addColorStop(0.4, 'rgba(80, 0, 180, 0.07)');
+  coreGlowGradient.addColorStop(1, 'transparent');
 }
 
 function spawnShootingStar(w, h) {
@@ -2200,31 +2277,23 @@ function drawGalaxy(ts) {
   const h = canvas.offsetHeight;
   ctx.clearRect(0, 0, w, h);
 
-  // Nebula clouds
+  // Nebula clouds (gradients cached in initGalaxy — static shapes)
   dustClouds.forEach(c => {
-    const g = ctx.createRadialGradient(c.x, c.y, 0, c.x, c.y, Math.max(c.rx, c.ry));
-    g.addColorStop(0, `hsla(${c.hue}, 100%, 65%, ${c.alpha})`);
-    g.addColorStop(0.5, `hsla(${c.hue}, 80%, 50%, ${c.alpha * 0.5})`);
-    g.addColorStop(1, 'transparent');
     ctx.save();
     ctx.scale(1, c.ry / c.rx);
     ctx.beginPath();
     ctx.arc(c.x, c.y * (c.rx / c.ry), c.rx, 0, Math.PI * 2);
-    ctx.fillStyle = g;
+    ctx.fillStyle = c.gradient;
     ctx.fill();
     ctx.restore();
   });
 
-  // Galaxy core glow
+  // Galaxy core glow (gradient cached in initGalaxy — fixed position)
   const cx = w * 0.78;
   const cy = h * 0.32;
-  const coreGlow = ctx.createRadialGradient(cx, cy, 0, cx, cy, w * 0.14);
-  coreGlow.addColorStop(0, 'rgba(0, 212, 255, 0.12)');
-  coreGlow.addColorStop(0.4, 'rgba(80, 0, 180, 0.07)');
-  coreGlow.addColorStop(1, 'transparent');
   ctx.beginPath();
   ctx.ellipse(cx, cy, w * 0.14, h * 0.1, 0, 0, Math.PI * 2);
-  ctx.fillStyle = coreGlow;
+  ctx.fillStyle = coreGlowGradient;
   ctx.fill();
 
   // Stars
@@ -2277,16 +2346,50 @@ function drawGalaxy(ts) {
     ss.life -= ss.decay;
   });
 
-  if (!document.hidden) requestAnimationFrame(drawGalaxy);
+}
+
+// Only keep the rAF loop alive while the tab is visible AND the hero canvas
+// is actually on screen — no point paying for 500+ star redraws every frame
+// once the user has scrolled past it.
+let canvasInViewport = true;
+let galaxyLoopActive = false;
+
+function canvasShouldAnimate() {
+  return !document.hidden && canvasInViewport && !prefersReducedMotion;
+}
+
+function galaxyFrame(ts) {
+  if (!canvasShouldAnimate()) { galaxyLoopActive = false; return; }
+  drawGalaxy(ts);
+  requestAnimationFrame(galaxyFrame);
+}
+
+function startGalaxyLoop() {
+  if (galaxyLoopActive || !canvasShouldAnimate()) return;
+  galaxyLoopActive = true;
+  requestAnimationFrame(galaxyFrame);
 }
 
 resizeCanvas();
 initGalaxy();
-requestAnimationFrame(drawGalaxy);
 
-document.addEventListener('visibilitychange', () => {
-  if (!document.hidden) requestAnimationFrame(drawGalaxy);
-});
+if (prefersReducedMotion) {
+  // Draw a single static frame instead of an infinite animation loop.
+  drawGalaxy(0);
+} else {
+  startGalaxyLoop();
+
+  document.addEventListener('visibilitychange', () => {
+    if (!document.hidden) startGalaxyLoop();
+  });
+
+  new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      canvasInViewport = entry.isIntersecting;
+      if (canvasInViewport) startGalaxyLoop();
+    });
+  }, { threshold: 0 }).observe(canvas);
+}
 
 let resizeTimer;
 window.addEventListener('resize', () => {
@@ -2294,14 +2397,8 @@ window.addEventListener('resize', () => {
   resizeTimer = setTimeout(() => {
     resizeCanvas();
     initGalaxy();
+    measureHeroHeight();
   }, 150);
-});
-
-window.addEventListener('scroll', () => {
-  const heroHeight = canvas.closest('.hero').offsetHeight;
-  const scrolled = window.scrollY;
-  const fade = Math.max(0, 1 - scrolled / (heroHeight * 0.5));
-  canvas.style.opacity = fade * 0.85;
 });
 
 // ============ PROJECT MODAL ============
@@ -2318,7 +2415,14 @@ function openModal(card) {
   const cardImg = card.querySelector('.project-thumb img');
 
   if (d.img || cardImg) {
-    img.src = d.img || cardImg.src;
+    const fallback = d.img || cardImg.src;
+    if (d.imgWebp) {
+      img.onerror = () => { img.onerror = null; img.src = fallback; };
+      img.src = d.imgWebp;
+    } else {
+      img.onerror = null;
+      img.src = fallback;
+    }
     img.alt = d.name;
     img.style.display = 'block';
     thumbBg.style.display = 'none';
@@ -2357,23 +2461,34 @@ function closeModal() {
 // Helper to initialize card events for dynamically created project cards
 function setupProjectCard(card) {
   card.addEventListener('click', () => openModal(card));
-  
+
+  if (!hasFinePointer) return; // 3D tilt-on-cursor only makes sense with a mouse
+
   const glare = document.createElement('div');
   glare.style.cssText = 'position:absolute;inset:0;pointer-events:none;z-index:5;opacity:0;transition:opacity 0.3s ease;';
   card.appendChild(glare);
 
+  let tiltPending = false;
+  let lastEvent = null;
+
   card.addEventListener('mousemove', (e) => {
-    const rect = card.getBoundingClientRect();
-    const x = (e.clientX - rect.left) / rect.width;
-    const y = (e.clientY - rect.top) / rect.height;
-    card.style.transition = 'transform 0.1s ease, background 0.4s ease';
-    card.style.transform = `perspective(900px) rotateX(${(y - 0.5) * -10}deg) rotateY(${(x - 0.5) * 10}deg)`;
-    glare.style.opacity = '1';
-    glare.style.background = `radial-gradient(circle at ${x * 100}% ${y * 100}%, rgba(56,224,255,0.06) 0%, transparent 65%)`;
-  });
+    lastEvent = e;
+    card.classList.add('is-tilting');
+    if (tiltPending) return;
+    tiltPending = true;
+    requestAnimationFrame(() => {
+      tiltPending = false;
+      const rect = card.getBoundingClientRect();
+      const x = (lastEvent.clientX - rect.left) / rect.width;
+      const y = (lastEvent.clientY - rect.top) / rect.height;
+      card.style.transform = `perspective(900px) rotateX(${(y - 0.5) * -10}deg) rotateY(${(x - 0.5) * 10}deg)`;
+      glare.style.opacity = '1';
+      glare.style.background = `radial-gradient(circle at ${x * 100}% ${y * 100}%, rgba(56,224,255,0.06) 0%, transparent 65%)`;
+    });
+  }, { passive: true });
 
   card.addEventListener('mouseleave', () => {
-    card.style.transition = 'transform 0.6s ease, background 0.4s ease';
+    card.classList.remove('is-tilting');
     card.style.transform = '';
     glare.style.opacity = '0';
   });
@@ -2428,20 +2543,31 @@ setTimeout(() => {
 
 
 // ============ MAGNETIC BUTTONS ============
-document.querySelectorAll('.btn').forEach(btn => {
-  btn.addEventListener('mousemove', (e) => {
-    const rect = btn.getBoundingClientRect();
-    const x = (e.clientX - rect.left - rect.width / 2) * 0.3;
-    const y = (e.clientY - rect.top - rect.height / 2) * 0.3;
-    btn.style.transition = 'transform 0.1s ease, background 0.3s ease, border-color 0.3s ease, color 0.3s ease, box-shadow 0.3s ease';
-    btn.style.transform = `translate(${x}px, ${y}px)`;
-  });
+if (hasFinePointer) {
+  document.querySelectorAll('.btn').forEach(btn => {
+    let magnetPending = false;
+    let lastEvent = null;
 
-  btn.addEventListener('mouseleave', () => {
-    btn.style.transition = 'transform 0.5s ease, background 0.3s ease, border-color 0.3s ease, color 0.3s ease, box-shadow 0.3s ease';
-    btn.style.transform = '';
+    btn.addEventListener('mousemove', (e) => {
+      lastEvent = e;
+      btn.classList.add('is-dragging');
+      if (magnetPending) return;
+      magnetPending = true;
+      requestAnimationFrame(() => {
+        magnetPending = false;
+        const rect = btn.getBoundingClientRect();
+        const x = (lastEvent.clientX - rect.left - rect.width / 2) * 0.3;
+        const y = (lastEvent.clientY - rect.top - rect.height / 2) * 0.3;
+        btn.style.transform = `translate(${x}px, ${y}px)`;
+      });
+    }, { passive: true });
+
+    btn.addEventListener('mouseleave', () => {
+      btn.classList.remove('is-dragging');
+      btn.style.transform = '';
+    });
   });
-});
+}
 
 // ============ THEME SWITCHER LOGIC ============
 function toggleTheme() {
@@ -2572,27 +2698,28 @@ function renderLandingServices(services) {
   });
 }
 
-function getProjectImageUrl(p) {
-  if (!p || !p.image_url) return '';
+// Local project thumbnails ship a WebP (much smaller) alongside the
+// original PNG/JPG fallback for browsers that don't support WebP.
+const PROJECT_IMAGE_ASSETS = {
+  '1783223293991_9suav.png': { webp: 'images/Policy_Snap.webp', fallback: 'images/Policy_Snap.png' },
+  '1783223786542_nzlr5n.png': { webp: 'images/Carousel_Maker.webp', fallback: 'images/Carousel_Maker.png' },
+  '1783223573215_jmhlwn.png': { webp: 'images/xcraft.webp', fallback: 'images/xcraft.png' },
+  '1783223485403_rkdjse.png': { webp: 'images/Mpt.webp', fallback: 'images/Mpt.jpg' },
+  '1783223367629_bkbf9k.png': { webp: 'images/Watch_bot.webp', fallback: 'images/Watch_bot.png' },
+};
+
+function getProjectImageAssets(p) {
+  if (!p || !p.image_url) return null;
   const url = p.image_url;
-  
-  if (url.includes('1783223293991_9suav.png')) {
-    return 'images/Policy_Snap.png';
+  for (const key in PROJECT_IMAGE_ASSETS) {
+    if (url.includes(key)) return PROJECT_IMAGE_ASSETS[key];
   }
-  if (url.includes('1783223786542_nzlr5n.png')) {
-    return 'images/Carousel_Maker.png';
-  }
-  if (url.includes('1783223573215_jmhlwn.png')) {
-    return 'images/xcraft.png';
-  }
-  if (url.includes('1783223485403_rkdjse.png')) {
-    return 'images/Mpt.jpg';
-  }
-  if (url.includes('1783223367629_bkbf9k.png')) {
-    return 'images/Watch_bot.png';
-  }
-  
-  return url;
+  return { webp: null, fallback: url };
+}
+
+function getProjectImageUrl(p) {
+  const assets = getProjectImageAssets(p);
+  return assets ? assets.fallback : '';
 }
 
 function renderLandingShowcase() {
@@ -2630,11 +2757,16 @@ function renderLandingShowcase() {
 
     let thumbHtml = '';
     if (p.image_url) {
-      const imgUrl = getProjectImageUrl(p);
-      card.setAttribute('data-img', imgUrl);
+      const assets = getProjectImageAssets(p);
+      card.setAttribute('data-img', assets.fallback);
+      if (assets.webp) card.setAttribute('data-img-webp', assets.webp);
       const isContain = p.title.toLowerCase().includes('portal') || p.title.toLowerCase().includes('mpt');
+      const sourceHtml = assets.webp ? `<source srcset="${assets.webp}" type="image/webp">` : '';
       thumbHtml = `<div class="project-thumb ${isContain ? 'project-thumb--contain' : ''}" style="background: ${grad}">
-        <img src="${imgUrl}" alt="${p.title}" loading="lazy" decoding="async" onerror="this.onerror=null; this.src='images/onyxx_logo_transparent.png';">
+        <picture>
+          ${sourceHtml}
+          <img src="${assets.fallback}" alt="${p.title}" loading="lazy" decoding="async" onerror="this.onerror=null; this.src='images/onyxx_logo_transparent.png';">
+        </picture>
       </div>`;
     } else {
       thumbHtml = `<div class="project-thumb">
