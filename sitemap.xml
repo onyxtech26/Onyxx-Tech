@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- REPLACE-WITH-YOUR-DOMAIN is a placeholder — swap it for the real
+     production domain once the site is deployed, then keep this list in
+     sync with the page set. -->
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url><loc>https://REPLACE-WITH-YOUR-DOMAIN/index.html</loc><priority>1.0</priority></url>
+  <url><loc>https://REPLACE-WITH-YOUR-DOMAIN/services.html</loc><priority>0.8</priority></url>
+  <url><loc>https://REPLACE-WITH-YOUR-DOMAIN/why.html</loc><priority>0.6</priority></url>
+  <url><loc>https://REPLACE-WITH-YOUR-DOMAIN/work.html</loc><priority>0.8</priority></url>
+  <url><loc>https://REPLACE-WITH-YOUR-DOMAIN/process.html</loc><priority>0.6</priority></url>
+  <url><loc>https://REPLACE-WITH-YOUR-DOMAIN/founders.html</loc><priority>0.6</priority></url>
+  <url><loc>https://REPLACE-WITH-YOUR-DOMAIN/contact.html</loc><priority>0.7</priority></url>
+</urlset>

@@ -1,6 +1,11 @@
 # Onyxx Tech — Website
 
-Single-page site for Onyxx Tech, ready to deploy on GitHub Pages.
+Multi-page site for Onyxx Tech, ready to deploy on GitHub Pages. No build step — plain HTML/CSS/JS, `<link>`/`<script src>` shared assets.
+
+**Pages:** `index.html` (Home/Hero), `services.html`, `why.html`, `work.html`, `process.html`, `founders.html`, `contact.html`.
+**Shared assets:** `styles.css` (all site CSS), `common.js` (shared chrome: nav, theme toggle, cursor glow, reveal-on-scroll, etc — loaded by every page). Page-specific behavior (the hero starfield canvas, live Supabase data for Services/Work) lives in an inline `<script>` at the bottom of that page only.
+
+`services.html` and `work.html` ship real static fallback content (not JS-only) so search crawlers and no-JS visitors see real content immediately; a Supabase fetch then enhances/replaces it with the latest live data.
 
 ---
 
@@ -15,7 +20,7 @@ Single-page site for Onyxx Tech, ready to deploy on GitHub Pages.
 ### Step 2: Upload the files
 **Easy way (browser):**
 1. On the new repo page, click **uploading an existing file**
-2. Drag in `index.html` and `onyxx-banner.png`
+2. Drag in all the `.html` files, `styles.css`, `common.js`, `sitemap.xml`, `robots.txt`, and the `images/` folder
 3. Click **Commit changes**
 
 **Git way (terminal):**
@@ -45,26 +50,26 @@ That's the link to share on LinkedIn. 🎉
 
 ## ✏️ Editing Later
 
-Everything is in **one file**: `index.html`. Open it in any text editor (VS Code recommended).
+Each section now lives on its own page (see the list above). Shared chrome (nav, footer, colors, fonts) lives in `styles.css` and `common.js` — edit those once and every page picks it up.
 
 ### Common edits:
 
 **Change the projects (Work section):**
-Find `<!-- TIP: Replace these with real project titles -->` in the HTML. Update the three `.work-item` blocks below it.
+The Supabase `showcase_projects` table is the live source of truth — edit it there. `work.html` also has a hand-written static fallback grid (`#projectsGrid`) for SEO/no-JS visitors; keep it roughly in sync if you change the featured projects.
 
 **Add a LinkedIn URL:**
-Search for `nav-links` and add a new `<li>` with your LinkedIn link, or add it to the founder cards.
+Search `common.js`/each page for `nav-links` and add a new `<li>` with your LinkedIn link, or add it to the founder cards in `founders.html`.
 
 **Change colors:**
-At the top of the `<style>` section, modify the CSS variables:
-- `--accent: #00d4ff;` → change to any hex color
+At the top of `styles.css`, modify the CSS variables:
+- `--accent: #38e0ff;` → change to any hex color
 - `--onyx: #0a0a0a;` → background color
 
 **Change the rotating words in the hero:**
-Search for `class="rotator-word"` — you'll find 4 phrases. Edit them to whatever you want.
+In `index.html`, search for `class="rotator-word"` — you'll find 4 phrases. Edit them to whatever you want.
 
 **Update tagline / headline:**
-Search for `We build the` to find the hero headline. Edit the text directly.
+In `index.html`, search for `We build the` to find the hero headline. Edit the text directly.
 
 ---
 

@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<script>
+  (function() {
+    const savedTheme = localStorage.getItem('theme') || 'dark';
+    document.documentElement.setAttribute('data-theme', savedTheme);
+  })();
+</script>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Our Process — Onyxx Tech</title>
+<meta name="description" content="Four steps. Two-week cycles. Zero meetings that should have been emails. Discover, Design, Build, Deploy." />
+
+<meta property="og:title" content="Our Process — Onyxx Tech" />
+<meta property="og:description" content="A process built for shipping: Discover, Design, Build, Deploy." />
+<meta property="og:image" content="images/onyxx-banner.png" />
+<meta property="og:type" content="website" />
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:title" content="Our Process — Onyxx Tech" />
+<meta name="twitter:description" content="A process built for shipping: Discover, Design, Build, Deploy." />
+<meta name="twitter:image" content="images/onyxx_logo_transparent.png" />
+<meta name="robots" content="index, follow" />
+
+<link rel="icon" type="image/png" href="images/favicon-white.png" />
+<link rel="icon" type="image/png" href="images/favicon-black.png" media="(prefers-color-scheme: light)" />
+<link rel="icon" type="image/png" href="images/favicon-white.png" media="(prefers-color-scheme: dark)" />
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,400;9..144,500;9..144,600;9..144,700&family=JetBrains+Mono:wght@300;400;500;600&family=Outfit:wght@200;300;400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<a href="#main-content" class="skip-link">Skip to main content</a>
+<div class="grid-bg" aria-hidden="true"></div>
+<div class="cursor-glow" id="cursorGlow" aria-hidden="true"></div>
+<div class="noise" aria-hidden="true"></div>
+
+<!-- ============ NAV ============ -->
+<div class="nav-container">
+  <nav id="nav">
+    <a href="index.html" class="nav-logo" aria-label="Onyxx Tech home" ondblclick="window.location.href='admin-login.html?v=' + Date.now()">
+      <img src="images/onyxx_logo_transparent.png" alt="Onyxx Tech" class="nav-logo-img" />
+    </a>
+
+    <ul class="nav-links" id="navLinks">
+      <li><a href="services.html">Services</a></li>
+      <li><a href="why.html">Why Us</a></li>
+      <li><a href="work.html">Work</a></li>
+      <li><a href="process.html" class="active" aria-current="page">Process</a></li>
+      <li><a href="founders.html">Founders</a></li>
+    </ul>
+
+    <div class="nav-right" style="display: flex; align-items: center; gap: 0.8rem;">
+      <a href="contact.html" class="nav-email">Contact</a>
+
+      <button id="themeToggleBtn" class="theme-toggle" onclick="toggleTheme()" aria-label="Toggle Theme">
+        <svg class="sun-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="5"></circle>
+          <line x1="12" y1="1" x2="12" y2="3"></line>
+          <line x1="12" y1="21" x2="12" y2="23"></line>
+          <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+          <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+          <line x1="1" y1="12" x2="3" y2="12"></line>
+          <line x1="21" y1="12" x2="23" y2="12"></line>
+          <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+          <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+        </svg>
+        <svg class="moon-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display: none;">
+          <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+        </svg>
+      </button>
+    </div>
+
+    <button class="nav-toggle" id="navToggle" aria-label="Toggle menu">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+        <line x1="3" y1="8" x2="21" y2="8"/>
+        <line x1="3" y1="16" x2="21" y2="16"/>
+      </svg>
+    </button>
+  </nav>
+</div>
+
+<main id="main-content">
+<section class="process" id="process">
+  <div class="section-inner">
+    <div class="reveal">
+      <div class="section-label">04 — How We Work</div>
+      <h2 class="section-title">A process built for <em>shipping.</em></h2>
+      <p class="section-intro">Four steps. Two-week cycles. Zero meetings that should have been emails.</p>
+    </div>
+
+    <div class="process-steps reveal">
+      <div class="process-step">
+        <div class="process-dot">01</div>
+        <h3 class="process-name">Discover</h3>
+        <p class="process-desc">We listen, ask sharp questions, and map the problem before touching code.</p>
+      </div>
+
+      <div class="process-step">
+        <div class="process-dot">02</div>
+        <h3 class="process-name">Design</h3>
+        <p class="process-desc">Architecture, flows, and prototypes — fast iterations until the shape is right.</p>
+      </div>
+
+      <div class="process-step">
+        <div class="process-dot">03</div>
+        <h3 class="process-name">Build</h3>
+        <p class="process-desc">Heads-down execution with weekly demos. You see it grow in real time.</p>
+      </div>
+
+      <div class="process-step">
+        <div class="process-dot">04</div>
+        <h3 class="process-name">Deploy</h3>
+        <p class="process-desc">Ship to production, hand off documentation, stay on for what comes next.</p>
+      </div>
+    </div>
+  </div>
+</section>
+</main>
+
+<footer>
+  <div>© 2026 Onyxx Tech · Made in Malaysia</div>
+  <div>
+    <a href="mailto:onyxtech26@gmail.com">onyxtech26@gmail.com</a>
+  </div>
+</footer>
+
+<script src="common.js"></script>
+</body>
+</html>

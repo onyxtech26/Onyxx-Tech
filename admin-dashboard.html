@@ -2218,6 +2218,52 @@ function getProjectImageUrl(p) {
       openModal('showcaseModal');
     }
 
+    // Resizes/re-encodes an image File in the browser before it's uploaded
+    // to Supabase storage. Uploads here used to go straight from
+    // <input type="file"> to storage.upload() with zero processing — some
+    // showcase screenshots landed at 5-8MB for what only ever renders as a
+    // ~400px-wide card thumbnail on the public site, which is why those
+    // pages were slow to load. This runs client-side, before the network
+    // request, so the upload itself is faster too.
+    //
+    // Non-image files (PDFs, docs) and animated GIFs pass through
+    // untouched — canvas can't safely re-encode either (GIF animation would
+    // collapse to a single frame). Already-small images are also skipped so
+    // a sensible manual upload isn't needlessly reprocessed.
+    async function compressImageFile(file, { maxDim = 1600, quality = 0.82, skipIfUnder = 400 * 1024 } = {}) {
+      if (!file.type.startsWith('image/') || file.type === 'image/gif') return file;
+      if (file.size <= skipIfUnder) return file;
+
+      const bitmap = await createImageBitmap(file).catch(() => null);
+      if (!bitmap) return file; // decode failed — fall back to the original rather than block the upload
+
+      const scale = Math.min(1, maxDim / Math.max(bitmap.width, bitmap.height));
+      const w = Math.round(bitmap.width * scale);
+      const h = Math.round(bitmap.height * scale);
+
+      const canvas = document.createElement('canvas');
+      canvas.width = w;
+      canvas.height = h;
+      canvas.getContext('2d').drawImage(bitmap, 0, 0, w, h);
+      bitmap.close?.();
+
+      // Prefer WebP for the smaller file size, but canvas.toBlob() silently
+      // falls back to PNG (large, no benefit here) in browsers that can't
+      // encode WebP — check the actual returned type and re-encode as JPEG
+      // instead when that happens, since JPEG has universal canvas support.
+      const toBlob = (type) => new Promise(resolve => canvas.toBlob(resolve, type, quality));
+      let blob = await toBlob('image/webp');
+      let ext = 'webp';
+      if (!blob || blob.type !== 'image/webp') {
+        blob = await toBlob('image/jpeg');
+        ext = 'jpg';
+      }
+      if (!blob || blob.size >= file.size) return file; // compression didn't actually help — keep the original
+
+      const baseName = file.name.replace(/\.[^.]+$/, '');
+      return new File([blob], `${baseName}.${ext}`, { type: blob.type });
+    }
+
     async function saveShowcaseProject(e) {
       e.preventDefault();
       const id = document.getElementById('showcaseId').value;
@@ -2225,15 +2271,15 @@ function getProjectImageUrl(p) {
       const fileInput = document.getElementById('showcaseImageFile');
 
       if (fileInput.files.length > 0) {
-        const file = fileInput.files[0];
+        const file = await compressImageFile(fileInput.files[0]);
         const fileExt = file.name.split('.').pop();
         const fileName = `${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`;
-        
+
         showToast('Uploading project image...', 'info');
         try {
           const { error } = await supabaseClient.storage.from('showcase').upload(fileName, file);
           if (error) throw error;
-          
+
           const { data: publicUrlData } = supabaseClient.storage.from('showcase').getPublicUrl(fileName);
           image_url = publicUrlData.publicUrl;
         } catch (uploadErr) {
@@ -4161,15 +4207,17 @@ function getProjectImageUrl(p) {
       const fileInput = document.getElementById('teamAvatarFile');
 
       if (fileInput.files.length > 0) {
-        const file = fileInput.files[0];
+        // Avatars only ever render at ~130px, so a smaller cap than the
+        // showcase default (1600px) is plenty and compresses further.
+        const file = await compressImageFile(fileInput.files[0], { maxDim: 500 });
         const fileExt = file.name.split('.').pop();
         const fileName = `${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`;
-        
+
         showToast('Uploading avatar...', 'info');
         try {
           const { error } = await supabaseClient.storage.from('avatars').upload(fileName, file);
           if (error) throw error;
-          
+
           const { data: publicUrlData } = supabaseClient.storage.from('avatars').getPublicUrl(fileName);
           avatar_url = publicUrlData.publicUrl;
         } catch (uploadErr) {
