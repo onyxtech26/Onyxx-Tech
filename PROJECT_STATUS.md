@@ -7,7 +7,7 @@
 ---
 
 ## 📍 Where I left off
-Vercel canonical-URL fix and the project tracking docs (this file, CLAUDE.md, docs/CHANGELOG.md) are committed and pushed — `origin/main` is at `1cd8262`. Nothing outstanding right now; waiting on the user for what's next.
+Clean-URL fix (dropped `.html` from every internal link/canonical/sitemap entry, enabled Vercel `cleanUrls`) is committed and pushed — `origin/main` is at `2147681`. Nothing outstanding right now; waiting on the user for what's next.
 
 ---
 
@@ -27,7 +27,8 @@ Vercel canonical-URL fix and the project tracking docs (this file, CLAUDE.md, do
 - [x] Added staggered content-entrance animations (`.reveal-group`) across all 6 non-hero pages; fixed a CSS transition-cascade bug it surfaced on `.why-item`/`.contact-email`
 - [x] Restored the animated glass orbs on Home only (user preference), tuned opacity/blur (0.7→0.4 opacity, 45px→80px blur)
 - [x] Diagnosed and fixed the Vercel `/index.html` vs `/` canonical URL issue (`vercel.json` redirect, logo link, canonical tags, sitemap)
-- [x] Pushed three commits to `origin/main` today: `eb511ef` (multi-page restructure), `a95444b` (animations + glass orbs), `1cd8262` (canonical-URL fix + this tracking system)
+- [x] Enabled clean URLs sitewide (`/services` instead of `/services.html`) — `vercel.json` `cleanUrls`, every internal link/canonical/OG/sitemap entry updated to match
+- [x] Pushed five commits to `origin/main` today: `eb511ef` (multi-page restructure), `a95444b` (animations + glass orbs), `1cd8262` (canonical-URL fix + this tracking system), `85ecf26` (status board tweak), `2147681` (clean URLs)
 
 ### 🔄 In progress
 - (nothing active)

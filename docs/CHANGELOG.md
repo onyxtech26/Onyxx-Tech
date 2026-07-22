@@ -7,6 +7,11 @@ Format each entry: what was done, why it mattered, and any key decisions.
 
 ## 2026-07-22
 
+### Enabled clean URLs sitewide
+- Enabled Vercel's `cleanUrls` in `vercel.json` so pages resolve at `/services` instead of `/services.html`. Updated every internal link (nav, hero CTAs, the work-page modal's CTA) across all 7 pages, plus canonical/OG/Twitter URLs and `sitemap.xml`, to the extensionless form. Vercel auto-redirects the old `.html` paths, so existing links/bookmarks still resolve. Actual filenames on disk are unchanged.
+- **Why:** the user felt `.html` in the address bar looked unpolished/unfinished compared to other professional sites — a reasonable read, since clean URLs are the more common convention on modern marketing sites.
+- Verified locally against a small Python server hand-rigged to mimic Vercel's clean-URL resolution (no Vercel CLI installed on this machine) — extensionless paths, canonical tags, and console all checked out before pushing.
+
 ### Set up project tracking
 - Scaffolded CLAUDE.md, PROJECT_STATUS.md, and this changelog so sessions have continuity and big tasks get documented.
 - **Why:** so work is never lost between sessions and completed milestones are remembered.
