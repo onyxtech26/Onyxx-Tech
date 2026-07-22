@@ -100,7 +100,7 @@
 <main id="main-content">
 <section class="services" id="services">
   <div class="section-inner">
-    <div class="reveal">
+    <div class="reveal-group">
       <div class="section-label">01 — What We Build</div>
       <h2 class="section-title">Four disciplines.<br/><em>One studio.</em></h2>
       <p class="section-intro">We design and ship AI-native systems end to end — from the messy first conversation to the live product your customers actually use.</p>
@@ -110,7 +110,7 @@
          content immediately. loadServices() below replaces this with live
          Supabase data (same shape) once it resolves — this is just the
          seed/fallback, not a duplicate source of truth. -->
-    <div class="services-grid reveal" id="servicesGrid">
+    <div class="services-grid reveal-group" id="servicesGrid">
       <div class="service-card" data-service>
         <div class="service-num">/01</div>
         <svg class="service-icon" viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="1.2">
@@ -233,6 +233,9 @@ function renderServices(services) {
     `;
     grid.appendChild(card);
   });
+  // Re-run the stagger init on the freshly-swapped-in live cards so they
+  // fade+rise in one after another instead of appearing all at once.
+  window.initRevealGroup?.(grid);
 }
 
 document.addEventListener('DOMContentLoaded', () => {

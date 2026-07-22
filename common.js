@@ -83,6 +83,28 @@ const observer = new IntersectionObserver((entries) => {
 
 document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
 
+// ============ STAGGERED REVEAL GROUPS ============
+// A `.reveal-group` container (a grid, or a label/title/intro block) turns
+// its direct children into a staggered, one-after-another entrance instead
+// of the flat all-at-once fade a single `.reveal` block gives. Each child
+// gets the existing `.reveal` class — so it's driven by the same
+// IntersectionObserver above and correctly re-triggers on scroll for
+// below-the-fold content — plus a `--reveal-index` custom property that
+// styles.css (`.reveal-group > .reveal`) turns into an incremental
+// transition-delay. Exposed on window so page-specific scripts (services.html,
+// work.html) can re-run it after Supabase swaps in dynamically-loaded cards.
+function initRevealGroup(container) {
+  if (!container) return;
+  Array.from(container.children).forEach((child, i) => {
+    child.classList.add('reveal');
+    child.style.setProperty('--reveal-index', i);
+    observer.observe(child);
+  });
+}
+window.initRevealGroup = initRevealGroup;
+
+document.querySelectorAll('.reveal-group').forEach(initRevealGroup);
+
 // ============ TEXT SCRAMBLE ============
 const SCRAMBLE_CHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789@#$%!?';
 const PRESERVE = new Set([' ', ' ', '—', '/', '.', '-', '·']);

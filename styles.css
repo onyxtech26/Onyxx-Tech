@@ -157,6 +157,47 @@ body {
   background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
 }
 
+/* Glass orbs — Home-only. Brought back at the user's request after the
+   static body-gradient replacement; only index.html includes the orb-1/
+   orb-2 divs, everywhere else keeps just the lighter static wash above.
+   Still avoids the two things that actually caused the original flicker —
+   no mix-blend-mode, and the floatOrb keyframe stays translate-only (no
+   scale()) — but the blur radius itself was never the flicker culprit
+   (a translate-only animation just composites a pre-blurred bitmap, cheap
+   at any radius), so it's safe to push it up further here for a softer,
+   more feathered edge than the immediate post-fix version had. */
+.glass-orb {
+  position: fixed;
+  border-radius: 50%;
+  filter: blur(80px);
+  z-index: 0;
+  pointer-events: none;
+  animation: floatOrb 25s ease-in-out infinite alternate;
+  will-change: transform;
+  opacity: 0.4;
+}
+.orb-1 {
+  width: 500px;
+  height: 500px;
+  background: radial-gradient(circle, rgba(56,224,255,0.4) 0%, rgba(138,43,226,0.1) 70%);
+  top: -10%;
+  left: -10%;
+}
+.orb-2 {
+  width: 600px;
+  height: 600px;
+  background: radial-gradient(circle, rgba(138,43,226,0.3) 0%, rgba(56,224,255,0.1) 70%);
+  bottom: -15%;
+  right: -5%;
+  animation-delay: -10s;
+}
+
+@keyframes floatOrb {
+  0% { transform: translate(0, 0); }
+  50% { transform: translate(100px, 150px); }
+  100% { transform: translate(-50px, 80px); }
+}
+
 /* ============ NAV ============ */
 .nav-container {
   position: fixed;
@@ -600,6 +641,21 @@ section {
   transform: translateY(0);
 }
 
+/* Staggered reveal groups — a `.reveal-group` container (e.g. a grid, or a
+   label/title/intro block) turns its direct children into a one-after-
+   another entrance instead of the flat all-at-once fade `.reveal` gives a
+   single block. common.js assigns each child the `.reveal` class (so it
+   still uses the fade+rise transition and IntersectionObserver above — this
+   re-triggers correctly for below-the-fold content) plus a `--reveal-index`
+   custom property, which this rule turns into an incremental transition
+   delay. Same 1s cubic-bezier(0.16, 1, 0.3, 1) as `.reveal` itself, so it
+   reads as the same motion language as the hero's slideUp/fadeUp — just
+   applied per-item instead of per-block. Capped with min() so grids with
+   many items don't end up with a multi-second tail. */
+.reveal-group > .reveal {
+  transition-delay: min(calc(var(--reveal-index, 0) * 0.1s), 0.6s);
+}
+
 /* ============ SERVICES ============ */
 .services {
   background: var(--onyx-deep);
@@ -726,7 +782,13 @@ section {
   position: relative;
   padding-left: 2rem;
   border-left: 1px solid var(--line);
-  transition: border-left-color 0.3s ease;
+  /* opacity/transform are here (not just border-left-color) because this
+     element also gets `.reveal` when it's a .reveal-group child (why.html) —
+     a `transition:` shorthand completely replaces any other rule's
+     transition-property list of equal specificity, so without these two
+     .reveal's fade+rise would silently never fire and the item would just
+     snap into view instead of animating. */
+  transition: border-left-color 0.3s ease, opacity 1s cubic-bezier(0.16, 1, 0.3, 1), transform 1s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .why-item:hover {
@@ -1068,7 +1130,11 @@ section {
   text-decoration: none;
   position: relative;
   margin-bottom: 3rem;
-  transition: transform 0.3s ease;
+  /* transform stays a quick 0.3s ease (the hover-lift feel); opacity gets
+     its own entry so .reveal's fade still fires on this element — see the
+     .why-item comment above for why omitting it silently breaks the reveal
+     animation instead of just falling back to it. */
+  transition: transform 0.3s ease, opacity 1s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .contact-email::after {
@@ -1235,6 +1301,14 @@ footer a:hover { color: var(--accent); }
   *, *::before, *::after {
     animation-duration: 0.01ms !important;
     transition-duration: 0.01ms !important;
+    /* Also zero out delays, not just durations: without this, the
+       `.reveal-group` stagger above (and the hero's per-line animation-delay)
+       would still wait out their staggered delay before snapping into place
+       near-instantly — visible sequencing, which reduced-motion users are
+       asking us not to do. Zeroing the delay means every reveal-group child
+       (and every hero element) appears together, immediately. */
+    transition-delay: 0ms !important;
+    animation-delay: 0ms !important;
   }
 }
 

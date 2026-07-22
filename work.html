@@ -91,7 +91,7 @@
 <main id="main-content">
 <section class="work" id="work">
   <div class="section-inner">
-    <div class="reveal">
+    <div class="reveal-group">
       <div class="section-label">03 — Selected Work</div>
       <h2 class="section-title">Six products.<br/><em>All shipped.</em></h2>
       <p class="section-intro">Tools, apps, and bots built by the Onyxx Tech team — from client projects to products we run ourselves. Click any card to see the full story.</p>
@@ -100,7 +100,7 @@
     <!-- Static fallback markup so crawlers and no-JS visitors see real
          content immediately. loadShowcase() below replaces this with the
          live, full Supabase project list once it resolves. -->
-    <div class="projects-grid reveal" id="projectsGrid">
+    <div class="projects-grid reveal-group" id="projectsGrid">
       <div class="project-card" data-category="Windows Application" data-name="POS System" data-client="RSTAR Mini Mart" data-desc="R-Star POS handles the full shop workflow which are POS that sell items. Inventory that batches, stock levels, product conversions, and an immutable stock-movement ledger. Stock counts which daily cycle counts with variance reasons and theft/shrinkage tracking. Reports for business-day sales, profit/COGS, discounts, payment breakdown, and daily cash settlement." data-stack="Flutter, Dart, JavaScript, SQLite" data-gradient="linear-gradient(145deg, #0c1829, #1a2d50)" data-img="https://whjstsgtximknicppllt.supabase.co/storage/v1/object/public/showcase/1784540735392_9327ps.png">
         <div class="project-thumb" style="background: linear-gradient(145deg, #0c1829, #1a2d50)">
           <img src="https://whjstsgtximknicppllt.supabase.co/storage/v1/object/public/showcase/1784540735392_9327ps.png" alt="POS System" loading="lazy" decoding="async" onerror="this.onerror=null; this.src='images/onyxx_logo_transparent.png';">
@@ -471,6 +471,10 @@ function renderShowcase() {
     grid.appendChild(card);
     setupProjectCard(card);
   });
+
+  // Re-run the stagger init on the freshly-swapped-in live cards so they
+  // fade+rise in one after another instead of appearing all at once.
+  window.initRevealGroup?.(grid);
 
   const showMoreContainer = document.getElementById('showMoreContainer');
   if (loadedProjects.length > 6) {
