@@ -7,7 +7,7 @@
 ---
 
 ## 📍 Where I left off
-Just fixed the Vercel canonical-URL issue (`/index.html` showing in the address bar instead of `/`) — added `vercel.json` with a redirect, pointed the nav logo link at `/` on all 7 pages, added real `<link rel="canonical">`/absolute OG tags now that the production domain (`onyxx-tech.vercel.app`) is known, and updated `sitemap.xml`. **These changes are made and verified locally but not yet committed/pushed** — that was the next step before this tracking system was set up.
+Vercel canonical-URL fix and the project tracking docs (this file, CLAUDE.md, docs/CHANGELOG.md) are committed and pushed — `origin/main` is at `1cd8262`. Nothing outstanding right now; waiting on the user for what's next.
 
 ---
 
@@ -27,13 +27,13 @@ Just fixed the Vercel canonical-URL issue (`/index.html` showing in the address 
 - [x] Added staggered content-entrance animations (`.reveal-group`) across all 6 non-hero pages; fixed a CSS transition-cascade bug it surfaced on `.why-item`/`.contact-email`
 - [x] Restored the animated glass orbs on Home only (user preference), tuned opacity/blur (0.7→0.4 opacity, 45px→80px blur)
 - [x] Diagnosed and fixed the Vercel `/index.html` vs `/` canonical URL issue (`vercel.json` redirect, logo link, canonical tags, sitemap)
-- [x] Pushed two commits to `origin/main` today: `eb511ef` (multi-page restructure) and `a95444b` (animations + glass orbs)
+- [x] Pushed three commits to `origin/main` today: `eb511ef` (multi-page restructure), `a95444b` (animations + glass orbs), `1cd8262` (canonical-URL fix + this tracking system)
 
 ### 🔄 In progress
-- [ ] Commit and push the `vercel.json`/canonical-URL fix (files are modified locally, verified, not yet committed)
+- (nothing active)
 
 ### ⏭️ Next / To do
-- (nothing queued — ask the user what's next once the pending commit is pushed)
+- (nothing queued — ask the user what's next)
 
 ### 💤 Backlog / ideas
 - Consider client-side compression for the admin dashboard's `receipts` upload too (deliberately skipped so far — financial documents, didn't want to risk blurring numbers without the user weighing in)
