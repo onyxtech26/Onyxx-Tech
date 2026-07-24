@@ -1,11 +1,8 @@
 # Onyxx Tech Hub — Website
 
-Multi-page site for Onyxx Tech Hub, ready to deploy on GitHub Pages. No build step — plain HTML/CSS/JS, `<link>`/`<script src>` shared assets.
+Single-page site for Onyxx Tech Hub, ready to deploy on GitHub Pages or Vercel. Everything is contained in `index.html` with modular CSS (`styles.css`) and shared scripts (`common.js`).
 
-**Pages:** `index.html` (Home/Hero), `services.html`, `why.html`, `work.html`, `process.html`, `founders.html`, `contact.html`.
-**Shared assets:** `styles.css` (all site CSS), `common.js` (shared chrome: nav, theme toggle, cursor glow, reveal-on-scroll, etc — loaded by every page). Page-specific behavior (the hero starfield canvas, live Supabase data for Services/Work) lives in an inline `<script>` at the bottom of that page only.
-
-`services.html` and `work.html` ship real static fallback content (not JS-only) so search crawlers and no-JS visitors see real content immediately; a Supabase fetch then enhances/replaces it with the latest live data.
+**Sections:** Hero, Services, Why Us, Work/Showcase, Process, Founders, and Contact — all smoothly navigable from the main header. Double-clicking the logo/home icon navigates directly to `admin-login.html`.
 
 ---
 
