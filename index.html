@@ -54,8 +54,19 @@
 
 <link rel="stylesheet" href="styles.css">
 
+<!-- dotLottie Player for loading animations -->
+<script src="https://unpkg.com/@dotlottie/player-component@latest/dist/dotlottie-player.mjs" type="module"></script>
 </head>
 <body>
+
+<!-- ============ SPLASH SCREEN ============ -->
+<div id="splashScreen" aria-hidden="true">
+  <div class="splash-content">
+    <img src="images/onyxx_logo_transparent.png" alt="Onyxx Tech Hub" class="splash-logo" />
+    <div class="splash-title">Onyxx Tech Hub</div>
+    <dotlottie-player src="images/loading.lottie" background="transparent" speed="1" style="width: 90px; height: 90px;" loop autoplay></dotlottie-player>
+  </div>
+</div>
 
 <a href="#main-content" class="skip-link">Skip to main content</a>
 <div class="grid-bg"></div>
@@ -889,6 +900,16 @@ let showAllProjects = false;
 
 async function loadLandingPageData() {
   try {
+    const lottieLoader = `
+      <div style="grid-column: 1 / -1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 3rem 1rem; width: 100%;">
+        <dotlottie-player src="images/loading.lottie" background="transparent" speed="1" style="width: 80px; height: 80px;" loop autoplay></dotlottie-player>
+      </div>
+    `;
+    const sGrid = document.getElementById('servicesGrid');
+    const pGrid = document.getElementById('projectsGrid');
+    if (sGrid && sGrid.children.length === 0) sGrid.innerHTML = lottieLoader;
+    if (pGrid && pGrid.children.length === 0) pGrid.innerHTML = lottieLoader;
+
     const [showcaseRes, servicesRes, teamRes] = await Promise.all([
       supabaseClient.from('showcase_projects').select('*').order('created_at', { ascending: false }),
       supabaseClient.from('services').select('*').order('num'),

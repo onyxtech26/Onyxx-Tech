@@ -671,7 +671,7 @@ section {
 
 /* ============ SERVICES ============ */
 .services {
-  background: var(--onyx-deep);
+  background: transparent;
   border-top: 1px solid var(--line);
   border-bottom: 1px solid var(--line);
 }
@@ -843,7 +843,7 @@ section {
 
 /* ============ WORK ============ */
 .work {
-  background: var(--onyx-deep);
+  background: transparent;
   border-top: 1px solid var(--line);
   border-bottom: 1px solid var(--line);
 }
@@ -988,7 +988,7 @@ section {
 
 /* ============ FOUNDERS ============ */
 .founders {
-  background: var(--onyx-deep);
+  background: transparent;
   border-top: 1px solid var(--line);
   border-bottom: 1px solid var(--line);
 }
@@ -1408,6 +1408,62 @@ footer a:hover { color: var(--accent); }
   ::view-transition-new(*) {
     animation-duration: 0.01ms !important;
   }
+}
+
+/* ============ SPLASH SCREEN ============ */
+#splashScreen {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background-color: var(--onyx-deep);
+  background-image:
+    radial-gradient(circle 600px at 50% 40%, var(--accent-faint) 0%, transparent 70%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1.5rem;
+  transition: opacity 0.6s cubic-bezier(0.16, 1, 0.3, 1), visibility 0.6s ease;
+}
+
+:root[data-theme="light"] #splashScreen {
+  background-color: #ffffff;
+  background-image:
+    radial-gradient(circle 600px at 50% 40%, rgba(0, 102, 204, 0.1) 0%, transparent 70%);
+}
+
+#splashScreen.fade-out {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.splash-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.25rem;
+  text-align: center;
+}
+
+.splash-logo {
+  width: 68px;
+  height: 68px;
+  object-fit: contain;
+  animation: splashPulse 2s infinite ease-in-out;
+}
+
+@keyframes splashPulse {
+  0%, 100% { transform: scale(1); filter: drop-shadow(0 0 15px var(--accent-dim)); }
+  50% { transform: scale(1.08); filter: drop-shadow(0 0 30px var(--accent)); }
+}
+
+.splash-title {
+  font-family: var(--font-display);
+  font-size: 1.4rem;
+  letter-spacing: 0.15em;
+  color: var(--bone);
+  text-transform: uppercase;
 }
 
 /* ============ PROJECT CARDS ============ */

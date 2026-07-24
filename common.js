@@ -219,3 +219,21 @@ document.addEventListener('DOMContentLoaded', () => {
   document.documentElement.setAttribute('data-theme', savedTheme);
   updateThemeToggleIcons();
 });
+
+// ============ SPLASH SCREEN DISMISS ============
+function hideSplashScreen() {
+  const splash = document.getElementById('splashScreen');
+  if (splash && !splash.classList.contains('fade-out')) {
+    splash.classList.add('fade-out');
+    setTimeout(() => {
+      splash.style.display = 'none';
+    }, 600);
+  }
+}
+
+window.addEventListener('load', () => {
+  setTimeout(hideSplashScreen, 800);
+});
+
+// Fallback safety timeout if load event is delayed
+setTimeout(hideSplashScreen, 2500);
