@@ -25,6 +25,25 @@
   --font-display: 'Fraunces', Georgia, serif;
   --font-body: 'Outfit', -apple-system, sans-serif;
   --font-mono: 'JetBrains Mono', 'Courier New', monospace;
+
+  /* ---- Motion system ----
+     One vocabulary for every transition on the site so hovers, reveals and
+     the splash all decelerate the same way. `--ease-out-expo` is the site's
+     existing cubic-bezier(0.16, 1, 0.3, 1) given a name; `--ease-spring`
+     overshoots slightly and is reserved for things that should feel
+     physical (buttons, cards lifting). Durations are deliberately few —
+     if a value isn't one of these four, it probably shouldn't be. */
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-out-soft: cubic-bezier(0.22, 0.61, 0.36, 1);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --dur-instant: 0.15s;
+  --dur-fast: 0.25s;
+  --dur-base: 0.4s;
+  --dur-slow: 0.7s;
+
+  /* Hover lift + glow, shared by every card-like surface */
+  --hover-lift: -6px;
+  --hover-glow: 0 18px 45px -12px rgba(0, 0, 0, 0.55), 0 0 0 1px var(--accent-faint);
 }
 
 :root[data-theme="light"] {
@@ -49,6 +68,10 @@
   --nav-link-color: rgba(0, 0, 0, 0.55);
   --nav-link-hover-color: var(--accent);
   --nav-link-glow: 0 0 8px rgba(0, 102, 204, 0.5), 0 0 15px rgba(0, 102, 204, 0.25);
+
+  /* Light theme needs a much softer shadow — the dark theme's near-black
+     drop shadow reads as dirt on a white background. */
+  --hover-glow: 0 18px 40px -14px rgba(0, 0, 0, 0.18), 0 0 0 1px var(--accent-faint);
 }
 
 :root[data-theme="light"] .nav-logo-img,
@@ -94,6 +117,20 @@ body::-webkit-scrollbar,
 }
 
 .skip-link:focus { top: 1rem; }
+
+/* Visually hidden but still announced — used for the loader's status text,
+   since the animation itself is aria-hidden. */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
 
 html { scroll-behavior: auto; }
 
@@ -416,64 +453,28 @@ nav {
 
 .hero-headline {
   font-family: var(--font-display);
-  font-size: clamp(2.8rem, 7vw, 6.5rem);
-  font-weight: 400;
-  line-height: 1;
-  letter-spacing: -0.03em;
+  font-size: clamp(2.5rem, 6.5vw, 5.8rem);
+  font-weight: 300;
+  line-height: 1.15;
+  letter-spacing: -0.02em;
   margin-bottom: 2rem;
-  font-variation-settings: "opsz" 144, "SOFT" 50;
   color: var(--bone);
 }
 
 .hero-headline .line {
   display: block;
-  overflow: hidden;
-  padding: 0.12em 0;
-  margin: -0.12em 0;
+  padding: 0.05em 0;
 }
 
 .hero-headline .line span {
   display: inline-block;
-  transform: translateY(110%);
-  animation: slideUp 1s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
-
-.hero-headline .line:nth-child(1) span { animation-delay: 0.3s; }
-.hero-headline .line:nth-child(2) span { animation-delay: 0.45s; }
-.hero-headline .line:nth-child(3) span { animation-delay: 0.6s; }
 
 .hero-headline em {
   font-style: italic;
-  font-weight: 500;
+  font-weight: 400;
   color: var(--accent);
-  text-shadow: 0 0 30px rgba(56, 224, 255, 0.3);
-}
-
-.hero-rotator {
-  display: inline-block;
-  position: relative;
-  min-width: 260px;
-  text-align: left;
-}
-
-.rotator-word {
-  position: absolute;
-  left: 0;
-  top: 0;
-  opacity: 0;
-  font-style: italic;
-  font-weight: 500;
-  color: var(--accent);
-  text-shadow: 0 0 30px rgba(56, 224, 255, 0.3);
-  transition: opacity 0.5s ease, transform 0.5s ease;
-  transform: translateY(20px);
-  white-space: nowrap;
-}
-
-.rotator-word.active {
-  opacity: 1;
-  transform: translateY(0);
-  position: relative;
+  text-shadow: 0 0 25px var(--accent-dim);
 }
 
 .hero-sub {
@@ -672,8 +673,7 @@ section {
 /* ============ SERVICES ============ */
 .services {
   background: transparent;
-  border-top: 1px solid var(--line);
-  border-bottom: 1px solid var(--line);
+  border: none;
 }
 
 .services-grid {
@@ -844,8 +844,7 @@ section {
 /* ============ WORK ============ */
 .work {
   background: transparent;
-  border-top: 1px solid var(--line);
-  border-bottom: 1px solid var(--line);
+  border: none;
 }
 
 .work-list {
@@ -989,8 +988,7 @@ section {
 /* ============ FOUNDERS ============ */
 .founders {
   background: transparent;
-  border-top: 1px solid var(--line);
-  border-bottom: 1px solid var(--line);
+  border: none;
 }
 
 .founders-grid {
@@ -1175,7 +1173,7 @@ section {
 
 /* ============ FOOTER ============ */
 footer {
-  border-top: 1px solid var(--line);
+  border-top: none;
   padding: 3rem;
   display: flex;
   justify-content: space-between;
@@ -1204,7 +1202,8 @@ footer a:hover { color: var(--accent); }
 }
 
 @keyframes slideUp {
-  to { transform: translateY(0); }
+  from { transform: translateY(110%); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
 }
 
 @keyframes scrollBounce {
@@ -1307,7 +1306,6 @@ footer a:hover { color: var(--accent); }
 
   .hero { padding: 7rem 1.5rem 4rem; }
   .hero-logo { max-width: 240px; width: 70%; margin-bottom: 1.5rem; }
-  .hero-rotator { display: block; min-width: auto; min-height: 1.1em; }
   .hero-headline { font-size: clamp(2rem, 9vw, 2.6rem); }
   .hero-sub { font-size: 0.95rem; line-height: 1.6; margin-bottom: 2rem; }
   .hero-cta { flex-direction: column; align-items: stretch; gap: 0.75rem; width: 100%; }
@@ -1411,59 +1409,400 @@ footer a:hover { color: var(--accent); }
 }
 
 /* ============ SPLASH SCREEN ============ */
+/* A first-paint curtain: it is in the markup before anything else so it
+   covers the un-styled/un-hydrated page, then choreographs its way out.
+   Everything here is composited (opacity/transform/filter only) so the
+   entrance never competes with the hero canvas booting up behind it.
+
+   Timing lives in JS (index.html's inline controller) — this file only
+   describes the two states, `#splashScreen` and `#splashScreen.fade-out`. */
 #splashScreen {
   position: fixed;
   inset: 0;
-  z-index: 9999;
+  z-index: 99999;
   background-color: var(--onyx-deep);
   background-image:
-    radial-gradient(circle 600px at 50% 40%, var(--accent-faint) 0%, transparent 70%);
+    radial-gradient(circle 900px at 50% 42%, var(--accent-faint) 0%, transparent 68%),
+    radial-gradient(circle 620px at 18% 88%, rgba(138, 43, 226, 0.16) 0%, transparent 70%),
+    radial-gradient(circle 520px at 84% 12%, rgba(56, 224, 255, 0.10) 0%, transparent 70%);
   display: flex;
-  flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 1.5rem;
-  transition: opacity 0.6s cubic-bezier(0.16, 1, 0.3, 1), visibility 0.6s ease;
+  overflow: hidden;
+  transition:
+    opacity var(--dur-slow) var(--ease-out-expo),
+    transform var(--dur-slow) var(--ease-out-expo),
+    filter var(--dur-slow) ease,
+    visibility var(--dur-slow) ease;
 }
 
 :root[data-theme="light"] #splashScreen {
   background-color: #ffffff;
   background-image:
-    radial-gradient(circle 600px at 50% 40%, rgba(0, 102, 204, 0.1) 0%, transparent 70%);
+    radial-gradient(circle 900px at 50% 42%, rgba(0, 102, 204, 0.13) 0%, transparent 68%),
+    radial-gradient(circle 620px at 18% 88%, rgba(124, 58, 237, 0.08) 0%, transparent 70%),
+    radial-gradient(circle 520px at 84% 12%, rgba(0, 102, 204, 0.07) 0%, transparent 70%);
 }
 
+/* Faint technical grid, matching the site's own .grid-bg so the splash
+   feels like the same surface the page is built on rather than a lid. */
+.splash-grid {
+  position: absolute;
+  inset: -2px;
+  background-image:
+    linear-gradient(var(--grid) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+  background-size: 64px 64px;
+  mask-image: radial-gradient(circle 620px at 50% 50%, #000 10%, transparent 78%);
+  -webkit-mask-image: radial-gradient(circle 620px at 50% 50%, #000 10%, transparent 78%);
+  animation: splashGridDrift 24s linear infinite;
+  pointer-events: none;
+}
+
+@keyframes splashGridDrift {
+  from { background-position: 0 0, 0 0; }
+  to   { background-position: 64px 64px, 64px 64px; }
+}
+
+/* A single slow beam sweeping across the whole curtain — the only thing
+   that moves horizontally, so the eye reads it as "working". */
+.splash-sweep {
+  position: absolute;
+  top: -50%;
+  left: -60%;
+  width: 45%;
+  height: 200%;
+  background: linear-gradient(90deg, transparent, var(--accent-faint), transparent);
+  transform: rotate(12deg);
+  animation: splashSweep 3.6s var(--ease-out-soft) infinite;
+  pointer-events: none;
+}
+
+@keyframes splashSweep {
+  0%   { left: -60%; opacity: 0; }
+  15%  { opacity: 1; }
+  85%  { opacity: 1; }
+  100% { left: 130%; opacity: 0; }
+}
+
+/* ---- Exit ---- */
 #splashScreen.fade-out {
   opacity: 0;
+  transform: scale(1.08);
+  filter: blur(14px);
   visibility: hidden;
   pointer-events: none;
+}
+
+/* The content leaves fractionally ahead of the curtain, so the brand lifts
+   away and *then* the background clears, instead of the whole plate
+   dissolving flat. */
+#splashScreen.fade-out .splash-content {
+  opacity: 0;
+  transform: translateY(-18px) scale(0.97);
+  transition:
+    opacity 0.35s ease,
+    transform 0.45s var(--ease-out-expo);
 }
 
 .splash-content {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 1.25rem;
+  gap: 1.6rem;
   text-align: center;
+  position: relative;
+  z-index: 2;
+  padding: 2rem;
+  transition: opacity 0.35s ease, transform 0.45s var(--ease-out-expo);
+}
+
+/* ---- Logo mark inside an orbiting ring ---- */
+.splash-logo-container {
+  position: relative;
+  width: 128px;
+  height: 128px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: splashPop 0.9s var(--ease-out-expo) both;
+}
+
+/* Inner glass disc — breathes */
+.splash-glow-ring {
+  position: absolute;
+  inset: 14px;
+  border-radius: 50%;
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  box-shadow: 0 0 50px var(--accent-dim), inset 0 0 25px var(--accent-faint);
+  animation: splashRingGlow 3s ease-in-out infinite alternate;
+}
+
+@keyframes splashRingGlow {
+  0%   { transform: scale(0.94); opacity: 0.65; box-shadow: 0 0 30px var(--accent-faint), inset 0 0 18px var(--accent-faint); }
+  100% { transform: scale(1.06); opacity: 1;    box-shadow: 0 0 65px var(--accent-dim),   inset 0 0 30px var(--accent-faint); }
+}
+
+/* Outer arc — a conic gradient masked into a hairline ring, rotating.
+   Reads as a progress orbit without needing an SVG. */
+.splash-orbit {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: conic-gradient(from 0deg, transparent 0deg, transparent 210deg, var(--accent) 320deg, transparent 360deg);
+  mask: radial-gradient(farthest-side, transparent calc(100% - 2px), #000 calc(100% - 2px));
+  -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 2px), #000 calc(100% - 2px));
+  animation: splashOrbit 1.6s linear infinite;
+  opacity: 0.9;
+}
+
+@keyframes splashOrbit {
+  to { transform: rotate(360deg); }
 }
 
 .splash-logo {
-  width: 68px;
-  height: 68px;
+  position: relative;
+  z-index: 2;
+  width: 62px;
+  height: 62px;
   object-fit: contain;
-  animation: splashPulse 2s infinite ease-in-out;
+  filter: drop-shadow(0 0 16px var(--accent));
+  animation: splashLogoScale 1.2s var(--ease-out-expo) both;
 }
 
-@keyframes splashPulse {
-  0%, 100% { transform: scale(1); filter: drop-shadow(0 0 15px var(--accent-dim)); }
-  50% { transform: scale(1.08); filter: drop-shadow(0 0 30px var(--accent)); }
+:root[data-theme="light"] .splash-logo {
+  filter: invert(1) brightness(0) drop-shadow(0 0 12px var(--accent));
+}
+
+@keyframes splashLogoScale {
+  0%   { transform: scale(0.6) rotate(-8deg); opacity: 0; }
+  100% { transform: scale(1) rotate(0deg); opacity: 1; }
+}
+
+@keyframes splashPop {
+  0%   { transform: scale(0.82); opacity: 0; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+/* ---- Wordmark ---- */
+.splash-brand {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.55rem;
 }
 
 .splash-title {
   font-family: var(--font-display);
-  font-size: 1.4rem;
-  letter-spacing: 0.15em;
+  font-size: clamp(1.35rem, 4vw, 1.9rem);
+  font-weight: 300;
+  letter-spacing: 0.24em;
   color: var(--bone);
   text-transform: uppercase;
+  /* Trailing letter-spacing pushes the visual centre left; pull it back. */
+  text-indent: 0.24em;
+  display: flex;
+  overflow: hidden;
+}
+
+/* Per-character rise. index.html splits `.splash-title` into
+   `<span class="splash-char" style="--i:n">` on load; the `--i` index
+   becomes the delay so the name types itself in. */
+.splash-char {
+  display: inline-block;
+  white-space: pre;
+  animation: splashChar 0.7s var(--ease-out-expo) both;
+  animation-delay: calc(0.25s + var(--i, 0) * 0.035s);
+}
+
+@keyframes splashChar {
+  0%   { transform: translateY(105%); opacity: 0; }
+  100% { transform: translateY(0); opacity: 1; }
+}
+
+.splash-subtitle {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  letter-spacing: 0.28em;
+  color: var(--accent);
+  text-transform: uppercase;
+  text-indent: 0.28em;
+  opacity: 0.85;
+  animation: splashFadeUp 0.8s var(--ease-out-expo) both;
+  animation-delay: 0.7s;
+}
+
+@keyframes splashFadeUp {
+  0%   { transform: translateY(12px); opacity: 0; }
+  100% { transform: translateY(0); opacity: 0.85; }
+}
+
+/* ---- Loading block: the dotLottie animation + progress rail ---- */
+.splash-loader {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.9rem;
+  margin-top: 0.4rem;
+  animation: splashFadeUp 0.8s var(--ease-out-expo) both;
+  animation-delay: 0.85s;
+}
+
+.splash-loader .lottie-loader {
+  padding: 0;
+  --loader-size: 76px;
+}
+
+.splash-progress {
+  position: relative;
+  width: 190px;
+  height: 2px;
+  border-radius: 2px;
+  background: var(--line);
+  overflow: hidden;
+}
+
+.splash-progress-bar {
+  position: absolute;
+  inset: 0;
+  transform-origin: left center;
+  transform: scaleX(var(--progress, 0));
+  background: linear-gradient(90deg, var(--accent-dim), var(--accent));
+  box-shadow: 0 0 12px var(--accent-dim);
+  transition: transform 0.45s var(--ease-out-soft);
+}
+
+.splash-status {
+  font-family: var(--font-mono);
+  /* --bone-dim rather than --bone-faint: at 0.6rem with 0.3em tracking,
+     --bone-faint (#8e8e93) on the light theme's white plate is close to
+     unreadable. */
+  font-size: 0.62rem;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: var(--bone-dim);
+  text-indent: 0.3em;
+}
+
+@media (max-width: 600px) {
+  .splash-logo-container { width: 104px; height: 104px; }
+  .splash-logo { width: 50px; height: 50px; }
+  .splash-progress { width: 150px; }
+  .splash-loader .lottie-loader { --loader-size: 62px; }
+}
+
+/* Reduced motion: keep the splash (it still marks the load) but drop the
+   orbit, sweep, drift and per-character choreography — it becomes a plain
+   plate that fades out. The global reduced-motion rule already collapses
+   durations; these turn the *looping* decoration off entirely, which a
+   duration override can't do. */
+@media (prefers-reduced-motion: reduce) {
+  .splash-orbit,
+  .splash-sweep,
+  .splash-grid,
+  .splash-glow-ring { animation: none !important; }
+  .splash-sweep { display: none; }
+  .splash-char,
+  .splash-subtitle,
+  .splash-loader,
+  .splash-logo,
+  .splash-logo-container { animation: none !important; opacity: 1; transform: none; }
+}
+
+/* ============ LOTTIE LOADER (shared) ============ */
+/* One loading indicator for the whole site: the splash, every Supabase-backed
+   grid, the project modal and form submits all render this same block via
+   `window.lottieLoader()` in common.js.
+
+   The <dotlottie-player> element comes from a CDN module, so it can fail or
+   simply not have upgraded yet. `.lottie-fallback` is a pure-CSS ring shown
+   until `documentElement` gets `.lottie-ready` (set by common.js from
+   customElements.whenDefined) — so a blocked CDN degrades to a spinner
+   instead of an empty hole. */
+.lottie-loader {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.85rem;
+  padding: 3rem 1rem;
+  width: 100%;
+  grid-column: 1 / -1;
+  animation: loaderIn var(--dur-base) var(--ease-out-expo) both;
+}
+
+@keyframes loaderIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.lottie-loader.is-inline {
+  flex-direction: row;
+  padding: 0;
+  width: auto;
+  gap: 0.6rem;
+  --loader-size: 22px;
+}
+
+.lottie-loader dotlottie-player {
+  width: var(--loader-size, 84px);
+  height: var(--loader-size, 84px);
+  display: block;
+}
+
+.lottie-loader-label {
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: var(--bone-faint);
+  text-indent: 0.28em;
+  animation: loaderLabelPulse 1.9s ease-in-out infinite;
+}
+
+@keyframes loaderLabelPulse {
+  0%, 100% { opacity: 1; }
+  50%      { opacity: 0.45; }
+}
+
+/* CSS fallback ring */
+.lottie-fallback {
+  width: var(--loader-size, 84px);
+  height: var(--loader-size, 84px);
+  border-radius: 50%;
+  border: 2px solid var(--line);
+  border-top-color: var(--accent);
+  animation: lottieFallbackSpin 0.9s linear infinite;
+}
+
+@keyframes lottieFallbackSpin {
+  to { transform: rotate(360deg); }
+}
+
+/* Exactly one of the two is ever visible. */
+:root:not(.lottie-ready) .lottie-loader dotlottie-player { display: none; }
+:root.lottie-ready .lottie-fallback { display: none; }
+
+/* Full-surface overlay variant — used while the project modal loads. */
+.lottie-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  /* Plain rgba first so browsers without color-mix() still get a scrim. */
+  background: rgba(10, 10, 10, 0.72);
+  background: color-mix(in srgb, var(--onyx) 72%, transparent);
+  backdrop-filter: blur(6px);
+  border-radius: inherit;
+  transition: opacity var(--dur-fast) ease;
+}
+
+.lottie-overlay.is-hidden {
+  opacity: 0;
+  pointer-events: none;
 }
 
 /* ============ PROJECT CARDS ============ */
@@ -1810,4 +2149,346 @@ footer a:hover { color: var(--accent); }
   .modal { max-height: 92vh; }
   .modal-body { padding: 1.5rem; }
   .modal-title { font-size: 1.6rem; }
+}
+
+/* ==================================================================== */
+/* ============ SITEWIDE MOTION LAYER ============                      */
+/* Loaded last on purpose. Everything above defines what the site looks  */
+/* like; this defines how it *moves* — one easing vocabulary, one hover  */
+/* grammar, one set of entrance variants.                               */
+/*                                                                      */
+/* Two rules kept it from breaking anything above:                      */
+/*  1. Never use `transition: all` or a bare `transition:` shorthand on  */
+/*     an element that can also carry `.reveal` — the shorthand replaces */
+/*     .reveal's opacity/transform entry and the element would snap in   */
+/*     instead of fading. Longhands (`transition-timing-function`,       */
+/*     `transition-duration`) are used instead where a whole element's   */
+/*     feel is being retuned.                                           */
+/*  2. Every hover effect is inside `@media (hover: hover)` so a tap on  */
+/*     a phone doesn't leave a card stuck in its hover state.           */
+/* ==================================================================== */
+
+/* ---- Retune existing transitions to the shared easing ----
+   These elements already had `transition: ... ease` declarations above.
+   Overriding only the timing function and duration (never the property
+   list) upgrades them to the site's easing without touching what they
+   animate — so .reveal keeps working on the ones that also reveal. */
+a,
+button,
+.btn,
+.nav-links a,
+.nav-email,
+.nav-logo,
+.nav-logo-img,
+.theme-toggle,
+.service-card,
+.project-card,
+.founder-card,
+.why-item,
+.process-step,
+.contact-email,
+.modal-close,
+.service-tag,
+.project-tag {
+  transition-timing-function: var(--ease-out-expo);
+}
+
+/* Anything without its own transition still gets a sane default. */
+a, button, input, textarea, select, summary {
+  transition-property: color, background-color, border-color, box-shadow, opacity, transform;
+  transition-duration: var(--dur-fast);
+  transition-timing-function: var(--ease-out-expo);
+}
+
+/* Smooth in-page scrolling for the one-page nav. `scroll-padding-top`
+   keeps section headings clear of the fixed pill nav on arrival. */
+html {
+  scroll-behavior: smooth;
+  scroll-padding-top: 7rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+}
+
+/* ---- Hover grammar ---- */
+@media (hover: hover) and (pointer: fine) {
+
+  /* Card surfaces: lift, glow, and warm the border. */
+  .service-card:hover,
+  .founder-card:hover {
+    transform: translateY(var(--hover-lift));
+    box-shadow: var(--hover-glow);
+    border-color: var(--accent-dim);
+  }
+
+  /* Project cards get the same glow, but not the transform — their JS
+     3D-tilt handler writes an inline `transform` that would override
+     anything set here. The lift is folded into that tilt instead
+     (see setupProjectCard in index.html). */
+  .project-card:hover {
+    box-shadow: var(--hover-glow);
+    border-color: var(--accent-dim);
+  }
+
+  /* Thumbnails inside a hovered card push in slightly — the parallax
+     between card and image is what sells the lift as depth. */
+  .project-card .project-thumb img,
+  .project-card .project-thumb-bg {
+    transition: transform var(--dur-slow) var(--ease-out-expo);
+  }
+  .project-card:hover .project-thumb img,
+  .project-card:hover .project-thumb-bg {
+    transform: scale(1.06);
+  }
+
+  /* Service number + icon lead the card's motion by a hair. */
+  .service-card .service-num,
+  .service-card .service-icon {
+    transition: transform var(--dur-base) var(--ease-spring), color var(--dur-fast) ease;
+  }
+  .service-card:hover .service-num { transform: translateX(4px); color: var(--accent); }
+  .service-card:hover .service-icon { transform: translateY(-4px) scale(1.08); }
+
+  /* Founder avatar: rise out of the card and pick up an accent ring. */
+  .founder-avatar {
+    transition: transform var(--dur-base) var(--ease-spring), box-shadow var(--dur-base) ease, filter var(--dur-base) ease;
+  }
+  .founder-card:hover .founder-avatar {
+    transform: translateY(-6px) scale(1.05);
+    box-shadow: 0 12px 30px -10px rgba(0, 0, 0, 0.5), 0 0 0 2px var(--accent-dim);
+  }
+
+  /* "Details →" on a project card leads the card's hover. The arrow is a
+     literal character inside `.project-more`, not an `.arrow` span, so the
+     whole label travels. */
+  .project-more {
+    display: inline-block;
+    transition: transform var(--dur-base) var(--ease-spring), color var(--dur-fast) ease;
+  }
+  .project-card:hover .project-more {
+    transform: translateX(5px);
+    color: var(--accent);
+  }
+
+  /* Numbered process steps: the dot is the affordance. */
+  .process-step .process-dot {
+    transition: transform var(--dur-base) var(--ease-spring), box-shadow var(--dur-base) ease, background-color var(--dur-fast) ease;
+  }
+  .process-step:hover .process-dot {
+    transform: scale(1.12);
+    box-shadow: 0 0 22px var(--accent-dim);
+  }
+
+  /* Why items: the left rule fills in rather than just changing colour. */
+  .why-item::before {
+    content: '';
+    position: absolute;
+    left: -1px;
+    top: 0;
+    width: 2px;
+    height: 100%;
+    background: var(--accent);
+    transform: scaleY(0);
+    transform-origin: top;
+    transition: transform var(--dur-base) var(--ease-out-expo);
+  }
+  .why-item { position: relative; }
+  .why-item:hover::before { transform: scaleY(1); }
+
+  /* Nav links: an underline that wipes in from the left. */
+  .nav-links a {
+    position: relative;
+  }
+  .nav-links a::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    bottom: -4px;
+    width: 100%;
+    height: 1px;
+    background: currentColor;
+    transform: scaleX(0);
+    transform-origin: right;
+    transition: transform var(--dur-fast) var(--ease-out-expo);
+  }
+  .nav-links a:hover::after,
+  .nav-links a.active::after {
+    transform: scaleX(1);
+    transform-origin: left;
+  }
+
+  /* Pill CTA in the nav lifts with the rest of the button family. */
+  .nav-email:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px -8px rgba(0, 0, 0, 0.6);
+  }
+
+  .theme-toggle:hover { transform: rotate(15deg) scale(1.08); }
+
+  /* Tags/chips: fill on hover. */
+  .service-tag,
+  .project-tag,
+  .modal-stack span {
+    transition: background-color var(--dur-fast) var(--ease-out-expo),
+                color var(--dur-fast) var(--ease-out-expo),
+                border-color var(--dur-fast) var(--ease-out-expo),
+                transform var(--dur-fast) var(--ease-out-expo);
+  }
+  .service-tag:hover,
+  .project-tag:hover,
+  .modal-stack span:hover {
+    background: var(--accent-faint);
+    border-color: var(--accent);
+    color: var(--accent);
+    transform: translateY(-2px);
+  }
+
+  /* Arrows inside CTAs travel on hover. Scoped away from
+     #btnToggleShowcase: its arrow is a ↓ whose transform is driven by JS
+     (rotate(180deg) in "Show Less" state), and a sideways nudge would both
+     read wrong on a vertical glyph and lose to that inline style anyway. */
+  .btn .arrow {
+    display: inline-block;
+    transition: transform var(--dur-base) var(--ease-spring);
+  }
+  .btn:not(#btnToggleShowcase):hover .arrow {
+    transform: translateX(6px);
+  }
+
+  .modal-close:hover { transform: rotate(90deg); color: var(--accent); }
+}
+
+/* ---- Press feedback ----
+   `.btn` is deliberately absent: common.js's magnetic-button effect writes an
+   inline `transform` while the cursor is over the button, and an inline style
+   beats any rule here — so a `.btn:active` scale would simply never apply on
+   a fine pointer. The touch-device `:active` block further up covers `.btn`
+   on phones, where magnetism doesn't run at all. */
+.nav-email:active,
+.theme-toggle:active,
+.modal-close:active {
+  transform: scale(0.96);
+  transition-duration: var(--dur-instant);
+}
+
+/* Fallback message when a Supabase-backed grid has nothing to show. */
+.grid-empty {
+  grid-column: 1 / -1;
+  text-align: center;
+  padding: 3rem 1rem;
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  letter-spacing: 0.05em;
+  color: var(--bone-faint);
+}
+
+/* ---- Entrance variants ----
+   `.reveal` (fade + rise) already exists. These are drop-in siblings for
+   places where a plain rise reads wrong: a grid that should scale in, a
+   sidebar-ish block that should arrive from the side. They share
+   .reveal's `.visible` toggle so common.js's IntersectionObserver drives
+   them with no extra JS. */
+.reveal-scale {
+  opacity: 0;
+  transform: scale(0.94);
+  transition: opacity var(--dur-slow) var(--ease-out-expo), transform var(--dur-slow) var(--ease-out-expo);
+}
+.reveal-scale.visible { opacity: 1; transform: scale(1); }
+
+.reveal-left {
+  opacity: 0;
+  transform: translateX(-32px);
+  transition: opacity var(--dur-slow) var(--ease-out-expo), transform var(--dur-slow) var(--ease-out-expo);
+}
+.reveal-left.visible { opacity: 1; transform: translateX(0); }
+
+.reveal-right {
+  opacity: 0;
+  transform: translateX(32px);
+  transition: opacity var(--dur-slow) var(--ease-out-expo), transform var(--dur-slow) var(--ease-out-expo);
+}
+.reveal-right.visible { opacity: 1; transform: translateX(0); }
+
+.reveal-blur {
+  opacity: 0;
+  filter: blur(10px);
+  transform: translateY(20px);
+  transition: opacity var(--dur-slow) var(--ease-out-expo),
+              filter var(--dur-slow) var(--ease-out-expo),
+              transform var(--dur-slow) var(--ease-out-expo);
+}
+.reveal-blur.visible { opacity: 1; filter: blur(0); transform: translateY(0); }
+
+/* Stagger applies to every variant, not just `.reveal`. */
+.reveal-group > .reveal-scale,
+.reveal-group > .reveal-left,
+.reveal-group > .reveal-right,
+.reveal-group > .reveal-blur {
+  transition-delay: min(calc(var(--reveal-index, 0) * 0.1s), 0.6s);
+}
+
+/* Content swapped in by JS (Supabase grids, modal body) fades rather than
+   popping. Applied by common.js via `window.fadeSwap()`. */
+.fade-swap-in {
+  animation: fadeSwapIn var(--dur-base) var(--ease-out-expo) both;
+}
+
+@keyframes fadeSwapIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Images arrive rather than blink in. common.js adds `.is-loaded` on the
+   image's own load event (and immediately for cached ones). */
+img[data-fade] {
+  opacity: 0;
+  transform: scale(1.02);
+  transition: opacity var(--dur-slow) var(--ease-out-expo), transform var(--dur-slow) var(--ease-out-expo);
+}
+img[data-fade].is-loaded { opacity: 1; transform: scale(1); }
+
+/* Theme flip: cross-fade the whole surface instead of hard-cutting between
+   palettes. Scoped to a class common.js adds for the length of the swap,
+   so it never taxes normal scrolling. */
+:root.theme-transition,
+:root.theme-transition body,
+:root.theme-transition nav,
+:root.theme-transition .service-card,
+:root.theme-transition .project-card,
+:root.theme-transition .founder-card,
+:root.theme-transition .modal {
+  transition: background-color 0.45s var(--ease-out-soft),
+              color 0.45s var(--ease-out-soft),
+              border-color 0.45s var(--ease-out-soft) !important;
+}
+
+/* Reduced motion: strip the decorative layer entirely. The global rule
+   near the top already collapses durations; this removes the transforms
+   themselves so nothing shifts position at all. */
+@media (prefers-reduced-motion: reduce) {
+  .service-card:hover,
+  .project-card:hover,
+  .founder-card:hover,
+  .nav-email:hover,
+  .theme-toggle:hover,
+  .btn:active,
+  .project-card:hover .project-thumb img,
+  .project-card:hover .project-thumb-bg,
+  .founder-card:hover .founder-avatar,
+  .service-card:hover .service-num,
+  .service-card:hover .service-icon,
+  .process-step:hover .process-dot,
+  .btn:hover .arrow,
+  .modal-close:hover {
+    transform: none !important;
+  }
+
+  .reveal-scale, .reveal-left, .reveal-right, .reveal-blur {
+    opacity: 1;
+    transform: none;
+    filter: none;
+  }
+
+  .lottie-loader-label { animation: none !important; }
 }

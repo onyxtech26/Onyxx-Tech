@@ -25,6 +25,15 @@
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <!-- dotLottie Player -->
   <script src="https://unpkg.com/@dotlottie/player-component@latest/dist/dotlottie-player.mjs" type="module"></script>
+  <script>
+    // Flag the document once the custom element upgrades, so the CSS can
+    // swap the fallback spinner out for the Lottie (and never show both).
+    if (window.customElements) {
+      customElements.whenDefined('dotlottie-player')
+        .then(function () { document.documentElement.classList.add('lottie-ready'); })
+        .catch(function () { /* keep the spinner */ });
+    }
+  </script>
 
   <style>
     :root {
@@ -855,6 +864,31 @@
       animation: spin 1s linear infinite;
     }
     @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* Boot loader: dotLottie animation with the CSS spinner as fallback.
+       Exactly one is shown — `.lottie-ready` goes on <html> only once the
+       custom element actually upgrades, so a blocked CDN degrades to the
+       spinner instead of an empty overlay. */
+    .lottie-boot {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 1rem;
+    }
+    .lottie-boot dotlottie-player { width: 84px; height: 84px; display: block; }
+    html:not(.lottie-ready) .lottie-boot dotlottie-player { display: none; }
+    html.lottie-ready .lottie-boot .spinner { display: none; }
+    .lottie-boot-label {
+      font-family: var(--font-mono);
+      font-size: 0.65rem;
+      letter-spacing: 0.28em;
+      text-transform: uppercase;
+      text-indent: 0.28em;
+      color: var(--bone-dim);
+      opacity: 0.7;
+      animation: bootLabelPulse 1.9s ease-in-out infinite;
+    }
+    @keyframes bootLabelPulse { 0%, 100% { opacity: 0.7; } 50% { opacity: 0.3; } }
     /* Modals & Forms */
     .modal-backdrop {
       position: fixed;
@@ -1061,8 +1095,15 @@
   <!-- Toast Container -->
   <div id="toastContainer" style="position: fixed; bottom: 2rem; right: 2rem; z-index: 9999; display: flex; flex-direction: column; gap: 0.5rem; pointer-events: none;"></div>
 
+  <!-- Same dotLottie loading animation the public site uses, so the admin
+       tool reads as part of the same product. `.spinner` stays as the
+       fallback for when the CDN player module doesn't arrive. -->
   <div class="loading-overlay" id="loadingOverlay">
-    <div class="spinner"></div>
+    <div class="lottie-boot">
+      <div class="spinner" aria-hidden="true"></div>
+      <dotlottie-player src="images/loading.lottie" background="transparent" speed="1" loop autoplay aria-hidden="true"></dotlottie-player>
+      <span class="lottie-boot-label">Loading dashboard</span>
+    </div>
   </div>
 
   <div class="glass-orb orb-1"></div>

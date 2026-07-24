@@ -5,6 +5,92 @@ Format each entry: what was done, why it mattered, and any key decisions.
 
 ---
 
+## 2026-07-24
+
+### Splash screen redesign, sitewide dotLottie loader, and a sitewide motion layer
+
+**Splash screen (rebuilt).** Replaced the previous logo-and-name plate with a
+choreographed loading curtain: layered radial background + drifting technical
+grid + a slow sweep beam; logo inside a breathing glass disc with a rotating
+conic-gradient "orbit" ring; the wordmark rises character-by-character (split
+in JS so the HTML stays one readable string); then the `loading.lottie`
+animation, a progress rail, and a staged status line. Exit is a two-part move —
+the content lifts away fractionally before the curtain scales/blurs/fades.
+
+Timing is now honest and bounded: a 1500 ms minimum on-screen time (so a fast
+load doesn't flash a splash for 200 ms, which reads as a glitch), real dismissal
+on window `load`, and a 4500 ms hard cap. Click or Escape dismisses immediately.
+
+- **Key decision:** the controller is inline in `index.html` immediately after
+  the markup, not in `common.js`. A full-viewport curtain that needs a deferred
+  script to leave can hang visible if that script is slow or fails.
+- The progress bar eases toward 90% on a timer and only completes on the real
+  `load` event — there's no byte-level progress signal for a static page, so it
+  tracks elapsed time and is honest at the one moment it claims to be done.
+- The splash is `aria-hidden` (it's decorative, over content already in the DOM);
+  a sibling `sr-only` live region announces load start/finish once, instead of
+  reading four stage labels a user can't influence.
+
+**`loading.lottie` everywhere.** Added a shared loader (`window.lottieLoader()` /
+`showLoader()` / `toggleOverlayLoader()` in `common.js`) so every loading state
+uses the same animation: the splash, the Supabase-backed services and work grids,
+an overlay over the project modal's image while it decodes, the admin dashboard's
+boot overlay, and the admin login button's submit state.
+- `<dotlottie-player>` is a CDN custom element, so each usage ships a pure-CSS
+  ring fallback. `common.js` sets `.lottie-ready` on `<html>` via
+  `customElements.whenDefined`; CSS shows exactly one of the two. A blocked CDN
+  degrades to a spinner instead of an empty hole. Verified by rendering the
+  dashboard with JS disabled.
+- A failed Supabase fetch now swaps the loader for a `.grid-empty` message
+  rather than spinning forever.
+
+**Sitewide motion layer** (new section at the end of `styles.css`). One easing
+vocabulary (`--ease-out-expo`/`--ease-out-soft`/`--ease-spring`, four durations)
+applied via `transition-timing-function` longhands; hover grammar for cards
+(lift + glow + accent border), thumbnails, service numbers/icons, founder
+avatars, process dots, the why-list rule, nav-link underline wipe, tag fills,
+CTA arrows and `.project-more`; four new entrance variants (`.reveal-scale`,
+`-left`, `-right`, `-blur`) sharing `.reveal`'s `.visible` toggle; image
+fade-in via `img[data-fade]`; and a theme cross-fade applied only for the
+duration of a toggle.
+- **Constraint that shaped it:** never use a bare `transition:` shorthand on an
+  element that can also carry `.reveal` — the shorthand replaces `.reveal`'s
+  opacity/transform entry and the element snaps in instead of fading. This is
+  the same cascade bug logged on 2026-07-22; the new layer only ever sets
+  longhands on those elements.
+- All hover rules sit inside `@media (hover: hover)` so a tap on a phone doesn't
+  leave a card stuck in its hover state.
+- `.project-card` gets the glow but not the transform: its JS 3D-tilt handler
+  writes an inline `transform` that would override any rule. The lift is folded
+  into that tilt string instead.
+
+**Fixed: `common.js` had been silently dead on the site.** It and `index.html`'s
+inline script both declare top-level `const observer`, `nav`, `cursorGlow`,
+`SCRAMBLE_CHARS`… As classic scripts they share one global lexical environment,
+so the browser threw `Identifier 'observer' has already been declared` while
+*compiling* `common.js` and none of it ever ran. The duplication of that same
+logic inside `index.html` (from the single-page consolidation) is what masked
+it — the site looked fine, but magnetic buttons and `initRevealGroup` were doing
+nothing. `common.js` is now an IIFE that publishes only to `window`, and holds
+just the cross-cutting behaviour `index.html` doesn't already implement inline.
+
+**Hero copy.** The rotating headline ("modern businesses." / "ambitious teams." /
+"bold founders." / "what comes next.") is now the static line "for modern
+businesses." — rotator markup, JS interval and CSS all removed.
+
+**Verification.** Driven in real Chrome over CDP: 0 page exceptions, splash
+dismisses, 5 service + 6 project cards render, 0 stuck loaders, 25 reveals fire,
+7 magnetic buttons bind, and all 10 hover effects confirmed by dispatching real
+mouse events and diffing computed styles. Checked in light and dark theme, and
+under `prefers-reduced-motion: reduce` (nothing stays hidden, magnetism off,
+smooth scroll off, splash still dismisses).
+
+**Known pre-existing issue (not addressed):** a `showcase_projects` record points
+at `images/Carousel_Maker.png`, which isn't in the repo — a 404 on every load.
+The card falls back to the Onyxx logo. Needs a fix in Supabase or the image added.
+
+---
+
 ## 2026-07-22
 
 ### Enabled clean URLs sitewide

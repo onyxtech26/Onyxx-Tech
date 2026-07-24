@@ -53,6 +53,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,400;9..144,500;9..144,600;9..144,700&family=JetBrains+Mono:wght@300;400;500;600&family=Outfit:wght@200;300;400;500;600;700&display=swap" rel="stylesheet">
 
 <link rel="stylesheet" href="styles.css">
+<script src="common.js" defer></script>
 
 <!-- dotLottie Player for loading animations -->
 <script src="https://unpkg.com/@dotlottie/player-component@latest/dist/dotlottie-player.mjs" type="module"></script>
@@ -60,13 +61,142 @@
 <body>
 
 <!-- ============ SPLASH SCREEN ============ -->
+<!-- aria-hidden: the splash is a decorative loading curtain over content that
+     is already in the DOM behind it. The stage text ("Loading assets" →
+     "Almost ready") is visual pacing, not information — piping it into a
+     live region would make a screen reader read four labels for a load the
+     user can't influence. The single-shot announcement below covers it. -->
+<!-- Sibling, not a child: aria-hidden on an ancestor can't be undone by a
+     descendant, so this has to sit outside the curtain to be announced. -->
+<span class="sr-only" role="status" id="splashAnnounce">Loading Onyxx Tech Hub</span>
 <div id="splashScreen" aria-hidden="true">
+  <div class="splash-grid" aria-hidden="true"></div>
+  <div class="splash-sweep" aria-hidden="true"></div>
+
   <div class="splash-content">
-    <img src="images/onyxx_logo_transparent.png" alt="Onyxx Tech Hub" class="splash-logo" />
-    <div class="splash-title">Onyxx Tech Hub</div>
-    <dotlottie-player src="images/loading.lottie" background="transparent" speed="1" style="width: 90px; height: 90px;" loop autoplay></dotlottie-player>
+    <div class="splash-logo-container">
+      <div class="splash-orbit" aria-hidden="true"></div>
+      <div class="splash-glow-ring" aria-hidden="true"></div>
+      <img src="images/onyxx_logo_transparent.png" alt="" class="splash-logo" />
+    </div>
+
+    <div class="splash-brand">
+      <div class="splash-title" data-splitchars>Onyxx Tech Hub</div>
+      <div class="splash-subtitle">The AI Layer for Modern Businesses</div>
+    </div>
+
+    <div class="splash-loader">
+      <div class="lottie-loader" style="--loader-size:76px" aria-hidden="true">
+        <div class="lottie-fallback"></div>
+        <dotlottie-player src="images/loading.lottie" background="transparent" speed="1" loop autoplay></dotlottie-player>
+      </div>
+      <div class="splash-progress" aria-hidden="true">
+        <div class="splash-progress-bar" id="splashProgressBar"></div>
+      </div>
+      <div class="splash-status" id="splashStatus">Initialising</div>
+    </div>
   </div>
 </div>
+<script>
+  /* Splash controller.
+     Inline and immediately after the markup on purpose: the splash covers
+     the whole viewport, so the code that removes it must not depend on a
+     deferred script, the CDN'd Lottie module, or Supabase. Everything below
+     runs on plain DOM APIs and is guarded by a hard cap.
+
+     Lifecycle:
+       - Minimum on-screen time (MIN_MS) so a fast load doesn't flash a
+         quarter-second of splash and vanish, which reads as a glitch.
+       - Real dismissal is driven by window 'load'.
+       - HARD_CAP_MS guarantees it leaves even if an asset never resolves.
+       - Click/Escape dismiss immediately — never trap the user behind it. */
+  (function() {
+    var MIN_MS = 1500;
+    var HARD_CAP_MS = 4500;
+
+    var splash = document.getElementById('splashScreen');
+    if (!splash) return;
+
+    var startedAt = Date.now();
+    var dismissed = false;
+
+    /* Per-character rise on the wordmark. Done in JS so the HTML stays a
+       readable string for crawlers/screen readers rather than 13 spans. */
+    (function splitTitle() {
+      var el = splash.querySelector('[data-splitchars]');
+      if (!el) return;
+      var text = el.textContent;
+      el.textContent = '';
+      for (var i = 0; i < text.length; i++) {
+        var span = document.createElement('span');
+        span.className = 'splash-char';
+        span.style.setProperty('--i', i);
+        span.textContent = text[i];
+        el.appendChild(span);
+      }
+      el.setAttribute('aria-label', text);
+    })();
+
+    /* Progress rail. There's no honest byte-level progress signal available
+       for a static page, so this eases toward 90% on a timer and only
+       completes on the real 'load' event — it tracks elapsed time, and the
+       one moment it claims to be finished, it genuinely is. */
+    var bar = document.getElementById('splashProgressBar');
+    var status = document.getElementById('splashStatus');
+    var progress = 0;
+    var STAGES = ['Initialising', 'Loading assets', 'Preparing interface', 'Almost ready'];
+
+    var tick = setInterval(function() {
+      progress = Math.min(progress + (0.9 - progress) * 0.18, 0.9);
+      if (bar) bar.style.setProperty('--progress', String(progress));
+      if (status) {
+        var stage = STAGES[Math.min(Math.floor(progress * STAGES.length), STAGES.length - 1)];
+        if (status.textContent !== stage) status.textContent = stage;
+      }
+    }, 180);
+
+    function hideSplashScreen() {
+      if (dismissed) return;
+      dismissed = true;
+      clearInterval(tick);
+
+      if (bar) bar.style.setProperty('--progress', '1');
+      if (status) status.textContent = 'Ready';
+
+      var announce = document.getElementById('splashAnnounce');
+      if (announce) announce.textContent = 'Onyxx Tech Hub loaded';
+
+      /* Let the bar visibly complete before the curtain pulls back. */
+      setTimeout(function() {
+        splash.classList.add('fade-out');
+        document.documentElement.classList.add('splash-done');
+        setTimeout(function() {
+          if (splash.parentNode) splash.parentNode.removeChild(splash);
+        }, 800);
+      }, 220);
+    }
+    window.hideSplashScreen = hideSplashScreen;
+
+    /* Wait out the remainder of the minimum display time, then go. */
+    function requestDismiss() {
+      var elapsed = Date.now() - startedAt;
+      setTimeout(hideSplashScreen, Math.max(0, MIN_MS - elapsed));
+    }
+
+    if (document.readyState === 'complete') {
+      requestDismiss();
+    } else {
+      window.addEventListener('load', requestDismiss);
+    }
+
+    setTimeout(hideSplashScreen, HARD_CAP_MS);
+
+    splash.addEventListener('click', hideSplashScreen);
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape') hideSplashScreen();
+    });
+  })();
+</script>
 
 <a href="#main-content" class="skip-link">Skip to main content</a>
 <div class="grid-bg"></div>
@@ -141,12 +271,7 @@
     <h1 class="hero-headline">
       <span class="line"><span>We build the</span></span>
       <span class="line"><span><em>AI layer</em></span></span>
-      <span class="line"><span>for <span class="hero-rotator" id="rotator">
-        <span class="rotator-word active">modern businesses.</span>
-        <span class="rotator-word">ambitious teams.</span>
-        <span class="rotator-word">bold founders.</span>
-        <span class="rotator-word">what comes next.</span>
-      </span></span></span>
+      <span class="line"><span>for modern businesses.</span></span>
     </h1>
 
     <p class="hero-sub">
@@ -512,16 +637,9 @@ const sectionObserver = new IntersectionObserver(entries => {
 
 sectionEls.forEach(s => sectionObserver.observe(s));
 
-// ============ HERO ROTATOR ============
-const rotatorWords = document.querySelectorAll('.rotator-word');
-let rotIdx = 0;
-setInterval(() => {
-  rotatorWords[rotIdx].classList.remove('active');
-  rotIdx = (rotIdx + 1) % rotatorWords.length;
-  rotatorWords[rotIdx].classList.add('active');
-}, 2800);
-
 // ============ SCROLL REVEAL ============
+// Mirrors common.js's observer for this page's own markup, and covers the
+// `.reveal-*` entrance variants as well as plain `.reveal`.
 const observer = new IntersectionObserver((entries) => {
   entries.forEach(entry => {
     if (entry.isIntersecting) {
@@ -531,7 +649,9 @@ const observer = new IntersectionObserver((entries) => {
   });
 }, { threshold: 0.1, rootMargin: '0px 0px -50px 0px' });
 
-document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+document
+  .querySelectorAll('.reveal, .reveal-scale, .reveal-left, .reveal-right, .reveal-blur')
+  .forEach(el => observer.observe(el));
 
 // ============ GALAXY CANVAS ANIMATION ============
 const canvas = document.getElementById('circuitCanvas');
@@ -741,10 +861,23 @@ function openModal(card) {
   const cardImg = card.querySelector('.project-thumb img');
 
   if (d.img || cardImg) {
-    img.src = d.img || cardImg.src;
+    const src = d.img || cardImg.src;
     img.alt = d.name;
     img.style.display = 'block';
     thumbBg.style.display = 'none';
+
+    // Full-resolution modal images can lag well behind the modal opening.
+    // Show the shared Lottie over the thumb area until it decodes, so the
+    // panel never opens onto an empty rectangle.
+    const thumb = img.closest('.modal-thumb');
+    if (img.src !== src) {
+      window.toggleOverlayLoader?.(thumb, true);
+      img.addEventListener('load', () => window.toggleOverlayLoader?.(thumb, false), { once: true });
+      img.addEventListener('error', () => window.toggleOverlayLoader?.(thumb, false), { once: true });
+      img.src = src;
+    } else {
+      window.toggleOverlayLoader?.(thumb, false);
+    }
   } else {
     img.style.display = 'none';
     thumbBg.style.background = d.gradient || 'var(--onyx-soft)';
@@ -789,14 +922,19 @@ function setupProjectCard(card) {
     const rect = card.getBoundingClientRect();
     const x = (e.clientX - rect.left) / rect.width;
     const y = (e.clientY - rect.top) / rect.height;
-    card.style.transition = 'transform 0.1s ease, background 0.4s ease';
-    card.style.transform = `perspective(900px) rotateX(${(y - 0.5) * -10}deg) rotateY(${(x - 0.5) * 10}deg)`;
+    card.style.transition = 'transform 0.1s ease, background 0.4s ease, box-shadow 0.4s ease';
+    // The `translateY` is the same lift `.project-card:hover` applies to
+    // every other card. It has to be baked into this string rather than left
+    // to CSS: an inline `transform` beats the stylesheet outright, so a tilt
+    // written on its own would silently cancel the lift.
+    card.style.transform =
+      `perspective(900px) translateY(-6px) rotateX(${(y - 0.5) * -10}deg) rotateY(${(x - 0.5) * 10}deg)`;
     glare.style.opacity = '1';
     glare.style.background = `radial-gradient(circle at ${x * 100}% ${y * 100}%, rgba(56,224,255,0.06) 0%, transparent 65%)`;
   });
 
   card.addEventListener('mouseleave', () => {
-    card.style.transition = 'transform 0.6s ease, background 0.4s ease';
+    card.style.transition = 'transform 0.6s cubic-bezier(0.16, 1, 0.3, 1), background 0.4s ease, box-shadow 0.4s ease';
     card.style.transform = '';
     glare.style.opacity = '0';
   });
@@ -867,10 +1005,24 @@ document.querySelectorAll('.btn').forEach(btn => {
 });
 
 // ============ THEME SWITCHER LOGIC ============
+let themeTransitionTimer;
+
 function toggleTheme() {
-  const currentTheme = document.documentElement.getAttribute('data-theme');
+  const root = document.documentElement;
+  const currentTheme = root.getAttribute('data-theme');
   const targetTheme = currentTheme === 'light' ? 'dark' : 'light';
-  document.documentElement.setAttribute('data-theme', targetTheme);
+
+  // Cross-fade the palette instead of hard-cutting between light and dark.
+  // The class is only present for the length of the swap — leaving a
+  // background/colour transition on every card permanently would tax
+  // ordinary scrolling for no benefit.
+  if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    root.classList.add('theme-transition');
+    clearTimeout(themeTransitionTimer);
+    themeTransitionTimer = setTimeout(() => root.classList.remove('theme-transition'), 500);
+  }
+
+  root.setAttribute('data-theme', targetTheme);
   localStorage.setItem('theme', targetTheme);
   updateThemeToggleIcons();
 }
@@ -900,15 +1052,15 @@ let showAllProjects = false;
 
 async function loadLandingPageData() {
   try {
-    const lottieLoader = `
-      <div style="grid-column: 1 / -1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 3rem 1rem; width: 100%;">
-        <dotlottie-player src="images/loading.lottie" background="transparent" speed="1" style="width: 80px; height: 80px;" loop autoplay></dotlottie-player>
-      </div>
-    `;
+    // Shared loader from common.js — same dotLottie animation as the splash,
+    // with a CSS-ring fallback if the player module never arrives.
+    // Only the two grids that are genuinely empty until Supabase answers.
+    // `.founders-grid` ships static founder cards as an SEO/no-JS fallback,
+    // so covering it with a spinner would hide content that's already there.
     const sGrid = document.getElementById('servicesGrid');
     const pGrid = document.getElementById('projectsGrid');
-    if (sGrid && sGrid.children.length === 0) sGrid.innerHTML = lottieLoader;
-    if (pGrid && pGrid.children.length === 0) pGrid.innerHTML = lottieLoader;
+    if (sGrid && sGrid.children.length === 0) window.showLoader(sGrid, { label: 'Loading services' });
+    if (pGrid && pGrid.children.length === 0) window.showLoader(pGrid, { label: 'Loading work' });
 
     const [showcaseRes, servicesRes, teamRes] = await Promise.all([
       supabaseClient.from('showcase_projects').select('*').order('created_at', { ascending: false }),
@@ -928,6 +1080,15 @@ async function loadLandingPageData() {
     renderLandingShowcase();
     renderLandingTeam(loadedTeam);
 
+    // Cards that arrived after the initial paint still get the site's
+    // staggered entrance, image fade-in and magnetic buttons rather than
+    // appearing instantly. All four helpers come from common.js.
+    window.initRevealGroup?.(document.getElementById('servicesGrid'));
+    window.initRevealGroup?.(document.getElementById('projectsGrid'));
+    window.initRevealGroup?.(document.querySelector('.founders-grid'));
+    window.initImageFades?.();
+    window.initMagneticButtons?.();
+
     // Scroll to dynamic section if URL hash is present
     if (window.location.hash) {
       const targetId = window.location.hash.substring(1);
@@ -940,8 +1101,17 @@ async function loadLandingPageData() {
     }
   } catch (err) {
     console.error("Error loading landing page data:", err);
+    // Never leave a loader spinning forever on a failed fetch — swap it for
+    // a quiet message so the section reads as "unavailable", not "stuck".
+    ['servicesGrid', 'projectsGrid'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el && el.querySelector('.lottie-loader')) {
+        el.innerHTML = '<p class="grid-empty">Content is taking a moment to load. Please refresh.</p>';
+      }
+    });
   }
 }
+
 
 function renderLandingTeam(teamMembers) {
   const grid = document.querySelector('.founders-grid');
@@ -958,7 +1128,7 @@ function renderLandingTeam(teamMembers) {
     const card = document.createElement('div');
     card.className = 'founder-card';
     card.innerHTML = `
-      <div class="founder-avatar"><img src="${avatar}" alt="${t.name}" loading="lazy" decoding="async" onerror="this.onerror=null; this.src='images/onyxx_logo_transparent.png';"></div>
+      <div class="founder-avatar"><img src="${avatar}" alt="${t.name}" data-fade loading="lazy" decoding="async" onerror="this.onerror=null; this.src='images/onyxx_logo_transparent.png';"></div>
       <h3 class="founder-name">${t.name}</h3>
       <div class="founder-role">${t.role}</div>
       <div class="founder-contact">
@@ -1108,7 +1278,7 @@ function renderLandingShowcase() {
       card.setAttribute('data-img', imgUrl);
       const isContain = p.title.toLowerCase().includes('portal') || p.title.toLowerCase().includes('mpt');
       thumbHtml = `<div class="project-thumb ${isContain ? 'project-thumb--contain' : ''}" style="background: ${grad}">
-        <img src="${imgUrl}" alt="${p.title}" loading="lazy" decoding="async" onerror="this.onerror=null; this.src='images/onyxx_logo_transparent.png';">
+        <img src="${imgUrl}" alt="${p.title}" data-fade loading="lazy" decoding="async" onerror="this.onerror=null; this.src='images/onyxx_logo_transparent.png';">
       </div>`;
     } else {
       thumbHtml = `<div class="project-thumb">

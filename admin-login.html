@@ -23,6 +23,15 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <!-- dotLottie Player -->
   <script src="https://unpkg.com/@dotlottie/player-component@latest/dist/dotlottie-player.mjs" type="module"></script>
+  <script>
+    // Flag the document once the custom element upgrades, so the CSS can
+    // swap the fallback spinner out for the Lottie (and never show both).
+    if (window.customElements) {
+      customElements.whenDefined('dotlottie-player')
+        .then(function () { document.documentElement.classList.add('lottie-ready'); })
+        .catch(function () { /* keep the spinner */ });
+    }
+  </script>
 
   <style>
     :root {
@@ -208,6 +217,26 @@
       transform: none;
     }
 
+    /* Inline loading state inside the submit button */
+    .btn-loading {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.6rem;
+    }
+    .btn-loading dotlottie-player { width: 22px; height: 22px; display: block; }
+    .spinner-inline {
+      width: 16px;
+      height: 16px;
+      border: 2px solid rgba(255, 255, 255, 0.25);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spinInline 0.9s linear infinite;
+    }
+    @keyframes spinInline { to { transform: rotate(360deg); } }
+    html:not(.lottie-ready) .btn-loading dotlottie-player { display: none; }
+    html.lottie-ready .btn-loading .spinner-inline { display: none; }
+
     .error-message {
       color: #ff4a4a;
       font-size: 0.85rem;
@@ -385,14 +414,28 @@
     }
     checkSession();
 
+    /* Button loading state — the same dotLottie animation the rest of the
+       site uses, shrunk to sit inline in the button. `.spinner-inline` is
+       the CSS fallback for when the CDN player module never arrives; CSS
+       shows exactly one of the two based on <html>.lottie-ready. */
+    function setLoginBtnLoading(isLoading) {
+      loginBtn.disabled = isLoading;
+      loginBtn.innerHTML = isLoading
+        ? `<span class="btn-loading">
+             <span class="spinner-inline" aria-hidden="true"></span>
+             <dotlottie-player src="images/loading.lottie" background="transparent" speed="1" loop autoplay aria-hidden="true"></dotlottie-player>
+             Authenticating…
+           </span>`
+        : 'Authenticate';
+    }
+
     loginForm.addEventListener('submit', async (e) => {
       e.preventDefault();
       
       const email = emailInput.value;
       const password = passwordInput.value;
       
-      loginBtn.disabled = true;
-      loginBtn.textContent = 'Authenticating...';
+      setLoginBtnLoading(true);
       errorMsg.style.display = 'none';
 
       try {
@@ -404,8 +447,7 @@
         if (error) {
           errorMsg.textContent = error.message;
           errorMsg.style.display = 'block';
-          loginBtn.disabled = false;
-          loginBtn.textContent = 'Authenticate';
+          setLoginBtnLoading(false);
         } else {
           // Show Success Overlay with premium transition
           successOverlay.style.display = 'flex';
