@@ -69,7 +69,28 @@ window.addEventListener('scroll', () => {
 // ============ MOBILE NAV ============
 const navToggle = document.getElementById('navToggle');
 const navLinks = document.getElementById('navLinks');
-navToggle?.addEventListener('click', () => navLinks.classList.toggle('open'));
+const navEl = document.getElementById('nav');
+
+navToggle?.addEventListener('click', (e) => {
+  e.stopPropagation();
+  navLinks?.classList.toggle('open');
+});
+
+// Auto-close mobile nav when clicking outside
+document.addEventListener('click', (e) => {
+  if (navLinks && navLinks.classList.contains('open')) {
+    if (!navEl?.contains(e.target)) {
+      navLinks.classList.remove('open');
+    }
+  }
+});
+
+// Auto-close mobile nav when clicking any nav link
+navLinks?.querySelectorAll('a').forEach(link => {
+  link.addEventListener('click', () => {
+    navLinks.classList.remove('open');
+  });
+});
 
 // ============ SCROLL REVEAL ============
 const observer = new IntersectionObserver((entries) => {
