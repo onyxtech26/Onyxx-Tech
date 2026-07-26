@@ -342,10 +342,21 @@
 
     <!-- `lines lines-immediate`: the masked per-line rise, played as soon as the
          splash clears rather than on scroll. -->
+    <!-- `lines lines-immediate`: the masked per-line rise, played as soon as the
+         splash clears rather than on scroll.
+
+         The rotator is aria-hidden with an sr-only stand-in beside it, so the
+         accessible name of the h1 is the stable, complete sentence rather than
+         whichever phrase happens to be showing when a screen reader reaches it. -->
     <h1 class="hero-headline lines lines-immediate">
       <span class="line"><span>We build the</span></span>
       <span class="line"><span><em>AI layer</em></span></span>
-      <span class="line"><span>for modern businesses.</span></span>
+      <span class="line"><span>for <span class="hero-rotator" id="heroRotator" aria-hidden="true">
+        <span class="rotator-word is-active">modern businesses.</span>
+        <span class="rotator-word">ambitious teams.</span>
+        <span class="rotator-word">bold founders.</span>
+        <span class="rotator-word">what comes next.</span>
+      </span><span class="sr-only">modern businesses.</span></span></span>
     </h1>
 
     <p class="hero-sub">

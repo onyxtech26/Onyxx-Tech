@@ -170,6 +170,15 @@ body {
 ::selection { background: var(--accent); color: var(--onyx); }
 
 /* Custom cursor glow */
+/* Positioned entirely by `transform` from common.js, which is why top/left stay
+   at 0 and `will-change: transform` is honest.
+
+   Two things were wrong here before. The glow is 400x400 with no centring
+   offset, and the follower wrote `left`/`top` — so the element's top-left
+   corner tracked the cursor and the visible centre sat 200px down-right of it.
+   Writing `translate3d(x, y, 0) translate(-50%, -50%)` instead both centres it
+   on the pointer and keeps the movement on the compositor; animating left/top
+   forced a layout on every single frame. */
 .cursor-glow {
   position: fixed;
   top: 0;
@@ -182,6 +191,9 @@ body {
   z-index: 1;
   transition: opacity 0.3s ease;
   will-change: transform;
+  /* Parked off-screen until the first mousemove, so it doesn't sit visibly in
+     the top-left corner on load. */
+  transform: translate3d(-50vw, -50vh, 0);
 }
 
 /* The fixed 80px `.grid-bg` that used to sit here is gone. Interior pages get
@@ -559,6 +571,55 @@ html.splash-done .lines.lines-immediate .line > span,
   font-weight: 400;
   color: var(--accent);
   text-shadow: 0 0 25px var(--accent-dim);
+}
+
+/* ---- Hero rotator ----
+   The tail of the headline cycles through phrases. Restored after being dropped
+   in e9dc5d3 in favour of a static line.
+
+   `inline-grid` with every word in the same cell replaces the original's
+   `position: absolute` + `min-width: 260px`: the container now sizes itself to
+   the widest phrase automatically, so there's no magic number to keep in sync
+   with the copy and no width jump when the phrase changes. */
+.hero-rotator {
+  display: inline-grid;
+  text-align: left;
+}
+
+.hero-rotator > .rotator-word {
+  grid-area: 1 / 1;
+  font-style: italic;
+  font-weight: 400;
+  color: var(--accent);
+  text-shadow: 0 0 25px var(--accent-dim);
+  white-space: nowrap;
+  opacity: 0;
+  /* Waiting below, so it rises into place. `.line`'s overflow:hidden crops it
+     on the way, which is what makes it read as a masked slide rather than a
+     drifting fade. */
+  transform: translateY(0.42em);
+  transition:
+    opacity var(--dur-slow) var(--ease-out-expo),
+    transform var(--dur-slow) var(--ease-out-expo);
+}
+
+.hero-rotator > .rotator-word.is-active {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Exits upward rather than sinking back the way it came, so the set reads as a
+   conveyor moving one direction. The original just removed the active class,
+   which made words fade downward on the way out. */
+.hero-rotator > .rotator-word.is-leaving {
+  opacity: 0;
+  transform: translateY(-0.42em);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  /* No cycling (common.js never starts the timer); just show the first phrase
+     at rest. */
+  .hero-rotator > .rotator-word { transition: none; }
 }
 
 .hero-sub {
@@ -1419,6 +1480,9 @@ footer a:hover { color: var(--accent); }
   .hero { padding: 7rem 1.5rem 4rem; }
   .hero-logo { max-width: 240px; width: 70%; margin-bottom: 1.5rem; }
   .hero-headline { font-size: clamp(2rem, 9vw, 2.6rem); }
+  /* Block-level grid so the rotator drops to its own line — the longest phrase
+     plus "for " does not fit beside it on a narrow screen. */
+  .hero-rotator { display: grid; }
   .hero-sub { font-size: 0.95rem; line-height: 1.6; margin-bottom: 2rem; }
   .hero-cta { flex-direction: column; align-items: stretch; gap: 0.75rem; width: 100%; }
   .btn { width: 100%; justify-content: center; text-align: center; }
@@ -2189,6 +2253,25 @@ footer a:hover { color: var(--accent); }
   flex-direction: column;
   border-radius: 16px;
   contain: layout paint style;
+}
+
+/* The homepage's teaser cards are real <a> elements so they work without JS and
+   get the browser's own affordances. Without this they render with the UA's link
+   styling — blue text, plus an underline that propagates into every descendant,
+   so the title and the description both pick it up. `.project-card` already
+   supplies display:flex, so only the text needs resetting. */
+.project-card--link,
+.project-card--link:visited {
+  color: inherit;
+  text-decoration: none;
+}
+
+/* The whole card is the link, so give keyboard focus a ring that follows the
+   card's own 16px radius instead of the global 2px one. */
+.project-card--link:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 4px;
+  border-radius: 16px;
 }
 
 .project-card:hover {

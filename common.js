@@ -450,19 +450,49 @@
   // ================================================================
   // CURSOR GLOW
   // ================================================================
+  // The glow eases toward the pointer rather than snapping to it. `translate(-50%,
+  // -50%)` after the positional translate is what centres the 400px circle on the
+  // cursor — without it the element's top-left corner tracked the pointer and the
+  // visible centre sat 200px down-right of it.
+  //
+  // Written as a transform, not left/top: left/top forced a layout every frame.
+  // The loop also only runs while the pointer has actually moved, so an idle page
+  // isn't spending a frame callback on a stationary circle.
   function initCursorGlow() {
     const glow = document.getElementById('cursorGlow');
     if (!glow || !hasFinePointer || prefersReducedMotion) return;
 
-    let mx = 0, my = 0, cx = 0, cy = 0;
-    document.addEventListener('mousemove', (e) => { mx = e.clientX; my = e.clientY; }, { passive: true });
-    (function loop() {
-      cx += (mx - cx) * 0.15;
-      cy += (my - cy) * 0.15;
-      glow.style.left = cx + 'px';
-      glow.style.top = cy + 'px';
-      requestAnimationFrame(loop);
-    })();
+    const EASE = 0.18;
+    let mx = 0, my = 0, cx = 0, cy = 0, raf = 0, seen = false;
+
+    function draw() {
+      cx += (mx - cx) * EASE;
+      cy += (my - cy) * EASE;
+      glow.style.transform =
+        `translate3d(${cx.toFixed(1)}px, ${cy.toFixed(1)}px, 0) translate(-50%, -50%)`;
+
+      // Settle exactly on the pointer, then stop until it moves again.
+      if (Math.abs(mx - cx) < 0.1 && Math.abs(my - cy) < 0.1) {
+        cx = mx; cy = my;
+        glow.style.transform =
+          `translate3d(${cx}px, ${cy}px, 0) translate(-50%, -50%)`;
+        raf = 0;
+        return;
+      }
+      raf = requestAnimationFrame(draw);
+    }
+
+    document.addEventListener('mousemove', (e) => {
+      mx = e.clientX;
+      my = e.clientY;
+      if (!seen) {
+        // Jump to the first known position instead of gliding in from 0,0.
+        seen = true;
+        cx = mx;
+        cy = my;
+      }
+      if (!raf) raf = requestAnimationFrame(draw);
+    }, { passive: true });
   }
 
   // ================================================================
@@ -587,6 +617,57 @@
       // curtain and the visitor sees only the settled text.
       onSplashDone(() => setTimeout(() => scramble(heroTag, 1500), 600));
     }
+  }
+
+  // ================================================================
+  // HERO ROTATOR
+  // ================================================================
+  // The tail of the headline cycles through phrases. Restored after being
+  // dropped in e9dc5d3 for a static line.
+  //
+  // Starts on `.splash-done`, not on load: behind a 2.7s curtain it would
+  // already be two phrases in by the time anyone saw the hero. The first swap
+  // lands at ~2.8s after that, which is comfortably past the headline's own
+  // entrance (line 3 settles ~1.6s in), so the first phrase is never mid-swap
+  // while the line is still rising.
+  const ROTATOR_MS = 2800;
+
+  function initHeroRotator() {
+    const rot = document.getElementById('heroRotator');
+    if (!rot) return;
+
+    const words = Array.from(rot.querySelectorAll('.rotator-word'));
+    // Nothing to cycle, and reduced motion keeps whichever phrase is marked
+    // active in the markup.
+    if (words.length < 2 || prefersReducedMotion) return;
+
+    let i = words.findIndex(w => w.classList.contains('is-active'));
+    if (i < 0) i = 0;
+    let timer = 0;
+
+    function step() {
+      const outgoing = words[i];
+      i = (i + 1) % words.length;
+      const incoming = words[i];
+
+      outgoing.classList.remove('is-active');
+      outgoing.classList.add('is-leaving');
+      incoming.classList.add('is-active');
+      // Drop the exit state once it has played, so the word is back to its
+      // waiting position (below) before its next turn comes round.
+      setTimeout(() => outgoing.classList.remove('is-leaving'), 750);
+    }
+
+    function play() { if (!timer) timer = setInterval(step, ROTATOR_MS); }
+    function pause() { clearInterval(timer); timer = 0; }
+
+    onSplashDone(play);
+
+    // Don't cycle text nobody is looking at.
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden) pause();
+      else if (document.documentElement.classList.contains('splash-done')) play();
+    });
   }
 
   // ================================================================
@@ -1094,6 +1175,7 @@
     observeReveals();
     document.querySelectorAll('.reveal-group').forEach(initRevealGroup);
     initLineReveals();
+    initHeroRotator();
     initImageFades();
     initMagneticButtons();
     initServiceCardGlow();

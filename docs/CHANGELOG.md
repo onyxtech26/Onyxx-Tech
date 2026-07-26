@@ -7,6 +7,67 @@ Format each entry: what was done, why it mattered, and any key decisions.
 
 ## 2026-07-26
 
+### Restored the hero rotator, and fixed the homepage teaser cards rendering as raw links
+
+**Hero rotator is back.** The tail of the headline cycles through "modern
+businesses." / "ambitious teams." / "bold founders." / "what comes next." in the
+cyan accent italic, every 2.8s. It was dropped in `e9dc5d3` in favour of a static
+line; the original markup, CSS and driver were recovered from `eaa9e15`.
+
+Three things done differently from the original:
+- **`inline-grid` with every phrase in the same cell** replaces the original's
+  `position: absolute` plus `min-width: 260px`. The container now sizes itself to
+  the widest phrase, so there's no magic number to keep in sync with the copy and
+  no width jump on swap. Measured stable at 664px across all four phrases.
+- **Phrases exit upward** instead of sinking back the way they came. The original
+  just removed `.active`, so the outgoing word faded *downward* while the
+  incoming one rose — two directions at once. Now it reads as a conveyor.
+- **Starts on `.splash-done`, not on load**, and pauses on `visibilitychange`.
+  Behind a 2.7s curtain it would otherwise already be two phrases in before
+  anyone saw the hero.
+- The rotator is `aria-hidden` with an `sr-only` stand-in beside it, so the `h1`'s
+  accessible name is the stable full sentence rather than whichever phrase
+  happened to be showing. The original exposed all four phrases to screen
+  readers as one run-on heading.
+
+**Fixed the homepage project teasers rendering with default link styling.** Those
+cards became real `<a>` elements in the multi-page work so they'd function
+without JS — but `.project-card--link` was set by `common.js` and **never styled**,
+so the UA's link rules applied: blue text, plus an underline that propagates into
+every descendant, hitting the title and the description. Now resets `color` and
+`text-decoration`, with a focus ring that follows the card's own 16px radius
+since the whole card is the link.
+
+- **Added a check for the whole class of mistake:** a script that diffs every
+  class applied by markup/JS against every class `styles.css` defines. It found
+  this one and confirmed the other seven candidates were benign (theme icons
+  positioned by inline style, splash paths styled via parent-group selectors).
+  Worth re-running after any batch of JS-driven markup changes.
+
+### Fixed the cursor glow sitting 283px away from the cursor
+
+`.cursor-glow` is a 400×400 circle positioned by JS, and it had no centring
+offset — the follower wrote `left`/`top`, so the element's **top-left corner**
+tracked the pointer and the visible centre sat 200px right and 200px down of it
+(283px diagonal). Present since `eb511ef`, i.e. every version of this site; the
+`will-change: transform` hint on the rule was a clue, since nothing was writing
+a transform.
+
+Now positioned with `translate3d(x, y, 0) translate(-50%, -50%)`, which both
+centres it on the pointer and keeps `will-change: transform` honest.
+
+- **Also a per-frame layout.** Animating `left`/`top` invalidates layout on
+  every frame; a transform stays on the compositor. The old loop did this
+  unconditionally at 60fps for the life of the page.
+- The rAF loop now **stops when the pointer is still** and restarts on the next
+  `mousemove`, instead of easing toward a stationary target forever. It also
+  snaps to the first known pointer position rather than gliding in from `0,0`,
+  and the element parks off-screen until the first move so it isn't briefly
+  visible in the top-left corner on load.
+- Verified by measurement, not by eye: pointer moved to five positions, glow's
+  bounding-box centre compared against each — **0.0px offset at all five** — and
+  the transform confirmed to stop being rewritten while idle.
+
 ### Splash now plays on every homepage load (reverses the once-per-session gate)
 
 At the user's request the `sessionStorage` gate added earlier the same day is
