@@ -184,18 +184,30 @@ body {
   will-change: transform;
 }
 
-/* Grid background */
-.grid-bg {
+/* The fixed 80px `.grid-bg` that used to sit here is gone. Interior pages get
+   `#pageGalaxy` instead (below) — the same galaxy renderer as the hero, dialled
+   down, so the background is on-brand rather than a technical grid. */
+
+/* Interior-page sky. Fixed and behind everything, at a fraction of the hero's
+   intensity so body copy stays comfortable to read over it. Home doesn't use
+   this — its hero canvas is the full-strength version. */
+#pageGalaxy {
   position: fixed;
   inset: 0;
-  background-image:
-    linear-gradient(var(--grid) 1px, transparent 1px),
-    linear-gradient(90deg, var(--grid) 1px, transparent 1px);
-  background-size: 80px 80px;
+  width: 100%;
+  height: 100%;
   z-index: 0;
+  opacity: 0;
   pointer-events: none;
-  mask-image: radial-gradient(ellipse at center, black 30%, transparent 80%);
+  animation: pageGalaxyIn 1.2s var(--ease-out-soft) 0.1s both;
 }
+
+@keyframes pageGalaxyIn {
+  to { opacity: 0.38; }
+}
+
+/* A scatter of pale specks on white reads as dirt, not stars. */
+:root[data-theme="light"] #pageGalaxy { display: none; }
 
 /* Noise overlay */
 .noise {
@@ -312,14 +324,52 @@ nav {
 }
 
 .nav-links a {
+  position: relative;
   color: var(--nav-link-color);
   text-decoration: none;
-  transition: all 0.3s ease;
+  transition: color 0.3s ease, text-shadow 0.3s ease;
 }
 
-.nav-links a:hover, .nav-links a.active {
+/* `[aria-current="page"]` is the selector, not a separate `.active` class.
+   The site is real URLs now, so which page you're on is a fact in the markup —
+   driving the visual state off the accessibility attribute keeps one source of
+   truth instead of a class that can drift out of sync with it. */
+.nav-links a:hover,
+.nav-links a[aria-current="page"] {
   color: var(--nav-link-hover-color);
   text-shadow: var(--nav-link-glow);
+}
+
+/* A hairline that grows out from the centre — on the current page it is simply
+   already there. */
+.nav-links a::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -0.5rem;
+  height: 1px;
+  background: var(--accent);
+  transform: scaleX(0);
+  transition: transform var(--dur-base) var(--ease-out-expo);
+}
+
+.nav-links a[aria-current="page"]::after { transform: scaleX(1); }
+
+/* Desktop keeps Contact as the pill on the right; this drawer-only duplicate
+   stays out of the way. */
+.nav-link-contact { display: none; }
+
+@media (hover: hover) and (pointer: fine) {
+  .nav-links a:hover::after { transform: scaleX(1); }
+}
+
+/* Was an inline style on the element; moved here now that seven pages share
+   the same nav markup. */
+.nav-right {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
 }
 
 .nav-email {
@@ -419,6 +469,14 @@ nav {
   width: 100%;
 }
 
+/* ---- Hero entrance ----
+   Every animation below is gated on `html.splash-done`, NOT on page load.
+   This is a real bug that shipped: the splash covers the viewport for ~2.7s,
+   while these delays run 0.1s–1.5s from load — so the whole hero entrance
+   played out behind the curtain and had finished before anyone could see it.
+   `.splash-done` is set by index.html's splash controller when the curtain
+   starts lifting, and immediately in the <head> of every page that has no
+   splash, so interior pages animate on arrival as normal. */
 .hero-logo {
   max-width: 380px;
   width: 60%;
@@ -426,8 +484,8 @@ nav {
   display: block;
   margin-bottom: 2.5rem;
   opacity: 0;
-  animation: fadeUp 1s 0.1s forwards;
 }
+html.splash-done .hero-logo { animation: fadeUp 1s 0.1s forwards; }
 
 .hero-tag {
   font-family: var(--font-mono);
@@ -441,8 +499,8 @@ nav {
   align-items: center;
   gap: 1rem;
   opacity: 0;
-  animation: fadeUp 0.8s 0.2s forwards;
 }
+html.splash-done .hero-tag { animation: fadeUp 0.8s 0.2s forwards; }
 
 .hero-tag::before {
   content: '';
@@ -461,13 +519,39 @@ nav {
   color: var(--bone);
 }
 
-.hero-headline .line {
+/* ---- Masked per-line reveal ----
+   The site's signature text motion: each line sits below a clipped box and
+   rises into place, one after another. This is what got deleted in e9dc5d3 —
+   the `.line > span` markup and `@keyframes slideUp` both survived, but the
+   `overflow: hidden`, the offset and the animation did not, so the structure
+   was doing nothing.
+
+   Now a reusable component. Two ways it fires:
+     • `.lines-immediate` — plays as soon as the curtain clears. The hero, which
+       is on screen before any scrolling happens.
+     • plain `.lines`      — plays when scrolled to. common.js adds `.lines-in`.
+   common.js also sets `--line-index` on each line, which is what staggers them;
+   the hero's 0.3 / 0.45 / 0.6s cadence is `--line-base` plus that index.
+
+   The padding/negative-margin pair is load-bearing: `overflow: hidden` would
+   otherwise clip descenders and the accent line's glow. */
+.lines .line {
   display: block;
-  padding: 0.05em 0;
+  overflow: hidden;
+  padding: 0.14em 0;
+  margin: -0.14em 0;
 }
 
-.hero-headline .line span {
+.lines .line > span {
   display: inline-block;
+  transform: translateY(110%);
+  will-change: transform;
+}
+
+html.splash-done .lines.lines-immediate .line > span,
+.lines.lines-in .line > span {
+  animation: slideUp 1s var(--ease-out-expo) forwards;
+  animation-delay: calc(var(--line-base, 0.3s) + var(--line-index, 0) * 0.15s);
 }
 
 .hero-headline em {
@@ -485,16 +569,16 @@ nav {
   font-weight: 400;
   line-height: 1.7;
   opacity: 0;
-  animation: fadeUp 0.8s 1s forwards;
 }
+html.splash-done .hero-sub { animation: fadeUp 0.8s 1s forwards; }
 
 .hero-cta {
   display: flex;
   gap: 1.2rem;
   flex-wrap: wrap;
   opacity: 0;
-  animation: fadeUp 0.8s 1.2s forwards;
 }
+html.splash-done .hero-cta { animation: fadeUp 0.8s 1.2s forwards; }
 
 .btn {
   display: inline-flex;
@@ -564,10 +648,10 @@ nav {
   align-items: center;
   gap: 0.6rem;
   opacity: 0;
-  animation: fadeUp 0.8s 1.5s forwards;
   cursor: pointer;
   user-select: none;
 }
+html.splash-done .scroll-hint { animation: fadeUp 0.8s 1.5s forwards; }
 
 .scroll-hint-label {
   font-family: var(--font-mono);
@@ -847,76 +931,11 @@ section {
   border: none;
 }
 
-.work-list {
-  margin-top: 3rem;
-}
-
-.work-item {
-  display: grid;
-  grid-template-columns: 80px 1fr auto;
-  gap: 2rem;
-  padding: 2.5rem 0;
-  border-bottom: 1px solid var(--line);
-  align-items: center;
-  transition: padding 0.4s ease;
-  cursor: pointer;
-  position: relative;
-}
-
-.work-item:hover {
-  padding-left: 1.5rem;
-}
-
-.work-item::before {
-  content: '';
-  position: absolute;
-  left: 0;
-  top: 0;
-  bottom: 0;
-  width: 0;
-  background: linear-gradient(90deg, var(--accent-faint), transparent);
-  transition: width 0.4s ease;
-}
-
-.work-item:hover::before { width: 100%; }
-
-.work-item > * { position: relative; }
-
-.work-num {
-  font-family: var(--font-mono);
-  font-size: 0.8rem;
-  color: var(--bone-faint);
-  letter-spacing: 0.15em;
-}
-
-.work-title {
-  font-family: var(--font-display);
-  font-size: clamp(1.4rem, 2.5vw, 2rem);
-  font-weight: 300;
-  letter-spacing: -0.01em;
-  transition: color 0.3s ease;
-}
-
-.work-item:hover .work-title { color: var(--accent); }
-
-.work-meta {
-  font-family: var(--font-mono);
-  font-size: 0.75rem;
-  color: var(--bone-faint);
-  text-transform: uppercase;
-  letter-spacing: 0.15em;
-  text-align: right;
-}
-
-.work-stack {
-  margin-top: 0.5rem;
-  color: var(--bone-dim);
-  font-size: 0.95rem;
-  font-weight: 400;
-  font-family: var(--font-body);
-  text-transform: none;
-  letter-spacing: 0;
-}
+/* The `.work-list` / `.work-item` / `.work-num` / `.work-title` / `.work-meta` /
+   `.work-stack` block that used to live here was a leftover from the first
+   multi-page era — a row-list layout for the Work page that was replaced by
+   `.projects-grid` and matched no markup in any file. Removed rather than
+   carried forward, so it can't collide with the new work.html. */
 
 /* ============ PROCESS ============ */
 .process-steps {
@@ -1172,20 +1191,91 @@ section {
 }
 
 /* ============ FOOTER ============ */
+/* Real structure rather than two centred lines: with seven pages the footer is
+   also the site's secondary navigation, so it carries the full page list and
+   both direct contacts. */
 footer {
-  border-top: none;
-  padding: 3rem;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 1.5rem;
+  position: relative;
+  z-index: 2;
+  border-top: 1px solid var(--line);
+  padding: 4rem 3rem 2.5rem;
   font-family: var(--font-mono);
   font-size: 0.78rem;
   font-weight: 500;
   color: var(--bone-dim);
   letter-spacing: 0.15em;
   text-transform: uppercase;
+}
+
+.footer-inner {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: 1.6fr 1fr 1fr;
+  gap: 3rem;
+  align-items: start;
+}
+
+.footer-brand-mark {
+  height: 28px;
+  width: auto;
+  display: block;
+  margin-bottom: 1.2rem;
+}
+
+:root[data-theme="light"] .footer-brand-mark {
+  filter: invert(1) brightness(0);
+}
+
+.footer-tagline {
+  text-transform: none;
+  letter-spacing: 0.02em;
+  font-family: var(--font-body);
+  font-size: 0.92rem;
+  line-height: 1.7;
+  color: var(--bone-dim);
+  max-width: 30ch;
+}
+
+.footer-col-title {
+  color: var(--bone);
+  letter-spacing: 0.22em;
+  font-size: 0.68rem;
+  margin-bottom: 1.1rem;
+}
+
+.footer-links {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+}
+
+.footer-links a,
+.footer-contact a {
+  text-transform: none;
+  letter-spacing: 0.02em;
+  font-family: var(--font-body);
+  font-size: 0.92rem;
+}
+
+.footer-contact {
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+}
+
+.footer-bottom {
+  max-width: 1200px;
+  margin: 3.5rem auto 0;
+  padding-top: 1.8rem;
+  border-top: 1px solid var(--line);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1rem;
+  font-size: 0.72rem;
 }
 
 footer a {
@@ -1195,6 +1285,19 @@ footer a {
 }
 
 footer a:hover { color: var(--accent); }
+
+@media (max-width: 768px) {
+  footer { padding: 3rem 1.5rem 2rem; }
+  .footer-inner {
+    grid-template-columns: 1fr;
+    gap: 2.4rem;
+  }
+  .footer-bottom {
+    margin-top: 2.4rem;
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
 
 /* ============ ANIMATIONS ============ */
 @keyframes fadeUp {
@@ -1240,7 +1343,12 @@ footer a:hover { color: var(--accent); }
 @media (max-width: 768px) {
   .nav-container { width: 92%; top: 0.8rem; }
   nav { padding: 0.5rem 0.8rem; gap: 0.75rem; position: relative; }
+  /* The Contact pill doesn't fit the mobile bar, so it moves into the drawer
+     instead of disappearing. It used to be reachable by scrolling to #contact;
+     now that Contact is its own page, dropping the pill without a replacement
+     would leave it with no mobile entry point in the nav at all. */
   .nav-email { display: none; }
+  .nav-link-contact { display: list-item; }
   .nav-toggle { display: flex; }
 
   .nav-links {
@@ -1283,10 +1391,14 @@ footer a:hover { color: var(--accent); }
   }
 
   .nav-links a:hover,
-  .nav-links a.active {
+  .nav-links a[aria-current="page"] {
     color: var(--accent);
     background: var(--accent-faint);
   }
+
+  /* In the drawer each link is a full-width block, so the centred hairline
+     underline reads as a stray rule. The tinted background carries the state. */
+  .nav-links a::after { display: none; }
 
   :root[data-theme="light"] .nav-links {
     background: rgba(255, 255, 255, 0.96);
@@ -1299,7 +1411,7 @@ footer a:hover { color: var(--accent); }
   }
 
   :root[data-theme="light"] .nav-links a:hover,
-  :root[data-theme="light"] .nav-links a.active {
+  :root[data-theme="light"] .nav-links a[aria-current="page"] {
     color: var(--accent);
     background: rgba(0, 102, 204, 0.08);
   }
@@ -1315,17 +1427,6 @@ footer a:hover { color: var(--accent); }
 
   section { padding: 4.5rem 1.5rem; }
   .contact { padding: 5rem 1.5rem; }
-
-  .work-item {
-    grid-template-columns: 50px 1fr;
-    gap: 1rem;
-  }
-
-  .work-meta {
-    grid-column: 2 / 3;
-    text-align: left;
-    margin-top: 0.5rem;
-  }
 
   .founders-grid { grid-template-columns: 1fr; gap: 1.5rem; }
 
@@ -1381,6 +1482,15 @@ footer a:hover { color: var(--accent); }
     transition-delay: 0ms !important;
     animation-delay: 0ms !important;
   }
+
+  /* The masked line reveal starts at translateY(110%) — entirely outside its
+     clipped box. Zeroing the duration is not enough here: if the animation
+     never gets applied at all (`.lines-in` not yet added, or `.splash-done`
+     late) the text would sit permanently hidden. Force the resting state. */
+  .lines .line > span {
+    animation: none !important;
+    transform: none !important;
+  }
 }
 
 /* ============ PAGE TRANSITIONS ============ */
@@ -1398,6 +1508,14 @@ footer a:hover { color: var(--accent); }
   animation-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
 }
 
+/* The nav logo is the one element that genuinely persists between pages, so it
+   gets its own transition name and is morphed rather than cross-faded with
+   everything else. Cheap, and it makes navigation feel like one continuous
+   surface instead of seven separate documents. */
+.nav-logo-img {
+  view-transition-name: onyx-logo;
+}
+
 /* The universal-selector reduced-motion rule above doesn't reach these
    browser-generated pseudo-elements, so they need their own override. */
 @media (prefers-reduced-motion: reduce) {
@@ -1408,212 +1526,425 @@ footer a:hover { color: var(--accent); }
   }
 }
 
-/* ============ SPLASH SCREEN ============ */
-/* A first-paint curtain: it is in the markup before anything else so it
-   covers the un-styled/un-hydrated page, then choreographs its way out.
-   Everything here is composited (opacity/transform/filter only) so the
-   entrance never competes with the hero canvas booting up behind it.
+/* ============ PAGE HEADER (interior pages) ============ */
+/* The old multi-page version dropped straight into a section with no title
+   treatment, which is the main reason those pages read as thin. Every interior
+   page now opens with the same three-part header — eyebrow, masked per-line
+   title, intro — so the homepage's text motion is the site's language rather
+   than a homepage trick. */
+.page-header {
+  position: relative;
+  z-index: 2;
+  padding: 11rem 3rem 4rem;
+  max-width: 1200px;
+  margin: 0 auto;
+  width: 100%;
+}
 
-   Timing lives in JS (index.html's inline controller) — this file only
-   describes the two states, `#splashScreen` and `#splashScreen.fade-out`. */
+.page-header .section-label { margin-bottom: 1.6rem; }
+
+.page-title {
+  font-family: var(--font-display);
+  font-size: clamp(2.4rem, 6vw, 4.6rem);
+  font-weight: 300;
+  line-height: 1.12;
+  letter-spacing: -0.02em;
+  color: var(--bone);
+  margin-bottom: 1.6rem;
+}
+
+.page-title em {
+  font-style: italic;
+  font-weight: 400;
+  color: var(--accent);
+  text-shadow: 0 0 25px var(--accent-dim);
+}
+
+.page-intro {
+  font-size: clamp(1.02rem, 1.4vw, 1.25rem);
+  color: var(--bone-dim);
+  max-width: 640px;
+  line-height: 1.7;
+}
+
+/* Interior pages have a header instead of a full-viewport hero, so their first
+   section shouldn't repeat the hero's top padding. */
+.page-header + main .section-inner,
+.page-body .section-inner { padding-top: 2rem; }
+
+@media (max-width: 768px) {
+  .page-header { padding: 8.5rem 1.5rem 2.5rem; }
+}
+
+/* ============ SECTION FOOT LINK ============ */
+/* "See all work →" under a teaser grid on the homepage. */
+.section-more {
+  display: flex;
+  justify-content: center;
+  margin-top: 3.5rem;
+}
+
+/* ============ HOME CTA BAND ============ */
+.home-cta {
+  position: relative;
+  z-index: 2;
+  text-align: center;
+  padding: 7rem 2rem 8rem;
+}
+
+.home-cta .contact-title { margin-bottom: 1.2rem; }
+
+.home-cta-actions {
+  display: flex;
+  gap: 1.2rem;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin-top: 2.4rem;
+}
+
+/* ============ SPLASH SCREEN ============ */
+/* A first-paint curtain built out of the brand mark, over the site's own sky.
+
+   The OX monogram is a circuit-trace glyph — an O and an X wired together
+   through six node vias — so the splash treats loading as the mark powering
+   up: the vias ignite, a bright head runs the outline like current finding a
+   route, the silhouette floods in, and the curtain lifts.
+
+   The plate is the hero's galaxy, painted on the splash's own canvas by the
+   controller in index.html with the spiral core at the hero's exact 78%/32%.
+   That is the point: when the curtain goes, the star field behind it is
+   already in the same place, so the load resolves into the page instead of
+   cutting to it.
+
+   Geometry is inline SVG in index.html, traced from
+   images/onyxx_logo_transparent.png and partitioned into three subpath groups
+   (traces / ring / cross) so the draw-on can be staggered. Every group
+   carries pathLength="100", so each dash figure below is a percentage of that
+   group's own outline — nothing here depends on measured lengths.
+
+   Timing lives in this file; the controller owns only the lifecycle. The
+   entrance fully resolves at ~2.58s, which is what MIN_MS (2700) there is
+   protecting — change one and re-check the other. Every duration and delay in
+   this block is one 1.6x-scaled vocabulary; retiming means scaling all of them
+   together, not nudging one.
+
+   There is no progress bar by design. The galaxy is live, so the wait has
+   motion without a rail claiming byte-level progress a static page cannot
+   honestly measure. */
+/* Repeat visits within a session skip the curtain entirely. index.html's <head>
+   decides and stamps `data-splash` before first paint, so the splash is never
+   briefly visible on a page that isn't going to show it. A 2.7s brand moment is
+   right once per session; on every navigation it would be a toll booth. */
+:root[data-splash="skip"] #splashScreen { display: none !important; }
+
 #splashScreen {
   position: fixed;
   inset: 0;
   z-index: 99999;
   background-color: var(--onyx-deep);
+  /* A base wash under the canvas, so the very first frame — before the galaxy
+     has painted once — is already the right sky rather than flat black. */
   background-image:
-    radial-gradient(circle 900px at 50% 42%, var(--accent-faint) 0%, transparent 68%),
-    radial-gradient(circle 620px at 18% 88%, rgba(138, 43, 226, 0.16) 0%, transparent 70%),
-    radial-gradient(circle 520px at 84% 12%, rgba(56, 224, 255, 0.10) 0%, transparent 70%);
+    radial-gradient(circle 620px at 4% 2%, rgba(56, 224, 255, 0.10), transparent 68%),
+    radial-gradient(circle 720px at 98% 100%, rgba(138, 43, 226, 0.12), transparent 70%);
   display: flex;
   align-items: center;
   justify-content: center;
   overflow: hidden;
+  /* Deliberately NOT faded in. This is a curtain over content that is already
+     in the DOM behind it, so any entrance opacity below 1 shows the hero
+     bleeding through on the first frames. It is opaque from first paint and
+     only ever animates on the way out. */
   transition:
-    opacity var(--dur-slow) var(--ease-out-expo),
-    transform var(--dur-slow) var(--ease-out-expo),
-    filter var(--dur-slow) ease,
-    visibility var(--dur-slow) ease;
+    opacity 0.72s var(--ease-out-expo),
+    transform 0.72s var(--ease-out-expo),
+    filter 0.72s ease,
+    visibility 0.72s ease;
 }
 
 :root[data-theme="light"] #splashScreen {
   background-color: #ffffff;
   background-image:
-    radial-gradient(circle 900px at 50% 42%, rgba(0, 102, 204, 0.13) 0%, transparent 68%),
-    radial-gradient(circle 620px at 18% 88%, rgba(124, 58, 237, 0.08) 0%, transparent 70%),
-    radial-gradient(circle 520px at 84% 12%, rgba(0, 102, 204, 0.07) 0%, transparent 70%);
+    radial-gradient(circle 620px at 4% 2%, rgba(0, 102, 204, 0.10), transparent 68%),
+    radial-gradient(circle 720px at 98% 100%, rgba(124, 58, 237, 0.07), transparent 70%);
 }
 
-/* Faint technical grid, matching the site's own .grid-bg so the splash
-   feels like the same surface the page is built on rather than a lid. */
-.splash-grid {
+.splash-galaxy {
   position: absolute;
-  inset: -2px;
-  background-image:
-    linear-gradient(var(--grid) 1px, transparent 1px),
-    linear-gradient(90deg, var(--grid) 1px, transparent 1px);
-  background-size: 64px 64px;
-  mask-image: radial-gradient(circle 620px at 50% 50%, #000 10%, transparent 78%);
-  -webkit-mask-image: radial-gradient(circle 620px at 50% 50%, #000 10%, transparent 78%);
-  animation: splashGridDrift 24s linear infinite;
+  inset: 0;
+  width: 100%;
+  height: 100%;
   pointer-events: none;
+  /* 0.85 to match .circuit-canvas exactly. The hero's galaxy sits at 0.85, so
+     any other value here would make the star field visibly change brightness
+     at the moment the curtain lifts — the one seam this design exists to
+     avoid. */
+  opacity: 0;
+  /* Fast, and effectively undelayed. The galaxy is the backdrop, not a reveal —
+     at the slower entrance pace a long fade left the first half-second looking
+     like an empty black plate before anything arrived. */
+  animation: splashGalaxyIn 0.9s var(--ease-out-soft) both;
 }
 
-@keyframes splashGridDrift {
-  from { background-position: 0 0, 0 0; }
-  to   { background-position: 64px 64px, 64px 64px; }
+@keyframes splashGalaxyIn {
+  to { opacity: 0.85; }
 }
 
-/* A single slow beam sweeping across the whole curtain — the only thing
-   that moves horizontally, so the eye reads it as "working". */
-.splash-sweep {
+/* The galaxy is a dark-sky object. On the light theme it would be a scatter of
+   grey specks on white, which reads as dirt, so the plate stays clean. */
+:root[data-theme="light"] .splash-galaxy { display: none; }
+
+/* Soft scrim centred on the lockup: keeps the wordmark and tagline crisp over
+   a field of stars without darkening the corners where the galaxy lives.
+   Wide and gently stepped on purpose — a tighter falloff renders as a
+   visible dark oval floating over the sky instead of as depth. */
+.splash-vignette {
   position: absolute;
-  top: -50%;
-  left: -60%;
-  width: 45%;
-  height: 200%;
-  background: linear-gradient(90deg, transparent, var(--accent-faint), transparent);
-  transform: rotate(12deg);
-  animation: splashSweep 3.6s var(--ease-out-soft) infinite;
+  inset: 0;
   pointer-events: none;
+  background: radial-gradient(ellipse 1120px 800px at 50% 50%,
+    rgba(5, 5, 5, 0.66) 0%,
+    rgba(5, 5, 5, 0.5) 30%,
+    rgba(5, 5, 5, 0.26) 55%,
+    rgba(5, 5, 5, 0.08) 75%,
+    transparent 92%);
 }
 
-@keyframes splashSweep {
-  0%   { left: -60%; opacity: 0; }
-  15%  { opacity: 1; }
-  85%  { opacity: 1; }
-  100% { left: 130%; opacity: 0; }
-}
+:root[data-theme="light"] .splash-vignette { display: none; }
 
-/* ---- Exit ---- */
-#splashScreen.fade-out {
-  opacity: 0;
-  transform: scale(1.08);
-  filter: blur(14px);
-  visibility: hidden;
-  pointer-events: none;
-}
-
-/* The content leaves fractionally ahead of the curtain, so the brand lifts
-   away and *then* the background clears, instead of the whole plate
-   dissolving flat. */
-#splashScreen.fade-out .splash-content {
-  opacity: 0;
-  transform: translateY(-18px) scale(0.97);
-  transition:
-    opacity 0.35s ease,
-    transform 0.45s var(--ease-out-expo);
-}
-
+/* Not an even three-item stack: the wordmark and tagline belong together as
+   one lockup, so they sit close and the mark gets the larger interval above
+   them. A uniform gap made the tagline read as a third, unrelated line. */
 .splash-content {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 1.6rem;
+  gap: 0;
   text-align: center;
   position: relative;
   z-index: 2;
   padding: 2rem;
-  transition: opacity 0.35s ease, transform 0.45s var(--ease-out-expo);
+  transition: opacity 0.34s ease, transform 0.46s var(--ease-out-expo);
 }
 
-/* ---- Logo mark inside an orbiting ring ---- */
-.splash-logo-container {
+.splash-word { margin-top: 2.3rem; }
+.splash-tagline { margin-top: 1.05rem; }
+
+/* ---- The mark ---- */
+.splash-mark {
   position: relative;
-  width: 128px;
-  height: 128px;
+  width: 210px;
+  height: 210px;
   display: flex;
   align-items: center;
   justify-content: center;
-  animation: splashPop 0.9s var(--ease-out-expo) both;
+  transition: transform 0.5s var(--ease-spring), filter 0.5s ease;
 }
 
-/* Inner glass disc — breathes */
-.splash-glow-ring {
-  position: absolute;
-  inset: 14px;
-  border-radius: 50%;
-  background: var(--glass-bg);
-  border: 1px solid var(--glass-border);
-  box-shadow: 0 0 50px var(--accent-dim), inset 0 0 25px var(--accent-faint);
-  animation: splashRingGlow 3s ease-in-out infinite alternate;
-}
-
-@keyframes splashRingGlow {
-  0%   { transform: scale(0.94); opacity: 0.65; box-shadow: 0 0 30px var(--accent-faint), inset 0 0 18px var(--accent-faint); }
-  100% { transform: scale(1.06); opacity: 1;    box-shadow: 0 0 65px var(--accent-dim),   inset 0 0 30px var(--accent-faint); }
-}
-
-/* Outer arc — a conic gradient masked into a hairline ring, rotating.
-   Reads as a progress orbit without needing an SVG. */
-.splash-orbit {
-  position: absolute;
-  inset: 0;
-  border-radius: 50%;
-  background: conic-gradient(from 0deg, transparent 0deg, transparent 210deg, var(--accent) 320deg, transparent 360deg);
-  mask: radial-gradient(farthest-side, transparent calc(100% - 2px), #000 calc(100% - 2px));
-  -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 2px), #000 calc(100% - 2px));
-  animation: splashOrbit 1.6s linear infinite;
-  opacity: 0.9;
-}
-
-@keyframes splashOrbit {
-  to { transform: rotate(360deg); }
-}
-
-.splash-logo {
+.splash-ox {
   position: relative;
-  z-index: 2;
-  width: 62px;
-  height: 62px;
-  object-fit: contain;
-  filter: drop-shadow(0 0 16px var(--accent));
-  animation: splashLogoScale 1.2s var(--ease-out-expo) both;
+  z-index: 1;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
 }
 
-:root[data-theme="light"] .splash-logo {
-  filter: invert(1) brightness(0) drop-shadow(0 0 12px var(--accent));
+/* Tight halo seating the mark against the star field. */
+.splash-halo {
+  position: absolute;
+  inset: -78%;
+  z-index: 0;
+  border-radius: 50%;
+  background: radial-gradient(circle, var(--accent-faint) 0%, transparent 62%);
+  pointer-events: none;
+  animation: splashHalo 4.6s ease-in-out 0.9s infinite alternate;
 }
 
-@keyframes splashLogoScale {
-  0%   { transform: scale(0.6) rotate(-8deg); opacity: 0; }
-  100% { transform: scale(1) rotate(0deg); opacity: 1; }
+@keyframes splashHalo {
+  from { opacity: 0.5; transform: scale(0.94); }
+  to   { opacity: 0.9; transform: scale(1.05); }
 }
 
-@keyframes splashPop {
-  0%   { transform: scale(0.82); opacity: 0; }
-  100% { transform: scale(1); opacity: 1; }
+/* Two rings pinging outward, timed with the via ignition so the power-up has
+   a pulse the eye can follow out to the edges. Kept faint on purpose: at full
+   accent it reads as a hard drawn circle competing with the mark. */
+.splash-ping {
+  position: absolute;
+  inset: 6%;
+  z-index: 0;
+  border-radius: 50%;
+  border: 1px solid var(--accent-dim);
+  opacity: 0;
+  pointer-events: none;
+  animation: splashPing 3.8s var(--ease-out-soft) infinite;
+}
+.splash-ping.p2 { animation-delay: 1.9s; }
+
+@keyframes splashPing {
+  0%   { transform: scale(0.72); opacity: 0; }
+  12%  { opacity: 0.26; }
+  100% { transform: scale(1.85); opacity: 0; }
 }
 
-/* ---- Wordmark ---- */
-.splash-brand {
+/* Fires once, on exit. Sits under the mark so it flares out from behind the
+   glyph instead of washing it out. */
+.splash-bloom {
+  position: absolute;
+  inset: 12%;
+  z-index: 0;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(56, 224, 255, 0.5) 0%, transparent 64%);
+  opacity: 0;
+  transform: scale(0.5);
+  pointer-events: none;
+  transition: opacity 0.55s ease, transform 0.65s var(--ease-out-expo);
+}
+
+:root[data-theme="light"] .splash-bloom {
+  background: radial-gradient(circle, rgba(0, 102, 204, 0.32) 0%, transparent 64%);
+}
+
+/* 1 — the route being laid down. Dash 100 with pathLength="100" means one dash
+   spanning the whole group; the offset walks it on. */
+.ox-draws path {
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: 0.85;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-dasharray: 100;
+  stroke-dashoffset: 100;
+  opacity: 0.9;
+  animation:
+    oxDraw var(--dd, 0.84s) var(--ease-out-soft) var(--delay, 0s) forwards,
+    oxDrawFade 0.58s ease 1.44s forwards;
+}
+.ox-draws .d1 { --delay: 0.32s; --dd: 0.84s; }
+.ox-draws .d2 { --delay: 0.53s; --dd: 0.84s; }
+.ox-draws .d3 { --delay: 0.69s; --dd: 0.80s; }
+
+@keyframes oxDraw {
+  to { stroke-dashoffset: 0; }
+}
+
+/* The wireframe doesn't vanish — it stays as a faint edge under the fill,
+   which keeps the blueprint reading after the mark lands. */
+@keyframes oxDrawFade {
+  to { opacity: 0.22; }
+}
+
+/* 2 — a short bright dash riding ahead of the draw. One dash of 4% and a gap
+   of 96% over a 100-unit path: the offset carries it exactly once along the
+   whole outline. */
+.ox-comets path {
+  fill: none;
+  stroke: #ffffff;
+  stroke-width: 1.35;
+  stroke-linecap: round;
+  stroke-dasharray: 4 96;
+  stroke-dashoffset: 100;
+  opacity: 0;
+  filter: drop-shadow(0 0 4px var(--accent));
+  animation: oxComet var(--cd, 0.74s) linear var(--delay, 0s) forwards;
+}
+.ox-comets .c1 { --delay: 0.32s; --cd: 0.74s; }
+.ox-comets .c2 { --delay: 0.53s; --cd: 0.74s; }
+.ox-comets .c3 { --delay: 0.69s; --cd: 0.70s; }
+
+@keyframes oxComet {
+  0%   { stroke-dashoffset: 100; opacity: 0; }
+  10%  { opacity: 1; }
+  85%  { opacity: 1; }
+  100% { stroke-dashoffset: 0; opacity: 0; }
+}
+
+/* 3 — the mark itself. --bone so it inverts with the theme, matching how the
+   nav and hero logos are handled in light mode. */
+.ox-solid path {
+  fill: var(--bone);
+  stroke: none;
+  opacity: 0;
+  transform-origin: 50% 50%;
+  animation: oxSolid 0.58s var(--ease-out-soft) 1.38s forwards;
+}
+
+@keyframes oxSolid {
+  from { opacity: 0; transform: scale(0.965); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+/* 4 — current running through the silhouette. Loops, so a slow load (up to the
+   4.5s cap) keeps a live mark rather than a frozen one. */
+.ox-sweepwrap {
+  opacity: 0;
+  animation: splashFade 0.6s ease 2s forwards;
+}
+
+.ox-sweep {
+  animation: oxSweep 3.2s var(--ease-out-soft) 2s infinite;
+}
+
+/* 130px carries the 24-unit band from just off the left edge to just past the
+   right, so nearly the whole cycle is spent crossing the mark rather than
+   travelling empty space beside it. */
+@keyframes oxSweep {
+  0%   { transform: translateX(0); }
+  100% { transform: translateX(130px); }
+}
+
+/* 5 — node vias. These ignite before anything is drawn: the board gets power,
+   then the traces route. Symmetric pairs share an --i so the mark stays
+   balanced as it lights. */
+.ox-vias circle {
+  fill: var(--accent);
+  opacity: 0;
+  transform-origin: center;
+  transform-box: fill-box;
+  animation:
+    oxVia 0.6s var(--ease-spring) calc(0.13s + var(--i, 0) * 0.105s) both,
+    oxViaBreathe 3.4s ease-in-out 2.1s infinite alternate;
+}
+
+@keyframes oxVia {
+  0%   { opacity: 0; transform: scale(0.2); }
+  55%  { opacity: 1; transform: scale(1.5); }
+  100% { opacity: 0.95; transform: scale(1); }
+}
+
+@keyframes oxViaBreathe {
+  from { opacity: 0.6; }
+  to   { opacity: 1; }
+}
+
+/* ---- Lockup ----
+   Matches the banner: geometric sans, ONYXX heavy against TECH light. This is
+   --font-body (Outfit) rather than the display serif on purpose — the brand's
+   own wordmark is a sans, and setting it in Fraunces made the splash disagree
+   with every other place the logo appears. */
+.splash-word {
   display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.55rem;
-}
-
-.splash-title {
-  font-family: var(--font-display);
-  font-size: clamp(1.35rem, 4vw, 1.9rem);
-  font-weight: 300;
-  letter-spacing: 0.24em;
-  color: var(--bone);
+  align-items: baseline;
+  gap: 0.34em;
+  font-family: var(--font-body);
+  font-size: clamp(2.1rem, 6vw, 3rem);
+  line-height: 1;
   text-transform: uppercase;
-  /* Trailing letter-spacing pushes the visual centre left; pull it back. */
-  text-indent: 0.24em;
-  display: flex;
+  letter-spacing: 0.06em;
+  color: var(--bone);
   overflow: hidden;
 }
 
-/* Per-character rise. index.html splits `.splash-title` into
-   `<span class="splash-char" style="--i:n">` on load; the `--i` index
-   becomes the delay so the name types itself in. */
+.splash-word .sw-bold  { font-weight: 700; }
+.splash-word .sw-light { font-weight: 300; letter-spacing: 0.1em; }
+
+/* Per-character rise. index.html splits each [data-splitchars] into
+   `<span class="splash-char" style="--i:n">`, indexing continuously across
+   both words so the stagger reads as a single sweep. */
 .splash-char {
   display: inline-block;
   white-space: pre;
-  animation: splashChar 0.7s var(--ease-out-expo) both;
-  animation-delay: calc(0.25s + var(--i, 0) * 0.035s);
+  animation: splashChar 0.8s var(--ease-out-expo) both;
+  animation-delay: calc(1.18s + var(--i, 0) * 0.052s);
 }
 
 @keyframes splashChar {
@@ -1621,99 +1952,131 @@ footer a:hover { color: var(--accent); }
   100% { transform: translateY(0); opacity: 1; }
 }
 
-.splash-subtitle {
+/* Muted rather than accent-coloured: the mark's cyan is the only accent on
+   screen, which reads richer than three competing highlights. */
+.splash-tagline {
   font-family: var(--font-mono);
-  font-size: 0.7rem;
-  letter-spacing: 0.28em;
-  color: var(--accent);
+  font-size: 0.8rem;
+  font-weight: 400;
+  /* 0.26em rather than 0.32em: at this size the wider tracking made the
+     strapline measure broader than the wordmark above it, which reads as the
+     supporting line overpowering the name. */
+  letter-spacing: 0.26em;
+  color: var(--bone-dim);
   text-transform: uppercase;
-  text-indent: 0.28em;
-  opacity: 0.85;
-  animation: splashFadeUp 0.8s var(--ease-out-expo) both;
-  animation-delay: 0.7s;
+  text-indent: 0.26em;
+  opacity: 0;
+  animation: splashFadeUp 0.8s var(--ease-out-expo) 1.78s both;
 }
 
 @keyframes splashFadeUp {
-  0%   { transform: translateY(12px); opacity: 0; }
-  100% { transform: translateY(0); opacity: 0.85; }
+  0%   { transform: translateY(10px); opacity: 0; }
+  100% { transform: translateY(0); opacity: 0.92; }
 }
 
-/* ---- Loading block: the dotLottie animation + progress rail ---- */
-.splash-loader {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.9rem;
-  margin-top: 0.4rem;
-  animation: splashFadeUp 0.8s var(--ease-out-expo) both;
-  animation-delay: 0.85s;
+@keyframes splashFade {
+  to { opacity: 1; }
 }
 
-.splash-loader .lottie-loader {
-  padding: 0;
-  --loader-size: 76px;
+/* ---- Exit ---- */
+/* Stage one: the mark flares. The controller adds .is-leaving 260ms before
+   .fade-out, so the brand pushes forward and blooms while the plate is still
+   opaque — then the curtain clears under it. */
+#splashScreen.is-leaving .splash-mark {
+  transform: scale(1.1);
+  filter: brightness(1.35) drop-shadow(0 0 32px var(--accent));
 }
 
-.splash-progress {
-  position: relative;
-  width: 190px;
-  height: 2px;
-  border-radius: 2px;
-  background: var(--line);
-  overflow: hidden;
+#splashScreen.is-leaving .splash-bloom {
+  opacity: 0.85;
+  transform: scale(2);
 }
 
-.splash-progress-bar {
-  position: absolute;
-  inset: 0;
-  transform-origin: left center;
-  transform: scaleX(var(--progress, 0));
-  background: linear-gradient(90deg, var(--accent-dim), var(--accent));
-  box-shadow: 0 0 12px var(--accent-dim);
-  transition: transform 0.45s var(--ease-out-soft);
+#splashScreen.is-leaving .splash-ping { animation: none; opacity: 0; }
+
+/* Stage two: the curtain. Scale and a light blur so it lifts away from the
+   hero rather than cross-fading flat into it. */
+#splashScreen.fade-out {
+  opacity: 0;
+  transform: scale(1.05);
+  filter: blur(9px);
+  visibility: hidden;
+  pointer-events: none;
 }
 
-.splash-status {
-  font-family: var(--font-mono);
-  /* --bone-dim rather than --bone-faint: at 0.6rem with 0.3em tracking,
-     --bone-faint (#8e8e93) on the light theme's white plate is close to
-     unreadable. */
-  font-size: 0.62rem;
-  letter-spacing: 0.3em;
-  text-transform: uppercase;
-  color: var(--bone-dim);
-  text-indent: 0.3em;
+/* Content leaves fractionally ahead of the curtain. */
+#splashScreen.fade-out .splash-content {
+  opacity: 0;
+  transform: translateY(-20px) scale(0.975);
 }
 
 @media (max-width: 600px) {
-  .splash-logo-container { width: 104px; height: 104px; }
-  .splash-logo { width: 50px; height: 50px; }
-  .splash-progress { width: 150px; }
-  .splash-loader .lottie-loader { --loader-size: 62px; }
+  .splash-mark { width: 168px; height: 168px; }
+  .splash-content { padding: 1.5rem; }
+  .splash-word { margin-top: 1.8rem; }
+  .splash-tagline { margin-top: 0.9rem; }
+  /* Tighter tracking and a smaller floor so the lockup and the tagline both
+     stay on one line down to a 320px viewport. */
+  .splash-word { font-size: clamp(1.5rem, 7.2vw, 2rem); letter-spacing: 0.04em; }
+  .splash-word .sw-light { letter-spacing: 0.07em; }
+  .splash-tagline { font-size: 0.58rem; letter-spacing: 0.17em; text-indent: 0.17em; }
+  .splash-vignette {
+    background: radial-gradient(ellipse 520px 460px at 50% 50%,
+      rgba(5, 5, 5, 0.78) 0%, rgba(5, 5, 5, 0.5) 45%, transparent 78%);
+  }
 }
 
-/* Reduced motion: keep the splash (it still marks the load) but drop the
-   orbit, sweep, drift and per-character choreography — it becomes a plain
-   plate that fades out. The global reduced-motion rule already collapses
-   durations; these turn the *looping* decoration off entirely, which a
-   duration override can't do. */
+/* Reduced motion: keep the splash — it still marks the load — but drop the
+   whole power-up. The mark is simply present, filled, at rest, over a static
+   sky (the controller draws a single galaxy frame and never starts its rAF
+   loop). The global reduced-motion rule collapses durations and delays; these
+   turn the *looping* decoration off entirely and force the end state, which a
+   duration override alone can't do — a 0.01ms oxDraw would still leave the
+   stroke mid-dash on some engines. */
 @media (prefers-reduced-motion: reduce) {
-  .splash-orbit,
-  .splash-sweep,
-  .splash-grid,
-  .splash-glow-ring { animation: none !important; }
-  .splash-sweep { display: none; }
+  .splash-halo,
+  .splash-ping,
+  .ox-sweep,
+  .ox-sweepwrap,
+  .ox-vias circle { animation: none !important; }
+
+  .splash-ping { display: none; }
+  .ox-draws,
+  .ox-comets,
+  .ox-sweepwrap { display: none; }
+
+  .ox-vias circle { opacity: 0.95; }
+
+  .ox-solid path {
+    animation: none !important;
+    opacity: 1;
+    transform: none;
+  }
+
   .splash-char,
-  .splash-subtitle,
-  .splash-loader,
-  .splash-logo,
-  .splash-logo-container { animation: none !important; opacity: 1; transform: none; }
+  .splash-tagline,
+  .splash-galaxy,
+  .splash-halo {
+    animation: none !important;
+    opacity: 1;
+    transform: none;
+  }
+  .splash-tagline { opacity: 0.92; }
+  .splash-halo { opacity: 0.6; }
+  .splash-galaxy { opacity: 0.85; }
+
+  #splashScreen.is-leaving .splash-mark { transform: none; filter: none; }
+  #splashScreen.is-leaving .splash-bloom { opacity: 0; }
 }
 
 /* ============ LOTTIE LOADER (shared) ============ */
-/* One loading indicator for the whole site: the splash, every Supabase-backed
-   grid, the project modal and form submits all render this same block via
-   `window.lottieLoader()` in common.js.
+/* One loading indicator for the whole site: every Supabase-backed grid, the
+   project modal, form submits and the admin tool all render this same block
+   via `window.lottieLoader()` in common.js.
+
+   Not the splash. The splash animates the brand mark itself, and a second
+   spinner next to a logo that is already visibly doing something read as two
+   competing loaders.
 
    The <dotlottie-player> element comes from a CDN module, so it can fail or
    simply not have upgraded yet. `.lottie-fallback` is a pure-CSS ring shown
@@ -2296,27 +2659,10 @@ html {
   .why-item { position: relative; }
   .why-item:hover::before { transform: scaleY(1); }
 
-  /* Nav links: an underline that wipes in from the left. */
-  .nav-links a {
-    position: relative;
-  }
-  .nav-links a::after {
-    content: '';
-    position: absolute;
-    left: 0;
-    bottom: -4px;
-    width: 100%;
-    height: 1px;
-    background: currentColor;
-    transform: scaleX(0);
-    transform-origin: right;
-    transition: transform var(--dur-fast) var(--ease-out-expo);
-  }
-  .nav-links a:hover::after,
-  .nav-links a.active::after {
-    transform: scaleX(1);
-    transform-origin: left;
-  }
+  /* The nav-link underline used to be redefined here, which silently overrode
+     the canonical rule near `.nav-links a` (this block comes later in the file,
+     so it won). It now lives in one place only, alongside the
+     `[aria-current="page"]` state it shares geometry with. */
 
   /* Pill CTA in the nav lifts with the rest of the button family. */
   .nav-email:hover {

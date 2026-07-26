@@ -2,14 +2,23 @@
 
 > **Living board.** Read at the start of every session; updated when significant tasks finish. Newest state on top.
 
-**Last updated:** 2026-07-24
+**Last updated:** 2026-07-26
 
 ---
 
 ## 📍 Where I left off
-Splash screen redesign, sitewide `loading.lottie` loader, and the sitewide motion layer are **done and verified locally but not committed**. Working tree has `index.html`, `styles.css`, `common.js`, `admin-login.html`, `admin-dashboard.html` modified. Verified in real Chrome over CDP (0 exceptions, all 10 hover effects confirmed, light/dark/reduced-motion checked) — but not yet reviewed by the user in a browser, and not pushed.
+**The site is multi-page again (7 pages), gridlines are gone, and the text animations work. Done and verified locally, NOT committed.**
 
-**Note the site is now single-page.** `index.html` is the only public page; the 6 other HTML pages were removed in commit `863a208`. Parts of `styles.css` (`.work-item`, `.work-list`) are leftovers from the multi-page era and match nothing.
+Working tree: `index.html`, `styles.css`, `common.js`, `sitemap.xml` modified; `services.html`, `why.html`, `work.html`, `process.html`, `founders.html`, `contact.html` added; this board, `CLAUDE.md` and `docs/CHANGELOG.md` updated. Yesterday's splash rebuild is also still uncommitted and rides along.
+
+Three things landed together:
+1. **`.grid-bg` removed** sitewide. Interior pages get the galaxy instead, dialled down.
+2. **The lost text animation restored and actually made visible.** Two bugs: the headline's per-line reveal had been deleted in `e9dc5d3`, *and* `.splash-done` was set by JS but used by no CSS rule — so all hero entrance animations were playing behind the 2.7s curtain and finishing before anyone saw them. Both fixed; the per-line rise is now a reusable `.lines` component used on every page.
+3. **Seven pages** (`/`, `/services`, `/why`, `/work`, `/process`, `/founders`, `/contact`), matching the pre-`863a208` set but regenerated from the current sections. Home is a hub with teasers, not a copy of the whole site.
+
+Plus: one galaxy renderer for the whole site (`window.onyxGalaxy`), `common.js` now owns all site chrome and loads **without `defer`**, splash is home-only + once per session, structured footer, nav state keyed to `aria-current`.
+
+Verified in Chrome via Playwright: 7 pages × dark/light with zero errors, 28 page/viewport combinations with no overflow, reduced motion, splash session policy, nav reachability at 1440 and 390px, and the headline measured rising line-by-line *after* the curtain. **Not yet reviewed by the user in a live browser, and not pushed.**
 
 ---
 
@@ -38,12 +47,20 @@ Splash screen redesign, sitewide `loading.lottie` loader, and the sitewide motio
 - [x] **Fixed `common.js` being silently dead** — top-level `const` collision with `index.html`'s inline script threw a SyntaxError at compile time, so none of it ever ran (magnetic buttons and `initRevealGroup` were doing nothing). Now an IIFE publishing to `window`
 - [x] Hero headline rotator replaced with the static line "for modern businesses."
 
+- [x] **Splash screen rebuilt around the brand mark + the hero galaxy** (2026-07-25) — traced `onyxx_logo_transparent.png` to vector (IoU 0.96), partitioned into three fill-correct subpath groups, `pathLength="100"` driven draw-on; six node vias ignite in pairs; own galaxy canvas with the hero's spiral core at 78%/32% for a seamless handoff; progress rail + staged status + splash Lottie all removed; wordmark corrected to the banner lockup. Full write-up in `docs/CHANGELOG.md`.
+
+- [x] **Removed the `.grid-bg` gridlines** sitewide, plus the dead `.work-item`/`.work-list` CSS from the first multi-page era (2026-07-26)
+- [x] **Restored the per-line text reveal and made the hero entrance visible** — it was deleted in `e9dc5d3`, *and* `.splash-done` was styled by nothing so the whole entrance ran behind the curtain. Now a reusable `.lines` component (2026-07-26)
+- [x] **Rebuilt the site as 7 pages** with page headers, per-page Supabase fetching, a hub homepage, structured footer, `aria-current` nav state and `view-transition-name` on the logo (2026-07-26)
+- [x] **Unified the two galaxy implementations** into `window.onyxGalaxy()`; `common.js` now owns all site chrome and loads without `defer` (2026-07-26)
+- [x] **Splash scoped to home, once per session** via `sessionStorage` (2026-07-26)
+
 ### 🔄 In progress
 - (nothing active)
 
 ### ⏭️ Next / To do
-- **User review of the splash + animations in a real browser**, then commit and push
-- **Fix the `Carousel_Maker.png` 404** — a `showcase_projects` row points at `images/Carousel_Maker.png`, which isn't in the repo. Card falls back to the Onyxx logo, but it 404s on every load. Fix the Supabase record or add the image.
+- **User review in a real browser**, then commit and push. Untracked files need adding: `services.html`, `why.html`, `work.html`, `process.html`, `founders.html`, `contact.html`
+- **Re-check the Supabase `services` count**: `/services` renders 5 cards but the copy on both the homepage teaser and the services page still says "Four disciplines." Either the table has an extra row or the heading needs updating.
 
 ### 💤 Backlog / ideas
 - Dead CSS from the multi-page era (`.work-item`, `.work-list`, and the `.hero-rotator` remnants that were just removed) could be swept out of `styles.css`
@@ -53,6 +70,17 @@ Splash screen redesign, sitewide `loading.lottie` loader, and the sitewide motio
 ---
 
 ## 🧠 Key decisions & context
+- **`common.js` loads WITHOUT `defer`, in `<head>`.** The inline splash controller needs `window.onyxGalaxy` the moment it runs, and a deferred file wouldn't exist yet. Nothing in `common.js` touches the DOM at parse time — all of it is behind `init()` on DOMContentLoaded. It still **must stay an IIFE** (see below).
+- **`.splash-done` on `<html>` is the site's "the visitor can see the page now" signal.** Anything that shouldn't animate behind the curtain hangs off it. Pages with no splash set it in their `<head>` bootstrap; `index.html` sets it when the curtain starts lifting. **Never put a hero entrance animation on a plain page-load delay again** — that was the bug where the entire hero entrance played invisibly behind a 2.7s splash.
+- **One galaxy renderer, three intensities.** `window.onyxGalaxy(canvas, opts)`. The default core position (78%/32%) is shared by the splash and the hero and is what makes the curtain lift seamless — don't change it for one caller only. Use `setTransform`, never `scale()`, when sizing: `scale()` compounds per resize and leaves the canvas blank after a maximise.
+- **Nav active state is `[aria-current="page"]`, not a `.active` class.** Real URLs mean the current page is a fact in the markup; keying the visuals off the accessibility attribute keeps one source of truth. Watch for duplicate `::after` rules later in `styles.css` overriding the canonical one — that already bit once.
+- **Contact needs two nav entries.** `.nav-email` is `display: none` under 768px, so there's also a drawer-only `<li class="nav-link-contact">`. Removing it leaves Contact unreachable from the mobile nav.
+- **The `.lines` component is the site's text motion.** `.lines-immediate` plays on `splash-done` (hero); plain `.lines` plays on scroll via `.lines-in`. Reduced motion needs the explicit `transform: none` override — a line starts at `translateY(110%)`, fully outside its clip, so a merely-zeroed duration can leave text invisible.
+- **Splash `MIN_MS` (2700), `HARD_CAP_MS` (5600) and the CSS entrance (~2.60s) are coupled.** The minimum display time sits just past where the choreography resolves, so the curtain can never pull back mid-draw; the hard cap must stay clear of `MIN_MS` + the entrance or a slow load gets cut off by the cap instead of by `load`. Every duration/delay in the splash CSS block is one 1.6×-scaled vocabulary — retiming means scaling them together, then moving both constants.
+- **The splash's three subpath groups are split for *fill correctness*, not visual grouping.** Every hole must sit inside its own group's outer contour. The two right-hand node vias belong to the X, not to the trace network — grouping all six vias together makes those two render as solid discs. Same three paths then serve the stroke pass, the fill and the sweep clip.
+- **The splash galaxy must stay at `opacity: 0.85` and keep its core at 78%/32%** to match `.circuit-canvas`. Those two values are what make the curtain lift read as one continuous sky instead of a cut between two backgrounds.
+- **Never give `#splashScreen` an entrance opacity animation.** It's a curtain over content already in the DOM, so anything below opacity 1 shows the hero bleeding through on the first frames. Bit us once already.
+- **Testing the splash:** pause `document.getAnimations()` and set `currentTime` to seek. Playwright's `screenshot(animations="disabled")` fast-forwards CSS animations to their end state and silently defeats the seek — use `animations="allow"`. Filtering `setTimeout` by delay won't hold the splash open either: when `load` lands after `MIN_MS`, the remaining delay is `0`.
 - **`common.js` must stay an IIFE.** It and `index.html`'s inline `<script>` are both classic scripts, so their top-level `const`/`let` share one global lexical environment. `common.js` previously declared `observer`, `nav`, `cursorGlow`, `SCRAMBLE_CHARS`… at top level — the same names the inline script uses — so the browser threw `Identifier 'observer' has already been declared` while *compiling* it and none of it ran. Adding a top-level binding back to `common.js` will silently kill the whole file again. Keep the wrapper; publish to `window`.
 - **Division of labour after that fix:** `index.html`'s inline script owns page chrome it implements more richly (cursor glow, eased smooth-scroll + active-nav, mobile nav, text scramble, theme toggle, hero galaxy canvas, project modal, Supabase). `common.js` owns cross-cutting behaviour only (Lottie loader, image fades, reveal helpers, magnetic buttons). Duplicating either side double-binds listeners.
 - **Never put a bare `transition:` shorthand on an element that can carry `.reveal`** — the shorthand replaces `.reveal`'s opacity/transform entry and the element snaps in instead of fading. Use longhands (`transition-timing-function`, `transition-duration`). Bit us twice now.
@@ -65,5 +93,7 @@ Splash screen redesign, sitewide `loading.lottie` loader, and the sitewide motio
 ---
 
 ## 📝 Session log
+- **2026-07-26** — Removed the gridlines; found and fixed why the text animations had "disappeared" (deleted headline rule **and** an unused `.splash-done` hook that meant the whole hero entrance played behind the curtain); rebuilt the site as 7 pages with page headers and a hub homepage; unified the two galaxy implementations into `common.js` and moved all site chrome there; scoped the splash to home/once-per-session; structured footer, `aria-current` nav state, logo view-transition. Caught in review: Contact had no mobile nav entry point once it became its own page. Full write-up in `docs/CHANGELOG.md`.
+- **2026-07-25** — Rebuilt the splash screen around the brand mark and the hero galaxy (see Done + CHANGELOG). Traced the logo PNG to vector to make the mark draw itself. Removed the progress rail, the staged status line and the splash's Lottie; corrected the wordmark from Fraunces "ONYXX TECH HUB" to the real banner lockup. Also fixed a curtain fade-in that let the hero show through on first paint. Verified frame-by-frame in Chrome via Playwright. Housekeeping: this board was stale — it listed the 2026-07-24 splash work as uncommitted when it had in fact landed as `e9dc5d3`, and listed a `Carousel_Maker.png` 404 that is already fixed (the file is in `images/`).
 - **2026-07-24** — Splash screen redesign + `loading.lottie` wired in sitewide + a sitewide motion/hover layer; removed the hero rotator in favour of the static "for modern businesses."; discovered and fixed that `common.js` had never executed on this site due to a global lexical `const` collision with `index.html`'s inline script. Verified in real Chrome over CDP rather than by inspection. See `docs/CHANGELOG.md` for the full write-up.
 - **2026-07-22** — Set up project tracking (CLAUDE.md + PROJECT_STATUS.md + docs/CHANGELOG.md). Also mid-session: full multi-page restructure, several bug fixes, animations, image optimization, and the Vercel canonical-URL fix (see Done list above for the full breakdown — this was one long continuous session).

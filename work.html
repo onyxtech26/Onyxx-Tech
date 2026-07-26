@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<script>
+  (function() {
+    var root = document.documentElement;
+    root.setAttribute('data-theme', localStorage.getItem('theme') || 'dark');
+    /* Interior pages have no splash, so nothing gates the entrance animations —
+       release them at once. Without this, anything behind `html.splash-done`
+       (the masked line reveals) would never play here. */
+    root.classList.add('splash-done');
+  })();
+</script>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Work — Products & Client Projects | Onyxx Tech</title>
+<meta name="description" content="Tools, apps, and bots built by the Onyxx Tech team — from client projects to products we run ourselves. Click any project for the full story." />
+<link rel="canonical" href="https://onyxx-tech.vercel.app/work" />
+
+<meta property="og:title" content="Work — Products & Client Projects | Onyxx Tech" />
+<meta property="og:description" content="Tools, apps, and bots built by the Onyxx Tech team — from client projects to products we run ourselves. Click any project for the full story." />
+<meta property="og:image" content="images/onyxx-banner.png" />
+<meta property="og:type" content="website" />
+<meta property="og:url" content="https://onyxx-tech.vercel.app/work" />
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:title" content="Work — Products & Client Projects | Onyxx Tech" />
+<meta name="twitter:description" content="Tools, apps, and bots built by the Onyxx Tech team — from client projects to products we run ourselves. Click any project for the full story." />
+<meta name="twitter:image" content="images/onyxx-banner.png" />
+<meta name="robots" content="index, follow" />
+
+<link rel="icon" type="image/png" href="images/favicon-white.png" />
+<link rel="icon" type="image/png" href="images/favicon-black.png" media="(prefers-color-scheme: light)" />
+<link rel="icon" type="image/png" href="images/favicon-white.png" media="(prefers-color-scheme: dark)" />
+<link rel="preload" as="image" href="images/onyxx_logo_transparent.png" type="image/png" />
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,400;9..144,500;9..144,600;9..144,700&family=JetBrains+Mono:wght@300;400;500;600&family=Outfit:wght@200;300;400;500;600;700&display=swap" rel="stylesheet">
+
+<link rel="stylesheet" href="styles.css">
+<!-- Not deferred: the splash controller below is inline and needs
+     window.onyxGalaxy the moment it runs. Nothing in common.js touches the DOM
+     at parse time — all of it is behind DOMContentLoaded. -->
+<script src="common.js"></script>
+<script src="https://unpkg.com/@dotlottie/player-component@latest/dist/dotlottie-player.mjs" type="module"></script>
+</head>
+<body data-page="work">
+
+<a href="#main-content" class="skip-link">Skip to main content</a>
+<!-- Interior pages carry the galaxy as a dialled-down fixed backdrop. This is
+     what replaced the old fixed gridlines. -->
+<canvas id="pageGalaxy" aria-hidden="true"></canvas>
+<div class="cursor-glow" id="cursorGlow"></div>
+<div class="noise"></div>
+
+<!-- ============ NAV ============ -->
+<div class="nav-container">
+  <nav id="nav">
+    <a href="/" class="nav-logo" aria-label="Onyxx Tech — home" title="Double-click for admin login">
+      <img src="images/onyxx_logo_transparent.png" alt="Onyxx Tech" class="nav-logo-img" />
+    </a>
+
+    <ul class="nav-links" id="navLinks">
+        <li><a href="services">Services</a></li>
+        <li><a href="why">Why Us</a></li>
+        <li><a href="work" aria-current="page">Work</a></li>
+        <li><a href="process">Process</a></li>
+        <li><a href="founders">Founders</a></li>
+        <li class="nav-link-contact"><a href="contact">Contact</a></li>
+    </ul>
+
+    <div class="nav-right">
+      <a href="contact" class="nav-email">Contact</a>
+
+      <button id="themeToggleBtn" class="theme-toggle" aria-label="Toggle theme">
+        <svg class="sun-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+          <circle cx="12" cy="12" r="5"></circle>
+          <line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line>
+          <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+          <line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line>
+          <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+        </svg>
+        <svg class="moon-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:none" aria-hidden="true">
+          <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+        </svg>
+      </button>
+    </div>
+
+    <button class="nav-toggle" id="navToggle" aria-label="Toggle menu" aria-expanded="false" aria-controls="navLinks">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+        <line x1="3" y1="8" x2="21" y2="8"/><line x1="3" y1="16" x2="21" y2="16"/>
+      </svg>
+    </button>
+  </nav>
+</div>
+
+<header class="page-header">
+  <div class="section-label">Selected Work</div>
+  <h1 class="page-title lines">
+      <span class="line"><span>Products we've</span></span>
+      <span class="line"><span><em>actually shipped.</em></span></span>
+  </h1>
+  <p class="page-intro">Tools, apps, and bots built by the Onyxx Tech team — from client projects to products we run ourselves. Click any project to see the full story.</p>
+</header>
+
+<main id="main-content" class="page-body">
+<section class="work">
+  <div class="section-inner">
+    <div class="projects-grid" id="projectsGrid"></div>
+
+    <div id="showMoreContainer" class="reveal" style="display:none; justify-content:center; margin-top:3rem;">
+      <button id="btnToggleShowcase" class="btn btn-secondary" style="width:auto; padding:0.8rem 2.5rem; display:inline-flex; align-items:center; gap:0.5rem; cursor:pointer;">
+        <span>Show More</span>
+        <span class="arrow" style="transition: transform 0.3s ease;">↓</span>
+      </button>
+    </div>
+  </div>
+</section>
+
+<section class="home-cta reveal">
+  <h2 class="contact-title">Want something like this?</h2>
+  <p class="contact-sub">Every project on this page started as a conversation about a problem.</p>
+  <div class="home-cta-actions">
+    <a href="contact" class="btn btn-primary">Start a Project <span class="arrow">→</span></a>
+    <a href="services" class="btn btn-secondary">What we build <span class="arrow">→</span></a>
+  </div>
+</section>
+</main>
+
+<!-- ============ PROJECT MODAL ============ -->
+<div class="modal-overlay" id="projectModal">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+    <button class="modal-close" id="modalClose" aria-label="Close">×</button>
+    <div class="modal-thumb">
+      <img id="modalImg" src="" alt="" style="display:none">
+      <div class="modal-thumb-bg" id="modalThumbBg">
+        <span class="modal-thumb-label" id="modalThumbLabel"></span>
+      </div>
+    </div>
+    <div class="modal-body">
+      <div class="modal-category" id="modalCategory"></div>
+      <h3 class="modal-title" id="modalTitle"></h3>
+      <div class="modal-client" id="modalClient"></div>
+      <p class="modal-desc" id="modalDesc"></p>
+      <div class="modal-label">Tech Stack</div>
+      <div class="modal-stack" id="modalStack"></div>
+      <div class="modal-actions">
+        <a href="#" id="modalGithub" class="btn btn-secondary" target="_blank" rel="noopener">
+          View on GitHub <span class="arrow">→</span>
+        </a>
+        <a href="contact" class="btn btn-primary" id="modalCta">
+          Start a Similar Project <span class="arrow">→</span>
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ FOOTER ============ -->
+<footer>
+  <div class="footer-inner">
+    <div>
+      <img src="images/onyxx_logo_transparent.png" alt="" class="footer-brand-mark" />
+      <p class="footer-tagline">Custom AI agents, chatbots, and automations — engineered to work where your business already lives.</p>
+    </div>
+
+    <div>
+      <div class="footer-col-title">Explore</div>
+      <ul class="footer-links">
+        <li><a href="/">Home</a></li>
+        <li><a href="services">Services</a></li>
+        <li><a href="work">Work</a></li>
+        <li><a href="why">Why Us</a></li>
+        <li><a href="process">Process</a></li>
+        <li><a href="founders">Founders</a></li>
+      </ul>
+    </div>
+
+    <div>
+      <div class="footer-col-title">Talk to us</div>
+      <div class="footer-contact">
+        <a href="mailto:onyxtech26@gmail.com">onyxtech26@gmail.com</a>
+        <a href="https://wa.me/601139884927" target="_blank" rel="noopener">WhatsApp Kunacosta</a>
+        <a href="https://wa.me/60194688052" target="_blank" rel="noopener">WhatsApp Rooben</a>
+        <a href="contact">Start a project</a>
+      </div>
+    </div>
+  </div>
+
+  <div class="footer-bottom">
+    <div>© 2026 Onyxx Tech · Located in Malaysia</div>
+    <div>Founder-led · AI-native · Built to ship</div>
+  </div>
+</footer>
+
+</body>
+</html>

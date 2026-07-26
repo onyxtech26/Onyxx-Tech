@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<script>
+  (function() {
+    var root = document.documentElement;
+    root.setAttribute('data-theme', localStorage.getItem('theme') || 'dark');
+    /* Interior pages have no splash, so nothing gates the entrance animations —
+       release them at once. Without this, anything behind `html.splash-done`
+       (the masked line reveals) would never play here. */
+    root.classList.add('splash-done');
+  })();
+</script>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Process — How We Work | Onyxx Tech</title>
+<meta name="description" content="Four steps, two-week cycles, zero meetings that should have been emails. Discover, design, build, deploy." />
+<link rel="canonical" href="https://onyxx-tech.vercel.app/process" />
+
+<meta property="og:title" content="Process — How We Work | Onyxx Tech" />
+<meta property="og:description" content="Four steps, two-week cycles, zero meetings that should have been emails. Discover, design, build, deploy." />
+<meta property="og:image" content="images/onyxx-banner.png" />
+<meta property="og:type" content="website" />
+<meta property="og:url" content="https://onyxx-tech.vercel.app/process" />
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:title" content="Process — How We Work | Onyxx Tech" />
+<meta name="twitter:description" content="Four steps, two-week cycles, zero meetings that should have been emails. Discover, design, build, deploy." />
+<meta name="twitter:image" content="images/onyxx-banner.png" />
+<meta name="robots" content="index, follow" />
+
+<link rel="icon" type="image/png" href="images/favicon-white.png" />
+<link rel="icon" type="image/png" href="images/favicon-black.png" media="(prefers-color-scheme: light)" />
+<link rel="icon" type="image/png" href="images/favicon-white.png" media="(prefers-color-scheme: dark)" />
+<link rel="preload" as="image" href="images/onyxx_logo_transparent.png" type="image/png" />
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,400;9..144,500;9..144,600;9..144,700&family=JetBrains+Mono:wght@300;400;500;600&family=Outfit:wght@200;300;400;500;600;700&display=swap" rel="stylesheet">
+
+<link rel="stylesheet" href="styles.css">
+<!-- Not deferred: the splash controller below is inline and needs
+     window.onyxGalaxy the moment it runs. Nothing in common.js touches the DOM
+     at parse time — all of it is behind DOMContentLoaded. -->
+<script src="common.js"></script>
+</head>
+<body data-page="process">
+
+<a href="#main-content" class="skip-link">Skip to main content</a>
+<!-- Interior pages carry the galaxy as a dialled-down fixed backdrop. This is
+     what replaced the old fixed gridlines. -->
+<canvas id="pageGalaxy" aria-hidden="true"></canvas>
+<div class="cursor-glow" id="cursorGlow"></div>
+<div class="noise"></div>
+
+<!-- ============ NAV ============ -->
+<div class="nav-container">
+  <nav id="nav">
+    <a href="/" class="nav-logo" aria-label="Onyxx Tech — home" title="Double-click for admin login">
+      <img src="images/onyxx_logo_transparent.png" alt="Onyxx Tech" class="nav-logo-img" />
+    </a>
+
+    <ul class="nav-links" id="navLinks">
+        <li><a href="services">Services</a></li>
+        <li><a href="why">Why Us</a></li>
+        <li><a href="work">Work</a></li>
+        <li><a href="process" aria-current="page">Process</a></li>
+        <li><a href="founders">Founders</a></li>
+        <li class="nav-link-contact"><a href="contact">Contact</a></li>
+    </ul>
+
+    <div class="nav-right">
+      <a href="contact" class="nav-email">Contact</a>
+
+      <button id="themeToggleBtn" class="theme-toggle" aria-label="Toggle theme">
+        <svg class="sun-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+          <circle cx="12" cy="12" r="5"></circle>
+          <line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line>
+          <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+          <line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line>
+          <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+        </svg>
+        <svg class="moon-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:none" aria-hidden="true">
+          <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+        </svg>
+      </button>
+    </div>
+
+    <button class="nav-toggle" id="navToggle" aria-label="Toggle menu" aria-expanded="false" aria-controls="navLinks">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+        <line x1="3" y1="8" x2="21" y2="8"/><line x1="3" y1="16" x2="21" y2="16"/>
+      </svg>
+    </button>
+  </nav>
+</div>
+
+<header class="page-header">
+  <div class="section-label">How We Work</div>
+  <h1 class="page-title lines">
+      <span class="line"><span>A process built for</span></span>
+      <span class="line"><span><em>shipping.</em></span></span>
+  </h1>
+  <p class="page-intro">Four steps. Two-week cycles. Zero meetings that should have been emails.</p>
+</header>
+
+<main id="main-content" class="page-body">
+<section class="process">
+  <div class="section-inner">
+    <div class="process-steps reveal-group">
+      <div class="process-step">
+        <div class="process-dot">01</div>
+        <h3 class="process-name">Discover</h3>
+        <p class="process-desc">We listen, ask sharp questions, and map the problem before touching code.</p>
+      </div>
+
+      <div class="process-step">
+        <div class="process-dot">02</div>
+        <h3 class="process-name">Design</h3>
+        <p class="process-desc">Architecture, flows, and prototypes — fast iterations until the shape is right.</p>
+      </div>
+
+      <div class="process-step">
+        <div class="process-dot">03</div>
+        <h3 class="process-name">Build</h3>
+        <p class="process-desc">Heads-down execution with weekly demos. You see it grow in real time.</p>
+      </div>
+
+      <div class="process-step">
+        <div class="process-dot">04</div>
+        <h3 class="process-name">Deploy</h3>
+        <p class="process-desc">Ship to production, hand off documentation, stay on for what comes next.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="home-cta reveal">
+  <h2 class="contact-title">Ready to start at step one?</h2>
+  <p class="contact-sub">Discovery is a conversation, not a contract. Let's map your problem together.</p>
+  <div class="home-cta-actions">
+    <a href="contact" class="btn btn-primary">Book a Discovery Call <span class="arrow">→</span></a>
+    <a href="work" class="btn btn-secondary">See the results <span class="arrow">→</span></a>
+  </div>
+</section>
+</main>
+
+<!-- ============ FOOTER ============ -->
+<footer>
+  <div class="footer-inner">
+    <div>
+      <img src="images/onyxx_logo_transparent.png" alt="" class="footer-brand-mark" />
+      <p class="footer-tagline">Custom AI agents, chatbots, and automations — engineered to work where your business already lives.</p>
+    </div>
+
+    <div>
+      <div class="footer-col-title">Explore</div>
+      <ul class="footer-links">
+        <li><a href="/">Home</a></li>
+        <li><a href="services">Services</a></li>
+        <li><a href="work">Work</a></li>
+        <li><a href="why">Why Us</a></li>
+        <li><a href="process">Process</a></li>
+        <li><a href="founders">Founders</a></li>
+      </ul>
+    </div>
+
+    <div>
+      <div class="footer-col-title">Talk to us</div>
+      <div class="footer-contact">
+        <a href="mailto:onyxtech26@gmail.com">onyxtech26@gmail.com</a>
+        <a href="https://wa.me/601139884927" target="_blank" rel="noopener">WhatsApp Kunacosta</a>
+        <a href="https://wa.me/60194688052" target="_blank" rel="noopener">WhatsApp Rooben</a>
+        <a href="contact">Start a project</a>
+      </div>
+    </div>
+  </div>
+
+  <div class="footer-bottom">
+    <div>© 2026 Onyxx Tech · Located in Malaysia</div>
+    <div>Founder-led · AI-native · Built to ship</div>
+  </div>
+</footer>
+
+</body>
+</html>

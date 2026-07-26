@@ -2,30 +2,32 @@
 //
 // WHY THIS FILE IS AN IIFE
 // ------------------------
-// This file and index.html's inline <script> both run as classic scripts, so
-// their top-level `const`/`let` share one global lexical environment. This
-// file used to declare `observer`, `nav`, `cursorGlow`, `SCRAMBLE_CHARS` …
-// at top level — the same names the inline script declares — so the browser
-// threw "Identifier 'observer' has already been declared" while *compiling*
-// this file, and none of it ever ran. The duplication of cursor glow, nav,
-// scramble and theme logic inside index.html is what masked it.
+// This file and each page's inline <script> run as classic scripts, so their
+// top-level `const`/`let` share one global lexical environment. This file once
+// declared `observer`, `nav`, `cursorGlow`, `SCRAMBLE_CHARS` … at top level —
+// the same names index.html declared — so the browser threw "Identifier
+// 'observer' has already been declared" while *compiling* this file and none of
+// it ever ran, silently, with no error at any call site.
 //
-// Wrapping everything in an IIFE removes the collision permanently: nothing
-// here reaches the global lexical scope, and the handful of things other
-// scripts need are published explicitly on `window` at the bottom.
+// Everything therefore stays inside the IIFE and the handful of things pages
+// need are published on `window` at the bottom. Adding a top-level binding here
+// will silently kill the whole file again.
 //
-// WHAT LIVES HERE vs. IN index.html
-// ---------------------------------
-// index.html owns page chrome it implements more richly inline (cursor glow,
-// eased smooth-scroll + active-nav tracking, mobile nav, text scramble,
-// theme toggle, the hero galaxy canvas, the project modal, Supabase).
-// This file owns cross-cutting behaviour that isn't page-specific:
-//   • the shared dotLottie loading indicator
-//   • image fade-in
-//   • scroll-reveal helpers (incl. the staggered `.reveal-group` contract)
-//   • magnetic buttons
-// Duplicating any of the index.html-owned behaviour here would double-bind
-// its listeners, so don't.
+// WHY IT IS LOADED WITHOUT `defer`
+// --------------------------------
+// The splash controller is inline in index.html's <body> and needs
+// `window.onyxGalaxy` the moment it runs — a deferred file would not exist yet.
+// So this loads as a normal blocking script in <head>. Nothing here touches the
+// DOM at parse time; all DOM work is behind `init()` on DOMContentLoaded.
+//
+// WHAT LIVES HERE
+// ---------------
+// All site chrome, because the site is seven static pages with no build step and
+// duplicating this into each one is how it drifts: the galaxy renderer, cursor
+// glow, nav, theme toggle, scroll reveals, line reveals, text scramble, magnetic
+// buttons, the project modal, and the Supabase data loaders. Pages declare what
+// they need with `<body data-page="…">` and markup presence; they do not
+// re-implement any of it.
 
 (function () {
   'use strict';
@@ -36,15 +38,14 @@
   // ================================================================
   // LOTTIE LOADER — one loading indicator for the whole site
   // ================================================================
-  // The splash screen, every Supabase-backed grid, the project modal and
-  // form submits all render the markup below, so "loading" looks identical
-  // everywhere.
+  // Every Supabase-backed grid, the project modal and the admin tool render the
+  // markup below, so "loading" looks identical everywhere. (Not the splash —
+  // that animates the brand mark itself.)
   //
-  // <dotlottie-player> is a custom element from a CDN module, so there are
-  // two windows where it can't paint: before the module parses, and forever
-  // if the CDN is blocked. `.lottie-fallback` (a pure-CSS ring) covers both.
-  // styles.css shows exactly one of the two, keyed off the `.lottie-ready`
-  // class set on <html> once the element actually upgrades.
+  // <dotlottie-player> is a custom element from a CDN module, so there are two
+  // windows where it can't paint: before the module parses, and forever if the
+  // CDN is blocked. `.lottie-fallback` (a pure-CSS ring) covers both. styles.css
+  // shows exactly one of the two, keyed off `.lottie-ready` on <html>.
   const LOTTIE_SRC = 'images/loading.lottie';
 
   if (window.customElements) {
@@ -53,14 +54,6 @@
       .catch(() => { /* leave the CSS fallback in place */ });
   }
 
-  /**
-   * Markup for the shared loader.
-   * @param {Object}  [opts]
-   * @param {string}  [opts.label]  Caption under the animation; '' for none.
-   * @param {number}  [opts.size]   Pixel size of the animation.
-   * @param {boolean} [opts.inline] Row layout, for use inside a button.
-   * @returns {string} HTML
-   */
   function lottieLoader(opts) {
     const o = opts || {};
     const label = o.label === undefined ? 'Loading' : o.label;
@@ -77,32 +70,12 @@
     `;
   }
 
-  /** Drop the loader into a container, replacing whatever is there. */
   function showLoader(target, opts) {
     const el = typeof target === 'string' ? document.querySelector(target) : target;
     if (!el) return;
     el.innerHTML = lottieLoader(opts);
   }
 
-  /**
-   * Swap a container's contents with a fade instead of a hard cut — used
-   * wherever JS replaces a loader with real content.
-   */
-  function fadeSwap(target, html) {
-    const el = typeof target === 'string' ? document.querySelector(target) : target;
-    if (!el) return;
-    el.innerHTML = html;
-    el.classList.remove('fade-swap-in');
-    // Force a reflow so re-adding the class restarts the animation even when
-    // the same container is refilled twice in a row.
-    void el.offsetWidth;
-    el.classList.add('fade-swap-in');
-  }
-
-  /**
-   * Show/hide a full-surface loading overlay inside a positioned container
-   * (the project modal uses this while its image decodes).
-   */
   function toggleOverlayLoader(container, show) {
     const el = typeof container === 'string' ? document.querySelector(container) : container;
     if (!el) return;
@@ -121,12 +94,29 @@
     }
   }
 
+  /** Replace a loader with real content on a fade rather than a hard cut. */
+  function fadeSwap(target, html) {
+    const el = typeof target === 'string' ? document.querySelector(target) : target;
+    if (!el) return;
+    el.innerHTML = html;
+    el.classList.remove('fade-swap-in');
+    void el.offsetWidth;   // reflow, so refilling the same container restarts it
+    el.classList.add('fade-swap-in');
+  }
+
+  /** Leave a failed fetch reading as "unavailable", never as "stuck". */
+  function loaderToMessage(ids, message) {
+    ids.forEach(id => {
+      const el = typeof id === 'string' ? document.getElementById(id) : id;
+      if (el && el.querySelector('.lottie-loader')) {
+        el.innerHTML = `<p class="grid-empty">${message}</p>`;
+      }
+    });
+  }
+
   // ================================================================
   // IMAGE FADE-IN
   // ================================================================
-  // Any <img data-fade> starts transparent (styles.css) and fades in once it
-  // decodes. Re-runnable so images injected later by Supabase renders are
-  // covered too.
   function initImageFades(root) {
     (root || document).querySelectorAll('img[data-fade]:not(.is-loaded)').forEach(img => {
       if (img.complete && img.naturalWidth > 0) {
@@ -135,8 +125,7 @@
       }
       const done = () => img.classList.add('is-loaded');
       img.addEventListener('load', done, { once: true });
-      // Don't leave a broken image permanently invisible — an alt-text box
-      // is more useful than a blank gap.
+      // A broken image should show its alt box, not stay invisible forever.
       img.addEventListener('error', done, { once: true });
     });
   }
@@ -144,9 +133,6 @@
   // ================================================================
   // SCROLL REVEAL
   // ================================================================
-  // `.reveal` is the default fade+rise. The `-scale`/`-left`/`-right`/`-blur`
-  // variants in styles.css share the same `.visible` toggle, so one observer
-  // drives all five.
   const REVEAL_SELECTOR = '.reveal, .reveal-scale, .reveal-left, .reveal-right, .reveal-blur';
 
   const revealObserver = new IntersectionObserver((entries) => {
@@ -165,20 +151,17 @@
   }
 
   /**
-   * Turn a container's direct children into a staggered, one-after-another
-   * entrance instead of the flat all-at-once fade a single `.reveal` block
-   * gives. Each child gets `.reveal` (so it's driven by the observer above
-   * and still waits until it's scrolled to) plus a `--reveal-index` custom
-   * property that styles.css turns into an incremental transition-delay.
-   *
-   * Safe to re-run after Supabase swaps in dynamically-loaded cards.
+   * Turn a container's direct children into a staggered entrance instead of the
+   * flat all-at-once fade a single `.reveal` block gives. Each child gets
+   * `.reveal` plus a `--reveal-index` that styles.css turns into a delay.
+   * Safe to re-run after Supabase swaps in cards.
    */
   function initRevealGroup(container) {
     const el = typeof container === 'string' ? document.querySelector(container) : container;
     if (!el) return;
     Array.from(el.children).forEach((child, i) => {
-      // Never hide the loader behind a reveal — it's the thing telling the
-      // user something is happening.
+      // Never hide the loader behind a reveal — it's the thing telling the user
+      // something is happening.
       if (child.classList.contains('lottie-loader')) return;
       child.classList.add('reveal');
       child.style.setProperty('--reveal-index', i);
@@ -188,10 +171,253 @@
   }
 
   // ================================================================
+  // LINE REVEAL — the masked per-line rise
+  // ================================================================
+  // The homepage headline's signature motion, extended to every page's header.
+  // Markup is authored as `.lines > .line > span` (readable for crawlers, no
+  // JS text-splitting); this only assigns `--line-index` so styles.css can
+  // stagger them. Off-hero headings wait for scroll; the hero plays as soon as
+  // the splash clears, which is what `html.splash-done` gates.
+  function initLineReveals(root) {
+    (root || document).querySelectorAll('.lines').forEach(group => {
+      group.querySelectorAll(':scope > .line').forEach((line, i) => {
+        line.style.setProperty('--line-index', i);
+      });
+      if (!group.classList.contains('lines-immediate')) {
+        lineObserver.observe(group);
+      }
+    });
+  }
+
+  const lineObserver = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('lines-in');
+        lineObserver.unobserve(entry.target);
+      }
+    });
+  }, { threshold: 0.25 });
+
+  // ================================================================
+  // GALAXY — one renderer, three intensities
+  // ================================================================
+  // Previously there were two near-identical implementations (the hero's and
+  // the splash's). This is the single one, used by the splash at full strength,
+  // the home hero at full strength, and interior pages dialled down.
+  //
+  // The spiral core defaults to 78% / 32% of the canvas — the same place the
+  // hero has always put it. The splash relies on that: matching core position
+  // is what makes the curtain lift read as one continuous sky rather than a cut
+  // between two different backgrounds. Don't change it for one caller only.
+  function onyxGalaxy(canvas, opts) {
+    const el = typeof canvas === 'string' ? document.querySelector(canvas) : canvas;
+    if (!el || !el.getContext) return null;
+    const ctx = el.getContext('2d');
+    if (!ctx) return null;
+
+    const o = opts || {};
+    const bgStars = o.bgStars === undefined ? 320 : o.bgStars;
+    const armStars = o.armStars === undefined ? 170 : o.armStars;
+    const dustCount = o.dust === undefined ? 6 : o.dust;
+    const coreX = o.coreX === undefined ? 0.78 : o.coreX;
+    const coreY = o.coreY === undefined ? 0.32 : o.coreY;
+    const shooting = o.shooting === undefined ? true : !!o.shooting;
+    const still = o.still === undefined ? prefersReducedMotion : !!o.still;
+
+    let stars = [], dust = [], shots = [], raf = 0, lastShot = 0, w = 0, h = 0, stopped = false;
+
+    function size() {
+      // setTransform, not scale(): scale() compounds on every resize, which is
+      // what used to leave the hero canvas stuck blank after a maximise.
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      w = el.offsetWidth;
+      h = el.offsetHeight;
+      if (!w || !h) return;
+      el.width = Math.round(w * dpr);
+      el.height = Math.round(h * dpr);
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    }
+
+    function build() {
+      stars = []; dust = []; shots = [];
+      if (!w || !h) return;
+
+      for (let i = 0; i < bgStars; i++) {
+        stars.push({
+          x: Math.random() * w, y: Math.random() * h,
+          r: Math.random() * 1.4 + 0.2,
+          brightness: Math.random(),
+          speed: Math.random() * 0.025 + 0.008,
+          offset: Math.random() * Math.PI * 2,
+          color: Math.random() < 0.15 ? 'cyan' : (Math.random() < 0.1 ? 'purple' : 'white')
+        });
+      }
+
+      // Two spiral arms clustered on the core.
+      const cx = w * coreX, cy = h * coreY;
+      for (let i = 0; i < armStars; i++) {
+        const arm = Math.floor(Math.random() * 2);
+        const t = Math.random();
+        const ang = arm * Math.PI + t * Math.PI * 3 + (Math.random() - 0.5) * 0.7;
+        const rad = t * Math.min(w * 0.22, h * 0.38) * (0.5 + Math.random() * 0.5);
+        const spread = rad * 0.18;
+        stars.push({
+          x: cx + Math.cos(ang) * rad + (Math.random() - 0.5) * spread,
+          y: cy + Math.sin(ang) * rad * 0.55 + (Math.random() - 0.5) * spread,
+          r: Math.random() * 1.8 + 0.3,
+          brightness: 0.5 + Math.random() * 0.5,
+          speed: Math.random() * 0.03 + 0.01,
+          offset: Math.random() * Math.PI * 2,
+          color: Math.random() < 0.35 ? 'cyan' : (Math.random() < 0.15 ? 'purple' : 'white')
+        });
+      }
+
+      for (let i = 0; i < dustCount; i++) {
+        dust.push({
+          x: Math.random() * w, y: Math.random() * h * 0.9,
+          rx: 60 + Math.random() * 120, ry: 40 + Math.random() * 80,
+          hue: Math.random() < 0.5 ? 185 : 270,
+          alpha: 0.025 + Math.random() * 0.04
+        });
+      }
+    }
+
+    function spawnShot() {
+      const ang = Math.PI * 0.18 + Math.random() * 0.2;
+      shots.push({
+        x: Math.random() * w * 0.85, y: Math.random() * h * 0.6,
+        vx: Math.cos(ang) * (4 + Math.random() * 4),
+        vy: Math.sin(ang) * (2 + Math.random() * 2),
+        len: 60 + Math.random() * 80, life: 1,
+        decay: 0.022 + Math.random() * 0.018
+      });
+    }
+
+    function draw(ts) {
+      if (stopped || !w || !h) return;
+      ctx.clearRect(0, 0, w, h);
+
+      for (let i = 0; i < dust.length; i++) {
+        const c = dust[i];
+        const g = ctx.createRadialGradient(c.x, c.y, 0, c.x, c.y, Math.max(c.rx, c.ry));
+        g.addColorStop(0, `hsla(${c.hue}, 100%, 65%, ${c.alpha})`);
+        g.addColorStop(0.5, `hsla(${c.hue}, 80%, 50%, ${c.alpha * 0.5})`);
+        g.addColorStop(1, 'transparent');
+        ctx.save();
+        ctx.scale(1, c.ry / c.rx);
+        ctx.beginPath();
+        ctx.arc(c.x, c.y * (c.rx / c.ry), c.rx, 0, Math.PI * 2);
+        ctx.fillStyle = g;
+        ctx.fill();
+        ctx.restore();
+      }
+
+      const gx = w * coreX, gy = h * coreY;
+      const core = ctx.createRadialGradient(gx, gy, 0, gx, gy, w * 0.14);
+      core.addColorStop(0, 'rgba(0, 212, 255, 0.12)');
+      core.addColorStop(0.4, 'rgba(80, 0, 180, 0.07)');
+      core.addColorStop(1, 'transparent');
+      ctx.beginPath();
+      ctx.ellipse(gx, gy, w * 0.14, h * 0.1, 0, 0, Math.PI * 2);
+      ctx.fillStyle = core;
+      ctx.fill();
+
+      const t = ts * 0.001;
+      for (let i = 0; i < stars.length; i++) {
+        const s = stars[i];
+        const flicker = still ? 1
+          : 0.4 + 0.6 * (0.5 + 0.5 * Math.sin(t * s.speed * 60 + s.offset));
+        const a = s.brightness * flicker;
+        let r, g2, b;
+        if (s.color === 'cyan') { r = 0; g2 = 212; b = 255; }
+        else if (s.color === 'purple') { r = 180; g2 = 80; b = 255; }
+        else { r = 220; g2 = 230; b = 255; }
+
+        ctx.beginPath();
+        ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(${r},${g2},${b},${a})`;
+        ctx.fill();
+
+        if (s.r > 1.0 && a > 0.5) {
+          const gl = ctx.createRadialGradient(s.x, s.y, 0, s.x, s.y, s.r * 5);
+          gl.addColorStop(0, `rgba(${r},${g2},${b},${a * 0.35})`);
+          gl.addColorStop(1, 'transparent');
+          ctx.beginPath();
+          ctx.arc(s.x, s.y, s.r * 5, 0, Math.PI * 2);
+          ctx.fillStyle = gl;
+          ctx.fill();
+        }
+      }
+
+      if (shooting && !still) {
+        if (ts - lastShot > 2400 + Math.random() * 2000) {
+          spawnShot();
+          lastShot = ts;
+        }
+        shots = shots.filter(s => s.life > 0);
+        for (let i = 0; i < shots.length; i++) {
+          const s = shots[i];
+          const m = Math.hypot(s.vx, s.vy);
+          const tx = s.x - (s.vx / m) * s.len, ty = s.y - (s.vy / m) * s.len;
+          const grad = ctx.createLinearGradient(tx, ty, s.x, s.y);
+          grad.addColorStop(0, 'transparent');
+          grad.addColorStop(1, `rgba(180, 240, 255, ${s.life * 0.9})`);
+          ctx.beginPath();
+          ctx.moveTo(tx, ty);
+          ctx.lineTo(s.x, s.y);
+          ctx.strokeStyle = grad;
+          ctx.lineWidth = 1.2;
+          ctx.stroke();
+          s.x += s.vx; s.y += s.vy; s.life -= s.decay;
+        }
+      }
+
+      // Reduced motion gets one frame — a real sky, just not a moving one.
+      if (!still) raf = requestAnimationFrame(draw);
+    }
+
+    size();
+    build();
+    if (still) draw(0); else raf = requestAnimationFrame(draw);
+
+    // Don't burn frames in a background tab.
+    function onVisibility() {
+      if (document.hidden) {
+        if (raf) cancelAnimationFrame(raf);
+        raf = 0;
+      } else if (!stopped && !still && !raf) {
+        raf = requestAnimationFrame(draw);
+      }
+    }
+    document.addEventListener('visibilitychange', onVisibility);
+
+    let resizeTimer;
+    function onResize() {
+      clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(() => {
+        if (stopped) return;
+        size();
+        build();
+        if (still) draw(0);
+      }, 150);
+    }
+    window.addEventListener('resize', onResize);
+
+    return {
+      stop() {
+        stopped = true;
+        if (raf) cancelAnimationFrame(raf);
+        raf = 0;
+        document.removeEventListener('visibilitychange', onVisibility);
+        window.removeEventListener('resize', onResize);
+      },
+      resize() { size(); build(); if (still) draw(0); }
+    };
+  }
+
+  // ================================================================
   // MAGNETIC BUTTONS
   // ================================================================
-  // Buttons drift toward the cursor while it's over them. rAF-throttled so
-  // rapid mousemove events collapse to one transform write per frame.
   function initMagneticButtons(root) {
     if (!hasFinePointer || prefersReducedMotion) return;
 
@@ -214,8 +440,6 @@
       }, { passive: true });
 
       btn.addEventListener('mouseleave', () => {
-        // Let it spring back rather than snap; cleared on transitionend so
-        // the inline style doesn't fight :active/:hover rules afterwards.
         btn.style.transition = 'transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1)';
         btn.style.transform = '';
         setTimeout(() => { btn.style.transition = ''; }, 450);
@@ -224,13 +448,657 @@
   }
 
   // ================================================================
+  // CURSOR GLOW
+  // ================================================================
+  function initCursorGlow() {
+    const glow = document.getElementById('cursorGlow');
+    if (!glow || !hasFinePointer || prefersReducedMotion) return;
+
+    let mx = 0, my = 0, cx = 0, cy = 0;
+    document.addEventListener('mousemove', (e) => { mx = e.clientX; my = e.clientY; }, { passive: true });
+    (function loop() {
+      cx += (mx - cx) * 0.15;
+      cy += (my - cy) * 0.15;
+      glow.style.left = cx + 'px';
+      glow.style.top = cy + 'px';
+      requestAnimationFrame(loop);
+    })();
+  }
+
+  // ================================================================
+  // NAV — scrolled state + mobile drawer
+  // ================================================================
+  // No smooth-scroll or scroll-spy any more: the site is seven real URLs, so
+  // the active link is server-side truth via `aria-current="page"` in the
+  // markup rather than something JS infers from scroll position.
+  function initNav() {
+    const nav = document.getElementById('nav');
+    if (nav) {
+      const onScroll = () => nav.classList.toggle('scrolled', window.scrollY > 50);
+      window.addEventListener('scroll', onScroll, { passive: true });
+      onScroll();
+    }
+
+    const toggle = document.getElementById('navToggle');
+    const links = document.getElementById('navLinks');
+    if (toggle && links) {
+      toggle.addEventListener('click', () => {
+        const open = links.classList.toggle('open');
+        toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+      });
+      // Any navigation closes the drawer.
+      links.querySelectorAll('a').forEach(a => {
+        a.addEventListener('click', () => {
+          links.classList.remove('open');
+          toggle.setAttribute('aria-expanded', 'false');
+        });
+      });
+    }
+
+    // Double-clicking the logo is the way into the admin tool.
+    document.querySelectorAll('.nav-logo').forEach(logo => {
+      logo.addEventListener('dblclick', (e) => {
+        e.preventDefault();
+        window.location.href = 'admin-login.html';
+      });
+    });
+  }
+
+  // ================================================================
+  // THEME
+  // ================================================================
+  let themeTimer;
+
+  function updateThemeIcons() {
+    const theme = document.documentElement.getAttribute('data-theme');
+    const btn = document.getElementById('themeToggleBtn');
+    if (!btn) return;
+    const sun = btn.querySelector('.sun-icon');
+    const moon = btn.querySelector('.moon-icon');
+    if (sun) sun.style.display = theme === 'light' ? 'none' : 'block';
+    if (moon) moon.style.display = theme === 'light' ? 'block' : 'none';
+  }
+
+  function toggleTheme() {
+    const root = document.documentElement;
+    const next = root.getAttribute('data-theme') === 'light' ? 'dark' : 'light';
+
+    // Cross-fade the palette instead of hard-cutting. The class is only present
+    // for the length of the swap — a permanent background/colour transition on
+    // every card would tax ordinary scrolling for no benefit.
+    if (!prefersReducedMotion) {
+      root.classList.add('theme-transition');
+      clearTimeout(themeTimer);
+      themeTimer = setTimeout(() => root.classList.remove('theme-transition'), 500);
+    }
+
+    root.setAttribute('data-theme', next);
+    localStorage.setItem('theme', next);
+    updateThemeIcons();
+  }
+
+  function initTheme() {
+    const btn = document.getElementById('themeToggleBtn');
+    if (btn) btn.addEventListener('click', toggleTheme);
+    updateThemeIcons();
+  }
+
+  // ================================================================
+  // TEXT SCRAMBLE — section eyebrow labels
+  // ================================================================
+  const SCRAMBLE_POOL = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789@#$%!?';
+  const SCRAMBLE_KEEP = new Set([' ', ' ', '—', '/', '.', '-', '·']);
+
+  function scramble(el, duration) {
+    const ms = duration || 1200;
+    const original = el.textContent;
+    let start = null;
+    function frame(ts) {
+      if (!start) start = ts;
+      const progress = Math.min((ts - start) / ms, 1);
+      const resolved = Math.floor(progress * original.length);
+      el.textContent = original.split('').map((ch, i) => {
+        if (SCRAMBLE_KEEP.has(ch) || i < resolved) return ch;
+        return SCRAMBLE_POOL[Math.floor(Math.random() * SCRAMBLE_POOL.length)];
+      }).join('');
+      if (progress < 1) requestAnimationFrame(frame);
+      else el.textContent = original;
+    }
+    requestAnimationFrame(frame);
+  }
+
+  function initScramble() {
+    if (prefersReducedMotion) return;
+
+    const obs = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          scramble(entry.target);
+          obs.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.8 });
+
+    document.querySelectorAll('.section-label').forEach(el => obs.observe(el));
+
+    const heroTag = document.querySelector('.hero-tag span:last-child');
+    if (heroTag) {
+      // After the splash, not after load — otherwise it scrambles behind the
+      // curtain and the visitor sees only the settled text.
+      onSplashDone(() => setTimeout(() => scramble(heroTag, 1500), 600));
+    }
+  }
+
+  // ================================================================
+  // SPLASH COORDINATION
+  // ================================================================
+  // `html.splash-done` is the site's "the visitor can see the page now" signal.
+  // Pages with no splash set it in their <head> bootstrap, so hero entrances
+  // play immediately there. index.html's controller sets it when the curtain
+  // starts lifting. Anything that should not animate behind the curtain hangs
+  // off this.
+  function onSplashDone(fn) {
+    if (document.documentElement.classList.contains('splash-done')) {
+      fn();
+      return;
+    }
+    const root = document.documentElement;
+    const obs = new MutationObserver(() => {
+      if (root.classList.contains('splash-done')) {
+        obs.disconnect();
+        fn();
+      }
+    });
+    obs.observe(root, { attributes: true, attributeFilter: ['class'] });
+  }
+
+  // ================================================================
+  // PROJECT MODAL — work.html only
+  // ================================================================
+  function initProjectModal() {
+    const overlay = document.getElementById('projectModal');
+    if (!overlay) return null;
+
+    const closeBtn = document.getElementById('modalClose');
+    const cta = document.getElementById('modalCta');
+
+    function open(card) {
+      const d = card.dataset;
+      const img = document.getElementById('modalImg');
+      const thumbBg = document.getElementById('modalThumbBg');
+      const thumbLabel = document.getElementById('modalThumbLabel');
+      const cardImg = card.querySelector('.project-thumb img');
+
+      if (d.img || cardImg) {
+        const src = d.img || cardImg.src;
+        img.alt = d.name || '';
+        img.style.display = 'block';
+        thumbBg.style.display = 'none';
+
+        // Full-resolution modal images can lag well behind the modal opening,
+        // so cover the thumb until it decodes — the panel never opens onto an
+        // empty rectangle.
+        const thumb = img.closest('.modal-thumb');
+        if (img.src !== src) {
+          toggleOverlayLoader(thumb, true);
+          img.addEventListener('load', () => toggleOverlayLoader(thumb, false), { once: true });
+          img.addEventListener('error', () => toggleOverlayLoader(thumb, false), { once: true });
+          img.src = src;
+        } else {
+          toggleOverlayLoader(thumb, false);
+        }
+      } else {
+        img.style.display = 'none';
+        thumbBg.style.background = d.gradient || 'var(--onyx-soft)';
+        thumbBg.style.display = 'flex';
+        thumbLabel.textContent = d.name || '';
+      }
+
+      document.getElementById('modalCategory').textContent = d.category || '';
+      document.getElementById('modalTitle').textContent = d.name || '';
+      document.getElementById('modalClient').textContent = d.client || '';
+      document.getElementById('modalDesc').textContent = d.desc || '';
+
+      const stackEl = document.getElementById('modalStack');
+      stackEl.innerHTML = (d.stack || '').split(',').filter(s => s.trim())
+        .map(s => `<span>${s.trim()}</span>`).join('');
+
+      const gh = document.getElementById('modalGithub');
+      if (d.github) {
+        gh.href = d.github;
+        gh.style.display = 'inline-flex';
+      } else {
+        gh.style.display = 'none';
+      }
+
+      overlay.classList.add('open');
+      document.body.style.overflow = 'hidden';
+    }
+
+    function close() {
+      overlay.classList.remove('open');
+      document.body.style.overflow = '';
+    }
+
+    closeBtn?.addEventListener('click', close);
+    cta?.addEventListener('click', close);
+    overlay.addEventListener('click', (e) => { if (e.target === overlay) close(); });
+    document.addEventListener('keydown', (e) => { if (e.key === 'Escape') close(); });
+
+    return { open, close };
+  }
+
+  /**
+   * Click-to-open plus the 3D tilt/glare on a project card.
+   * `modal` may be null (home's teaser cards link through to /work instead).
+   */
+  function initProjectCard(card, modal) {
+    if (modal) card.addEventListener('click', () => modal.open(card));
+    if (!hasFinePointer || prefersReducedMotion) return;
+
+    const glare = document.createElement('div');
+    glare.style.cssText =
+      'position:absolute;inset:0;pointer-events:none;z-index:5;opacity:0;transition:opacity 0.3s ease;';
+    card.appendChild(glare);
+
+    card.addEventListener('mousemove', (e) => {
+      const rect = card.getBoundingClientRect();
+      const x = (e.clientX - rect.left) / rect.width;
+      const y = (e.clientY - rect.top) / rect.height;
+      card.style.transition = 'transform 0.1s ease, background 0.4s ease, box-shadow 0.4s ease';
+      // The translateY is the same lift `.project-card:hover` gives every other
+      // card. It has to be baked into this string: an inline transform beats the
+      // stylesheet outright, so a tilt written alone would cancel the lift.
+      card.style.transform =
+        `perspective(900px) translateY(-6px) rotateX(${(y - 0.5) * -10}deg) rotateY(${(x - 0.5) * 10}deg)`;
+      glare.style.opacity = '1';
+      glare.style.background =
+        `radial-gradient(circle at ${x * 100}% ${y * 100}%, rgba(56,224,255,0.06) 0%, transparent 65%)`;
+    });
+
+    card.addEventListener('mouseleave', () => {
+      card.style.transition = 'transform 0.6s cubic-bezier(0.16, 1, 0.3, 1), background 0.4s ease, box-shadow 0.4s ease';
+      card.style.transform = '';
+      glare.style.opacity = '0';
+    });
+  }
+
+  // ================================================================
+  // SUPABASE
+  // ================================================================
+  const SUPABASE_URL = 'https://whjstsgtximknicppllt.supabase.co';
+  const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndoanN0c2d0eGlta25pY3BwbGx0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI3OTc5NzgsImV4cCI6MjA5ODM3Mzk3OH0.I_GHJG8XcyFO_WamEwWnme_-l1ZPUCUCuZ7roOE-B2U';
+
+  let client = null;
+  function supabase() {
+    if (client) return client;
+    if (!window.supabase) return null;
+    client = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    return client;
+  }
+
+  // ---- service cards ----
+  const SERVICE_ICONS = {
+    '/01': `<svg class="service-icon" viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="1.2">
+      <circle cx="24" cy="24" r="6"/><circle cx="24" cy="8" r="3"/><circle cx="24" cy="40" r="3"/>
+      <circle cx="8" cy="24" r="3"/><circle cx="40" cy="24" r="3"/>
+      <line x1="24" y1="11" x2="24" y2="18"/><line x1="24" y1="30" x2="24" y2="37"/>
+      <line x1="11" y1="24" x2="18" y2="24"/><line x1="30" y1="24" x2="37" y2="24"/>
+    </svg>`,
+    '/02': `<svg class="service-icon" viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="1.2">
+      <path d="M8 12 L40 12 L40 32 L24 32 L16 40 L16 32 L8 32 Z"/>
+      <circle cx="18" cy="22" r="1.5" fill="currentColor"/><circle cx="24" cy="22" r="1.5" fill="currentColor"/>
+      <circle cx="30" cy="22" r="1.5" fill="currentColor"/>
+    </svg>`,
+    '/03': `<svg class="service-icon" viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="1.2">
+      <rect x="6" y="10" width="36" height="28" rx="2"/><line x1="6" y1="18" x2="42" y2="18"/>
+      <circle cx="11" cy="14" r="0.8" fill="currentColor"/><circle cx="14" cy="14" r="0.8" fill="currentColor"/>
+      <line x1="12" y1="26" x2="36" y2="26"/><line x1="12" y1="32" x2="28" y2="32"/>
+    </svg>`,
+    '/04': `<svg class="service-icon" viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="1.2">
+      <rect x="14" y="6" width="20" height="36" rx="2"/><line x1="14" y1="12" x2="34" y2="12"/>
+      <line x1="14" y1="36" x2="34" y2="36"/><circle cx="24" cy="39" r="0.8" fill="currentColor"/>
+    </svg>`
+  };
+
+  const SERVICE_ICON_DEFAULT = `<svg class="service-icon" viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="1.2">
+    <circle cx="24" cy="24" r="10"/><path d="M24 10 L24 38 M10 24 L38 24 M14 14 L34 34 M14 34 L34 14"/>
+  </svg>`;
+
+  function renderServices(grid, services, limit) {
+    if (!grid) return;
+    const list = limit ? services.slice(0, limit) : services;
+    grid.innerHTML = '';
+    list.forEach(s => {
+      const num = s.num || '/00';
+      const tags = Array.isArray(s.tags)
+        ? s.tags.map(t => `<span class="service-tag">${t}</span>`).join('') : '';
+      const card = document.createElement('div');
+      card.className = 'service-card';
+      card.setAttribute('data-service', '');
+      card.innerHTML = `
+        <div class="service-num">${num}</div>
+        ${SERVICE_ICONS[num] || SERVICE_ICON_DEFAULT}
+        <h3 class="service-name">${s.name}</h3>
+        <p class="service-desc">${s.description}</p>
+        <div class="service-tags">${tags}</div>
+      `;
+      grid.appendChild(card);
+    });
+    initServiceCardGlow(grid);
+  }
+
+  /** Cursor-tracked highlight inside each service card. */
+  function initServiceCardGlow(root) {
+    if (!hasFinePointer) return;
+    (root || document).querySelectorAll('[data-service]:not([data-glow])').forEach(card => {
+      card.setAttribute('data-glow', '');
+      card.addEventListener('mousemove', (e) => {
+        const rect = card.getBoundingClientRect();
+        card.style.setProperty('--mx', ((e.clientX - rect.left) / rect.width) * 100 + '%');
+        card.style.setProperty('--my', ((e.clientY - rect.top) / rect.height) * 100 + '%');
+      }, { passive: true });
+    });
+  }
+
+  // ---- project cards ----
+  // Five showcase rows point at Supabase storage originals that were 5-8MB
+  // each; these map them to the local optimised copies. Keep in sync if the
+  // storage records change.
+  const LOCAL_IMAGE_MAP = {
+    '1783223293991_9suav.png': 'images/Policy_Snap.png',
+    '1783223786542_nzlr5n.png': 'images/Carousel_Maker.png',
+    '1783223573215_jmhlwn.png': 'images/xcraft.png',
+    '1783223485403_rkdjse.png': 'images/Mpt.jpg',
+    '1783223367629_bkbf9k.png': 'images/Watch_bot.png'
+  };
+
+  function projectImage(p) {
+    if (!p || !p.image_url) return '';
+    for (const key in LOCAL_IMAGE_MAP) {
+      if (p.image_url.includes(key)) return LOCAL_IMAGE_MAP[key];
+    }
+    return p.image_url;
+  }
+
+  const CARD_GRADIENTS = [
+    'linear-gradient(145deg, #0c1829, #1a2d50)',
+    'linear-gradient(145deg, #1a0e00, #3d2200)',
+    'linear-gradient(145deg, #001319, #012b38)',
+    'linear-gradient(145deg, #001208, #002914)',
+    'linear-gradient(145deg, #110820, #1e1038)',
+    'linear-gradient(145deg, #0d1a00, #1a2e00)'
+  ];
+
+  /**
+   * @param {Object} opts
+   * @param {number} [opts.limit]      Cap the number rendered.
+   * @param {Object} [opts.modal]      Modal API; when absent cards link to /work.
+   * @param {string} [opts.linkTo]     Wrap each card in a link to this URL.
+   */
+  function renderProjects(grid, projects, opts) {
+    if (!grid) return;
+    const o = opts || {};
+    const list = o.limit ? projects.slice(0, o.limit) : projects;
+    grid.innerHTML = '';
+
+    list.forEach((p, idx) => {
+      const grad = CARD_GRADIENTS[idx % CARD_GRADIENTS.length];
+      const stack = Array.isArray(p.tech_stack) ? p.tech_stack.join(', ') : '';
+      const tags = Array.isArray(p.tech_stack)
+        ? p.tech_stack.slice(0, 3).map(t => `<span class="project-tag">${t}</span>`).join('') : '';
+
+      let thumb;
+      if (p.image_url) {
+        const url = projectImage(p);
+        const contain = /portal|mpt/i.test(p.title || '');
+        thumb = `<div class="project-thumb${contain ? ' project-thumb--contain' : ''}" style="background:${grad}">
+          <img src="${url}" alt="${p.title}" data-fade loading="lazy" decoding="async"
+               onerror="this.onerror=null;this.src='images/onyxx_logo_transparent.png';">
+        </div>`;
+      } else {
+        thumb = `<div class="project-thumb"><div class="project-thumb-bg" style="background:${grad}">
+          <span class="project-thumb-label">${p.title}</span></div></div>`;
+      }
+
+      const body = `
+        ${thumb}
+        <div class="project-body">
+          <div class="project-category">${p.category || ''}</div>
+          <div class="project-name">${p.title}</div>
+          <div class="project-client">${p.client || ''}</div>
+          <p class="project-desc">${p.description || ''}</p>
+          <div class="project-footer">
+            <div class="project-tags">${tags}</div>
+            <span class="project-more">${o.linkTo ? 'View' : 'Details'} →</span>
+          </div>
+        </div>`;
+
+      let card;
+      if (o.linkTo) {
+        // Home's teasers are real links, so they work without JS and get the
+        // browser's own affordances; only /work opens the modal.
+        card = document.createElement('a');
+        card.href = o.linkTo;
+        card.className = 'project-card project-card--link';
+      } else {
+        card = document.createElement('div');
+        card.className = 'project-card';
+      }
+
+      if (p.image_url) card.setAttribute('data-img', projectImage(p));
+      card.setAttribute('data-category', p.category || '');
+      card.setAttribute('data-name', p.title || '');
+      card.setAttribute('data-client', p.client || '');
+      card.setAttribute('data-desc', p.description || '');
+      card.setAttribute('data-stack', stack);
+      card.setAttribute('data-gradient', grad);
+      if (p.github_url) card.setAttribute('data-github', p.github_url);
+      if (p.live_url) card.setAttribute('data-live', p.live_url);
+
+      card.innerHTML = body;
+      grid.appendChild(card);
+      initProjectCard(card, o.modal);
+    });
+  }
+
+  // ---- team cards ----
+  const WA_ICON = `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M17.5 14.4c-.3-.1-1.7-.8-1.9-.9-.3-.1-.5-.1-.7.1-.2.3-.7.9-.9 1.1-.2.2-.3.2-.6.1-.3-.1-1.2-.4-2.3-1.4-.8-.8-1.4-1.7-1.6-2-.2-.3 0-.4.1-.6.1-.1.3-.3.4-.5.1-.2.2-.3.3-.5.1-.2 0-.4 0-.5 0-.1-.7-1.6-.9-2.2-.2-.6-.5-.5-.7-.5h-.6c-.2 0-.5.1-.8.4-.3.3-1 1-1 2.4 0 1.4 1 2.8 1.2 3 .1.2 2 3 4.8 4.2.7.3 1.2.5 1.6.6.7.2 1.3.2 1.8.1.5-.1 1.7-.7 1.9-1.3.2-.7.2-1.2.2-1.3-.1-.1-.3-.2-.6-.3z"/><path d="M20.5 3.5C18.2 1.2 15.2 0 12 0 5.4 0 0 5.4 0 12c0 2.1.6 4.2 1.6 6L0 24l6.2-1.6c1.7.9 3.7 1.4 5.7 1.4 6.6 0 12-5.4 12-12 0-3.2-1.2-6.2-3.4-8.3zM12 21.8c-1.8 0-3.6-.5-5.2-1.4l-.4-.2-3.7 1 1-3.6-.2-.4c-1-1.6-1.5-3.4-1.5-5.3 0-5.5 4.5-10 10-10 2.7 0 5.2 1 7.1 2.9 1.9 1.9 2.9 4.4 2.9 7.1 0 5.5-4.5 10-10 10z"/></svg>`;
+  const MAIL_ICON = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="16" rx="2"/><polyline points="22,6 12,13 2,6"/></svg>`;
+
+  function renderTeam(grid, members) {
+    // The grid ships static founder cards as an SEO/no-JS fallback, so an empty
+    // result must leave them alone rather than blanking the section.
+    if (!grid || !members || members.length === 0) return;
+    grid.innerHTML = '';
+
+    members.forEach(t => {
+      const avatar = t.avatar_url || 'images/onyxx_logo_transparent.png';
+      const waClean = t.whatsapp ? t.whatsapp.replace(/[^0-9+]/g, '').replace(/^\+/, '') : '';
+      const card = document.createElement('div');
+      card.className = 'founder-card';
+      card.innerHTML = `
+        <div class="founder-avatar"><img src="${avatar}" alt="${t.name}" data-fade loading="lazy" decoding="async"
+             onerror="this.onerror=null;this.src='images/onyxx_logo_transparent.png';"></div>
+        <h3 class="founder-name">${t.name}</h3>
+        <div class="founder-role">${t.role || ''}</div>
+        <div class="founder-contact">
+          ${waClean ? `<a href="https://wa.me/${waClean}" target="_blank" rel="noopener">${WA_ICON}${t.whatsapp}</a>` : ''}
+          ${t.email ? `<a href="mailto:${t.email}">${MAIL_ICON}${t.email}</a>` : ''}
+        </div>`;
+      grid.appendChild(card);
+    });
+  }
+
+  /** Re-apply the site's entrance/hover behaviour to freshly injected cards. */
+  function refresh(container) {
+    initRevealGroup(container);
+    initImageFades(container);
+    initMagneticButtons(container);
+  }
+
+  // ================================================================
+  // PER-PAGE DATA
+  // ================================================================
+  // Each page fetches only the tables it renders — the single-page version used
+  // to pull all three on every load.
+  async function loadPageData() {
+    const page = document.body.dataset.page || '';
+    const db = supabase();
+
+    const servicesGrid = document.getElementById('servicesGrid');
+    const projectsGrid = document.getElementById('projectsGrid');
+    const teamGrid = document.querySelector('.founders-grid');
+
+    const wants = {
+      services: !!servicesGrid,
+      projects: !!projectsGrid,
+      team: !!teamGrid
+    };
+    if (!wants.services && !wants.projects && !wants.team) return;
+
+    if (!db) {
+      loaderToMessage([servicesGrid, projectsGrid].filter(Boolean),
+        'Content is taking a moment to load. Please refresh.');
+      return;
+    }
+
+    // Only cover grids that are genuinely empty until Supabase answers. The
+    // founders grid has static cards already, so a spinner there would hide
+    // content that is present.
+    if (wants.services && servicesGrid.children.length === 0) {
+      showLoader(servicesGrid, { label: 'Loading services' });
+    }
+    if (wants.projects && projectsGrid.children.length === 0) {
+      showLoader(projectsGrid, { label: 'Loading work' });
+    }
+
+    try {
+      const jobs = [];
+      if (wants.services) jobs.push(db.from('services').select('*').order('num'));
+      if (wants.projects) jobs.push(db.from('showcase_projects').select('*').order('created_at', { ascending: false }));
+      if (wants.team) jobs.push(db.from('team_members').select('*').order('created_at', { ascending: true }));
+
+      const results = await Promise.all(jobs);
+      let i = 0;
+
+      if (wants.services) {
+        const res = results[i++];
+        if (res.error) console.error('services:', res.error);
+        renderServices(servicesGrid, res.data || [], page === 'home' ? 4 : 0);
+        refresh(servicesGrid);
+      }
+
+      if (wants.projects) {
+        const res = results[i++];
+        if (res.error) console.error('showcase:', res.error);
+        const all = res.data || [];
+        if (page === 'home') {
+          renderProjects(projectsGrid, all, { limit: 3, linkTo: 'work' });
+        } else {
+          const modal = initProjectModal();
+          renderProjects(projectsGrid, all, { modal });
+          initShowMore(projectsGrid, all, modal);
+        }
+        refresh(projectsGrid);
+      }
+
+      if (wants.team) {
+        const res = results[i++];
+        if (res.error) console.error('team:', res.error);
+        renderTeam(teamGrid, res.data || []);
+        refresh(teamGrid);
+      }
+    } catch (err) {
+      console.error('page data:', err);
+      loaderToMessage([servicesGrid, projectsGrid].filter(Boolean),
+        'Content is taking a moment to load. Please refresh.');
+    }
+  }
+
+  /** work.html shows six, then reveals the rest. */
+  function initShowMore(grid, all, modal) {
+    const wrap = document.getElementById('showMoreContainer');
+    const btn = document.getElementById('btnToggleShowcase');
+    if (!wrap || !btn) return;
+
+    if (all.length <= 6) {
+      wrap.style.display = 'none';
+      renderProjects(grid, all, { modal });
+      refresh(grid);
+      return;
+    }
+
+    let expanded = false;
+    const label = btn.querySelector('span');
+    const arrow = btn.querySelector('.arrow');
+
+    function paint() {
+      renderProjects(grid, all, { modal, limit: expanded ? 0 : 6 });
+      refresh(grid);
+      if (label) label.textContent = expanded ? 'Show Less' : 'Show More';
+      if (arrow) arrow.style.transform = expanded ? 'rotate(180deg)' : '';
+    }
+
+    wrap.style.display = 'flex';
+    paint();
+
+    btn.addEventListener('click', () => {
+      expanded = !expanded;
+      paint();
+      if (!expanded) grid.scrollIntoView({ behavior: prefersReducedMotion ? 'auto' : 'smooth', block: 'start' });
+    });
+  }
+
+  // ================================================================
+  // BACKGROUND GALAXY
+  // ================================================================
+  // Home's hero runs the full sky. Every other page gets the same renderer
+  // dialled down behind the content — it replaces the old fixed gridlines with
+  // something on-brand instead of leaving interior pages flat.
+  function initBackgroundGalaxy() {
+    const hero = document.getElementById('circuitCanvas');
+    if (hero) {
+      onyxGalaxy(hero, { bgStars: 350, armStars: 180 });
+
+      // Fade the sky out as the hero scrolls away.
+      const section = hero.closest('.hero');
+      if (section && !prefersReducedMotion) {
+        window.addEventListener('scroll', () => {
+          const fade = Math.max(0, 1 - window.scrollY / (section.offsetHeight * 0.5));
+          hero.style.opacity = fade * 0.85;
+        }, { passive: true });
+      }
+      return;
+    }
+
+    const page = document.getElementById('pageGalaxy');
+    if (page) {
+      onyxGalaxy(page, {
+        bgStars: 170,
+        armStars: 90,
+        dust: 4,
+        shooting: false     // a shooting star behind body copy pulls the eye off it
+      });
+    }
+  }
+
+  // ================================================================
   // BOOT
   // ================================================================
   function init() {
+    initCursorGlow();
+    initNav();
+    initTheme();
+    initBackgroundGalaxy();
     observeReveals();
     document.querySelectorAll('.reveal-group').forEach(initRevealGroup);
+    initLineReveals();
     initImageFades();
     initMagneticButtons();
+    initServiceCardGlow();
+    initScramble();
+    loadPageData();
   }
 
   if (document.readyState === 'loading') {
@@ -240,7 +1108,6 @@
   }
 
   // ---- Public surface ----
-  // Page-specific scripts re-run these after injecting content.
   window.lottieLoader = lottieLoader;
   window.showLoader = showLoader;
   window.fadeSwap = fadeSwap;
@@ -249,11 +1116,8 @@
   window.observeReveals = observeReveals;
   window.initRevealGroup = initRevealGroup;
   window.initMagneticButtons = initMagneticButtons;
+  window.initLineReveals = initLineReveals;
+  window.onyxGalaxy = onyxGalaxy;
+  window.onSplashDone = onSplashDone;
+  window.toggleTheme = toggleTheme;
 })();
-
-// ============ SPLASH SCREEN ============
-// The splash controller lives in index.html's inline <script>, immediately
-// after the markup, so it runs on first parse rather than waiting for this
-// deferred file — a splash that needs a deferred script to leave can hang
-// visible if that script is slow or fails. `window.hideSplashScreen` is
-// published there; call it from anywhere to dismiss early.
