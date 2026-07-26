@@ -7,6 +7,34 @@ Format each entry: what was done, why it mattered, and any key decisions.
 
 ## 2026-07-26
 
+### Splash now plays on every homepage load (reverses the once-per-session gate)
+
+At the user's request the `sessionStorage` gate added earlier the same day is
+gone: reloading `/`, or returning to it from another page, plays the curtain
+again every time. The `<head>` bootstrap simply sets `data-splash="show"`
+unconditionally.
+
+`data-splash="skip"` is still honoured by both the controller and `styles.css`,
+so it remains the manual off-switch — but nothing sets it automatically now.
+Interior pages are unchanged: they have no splash markup and set `.splash-done`
+in their own `<head>`.
+
+- **Trade-off, stated for the record:** every arrival at the homepage now costs
+  ~2.7s before the hero appears, including a returning visitor clicking "Home".
+  That was the reason for the session gate; it is a deliberate call, not an
+  oversight. Reverting is a one-line change in `index.html`'s bootstrap.
+- Re-verified: splash on three consecutive loads plus an F5 reload, still absent
+  on `/services`, present again on returning to `/`, and no `sessionStorage` key
+  written any more. Hero entrance still fires correctly off `.splash-done`.
+
+- **Testing note:** the headline check was rewritten to sample in-page on
+  `requestAnimationFrame` rather than over CDP. Driving it with per-sample
+  round-trips cost ~700ms each, which skipped the window where the stagger is
+  widest and produced a false failure on a working animation. Also, an
+  `add_init_script` runs before the parser creates `<html>`, so
+  `document.documentElement` is null there — the first version of the sampler
+  threw silently and collected nothing.
+
 ### Back to seven pages, gridlines gone, and the text animations actually visible
 
 **Removed `.grid-bg`.** The fixed 80px gridline overlay is gone sitewide, along
@@ -93,6 +121,9 @@ time. **It must stay an IIFE** — the documented silent-failure mode.
 the `<head>` before first paint and stamped as `data-splash`, so a page that
 won't show the curtain never flashes it. A 2.7s brand moment is right on arrival;
 on every navigation it would be a toll booth.
+> **Superseded the same day** — the once-per-session gate was removed at the
+> user's request; the splash now plays on every homepage load. See the entry
+> above. Homepage-only, and the `data-splash` mechanism, still stand.
 
 **Design upgrades:**
 - Nav active state gets a hairline that grows from the centre, keyed to

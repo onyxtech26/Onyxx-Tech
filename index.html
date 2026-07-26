@@ -6,20 +6,16 @@
     var root = document.documentElement;
     root.setAttribute('data-theme', localStorage.getItem('theme') || 'dark');
 
-    /* Splash policy, decided before first paint so a page that will not show the
-       curtain never flashes it: the homepage shows it once per session. A 2.7s
-       brand moment is right on arrival; on every navigation it is a toll booth.
-       sessionStorage is wrapped because Safari private mode throws on write. */
-    var first = true;
-    try { first = !sessionStorage.getItem('onyx-splash-seen'); } catch (e) {}
-    if (first) {
-      try { sessionStorage.setItem('onyx-splash-seen', '1'); } catch (e) {}
-      root.setAttribute('data-splash', 'show');
-    } else {
-      root.setAttribute('data-splash', 'skip');
-      /* No curtain to wait for, so release the hero entrance immediately. */
-      root.classList.add('splash-done');
-    }
+    /* Splash policy: the homepage plays the curtain on EVERY load — reload it,
+       or come back from another page, and you get it again. There is
+       deliberately no sessionStorage gate here; an earlier version showed it
+       once per session and that is not what's wanted.
+
+       Interior pages have no splash markup at all, so they set `.splash-done`
+       in their own <head> instead. Setting `data-splash="skip"` here is still
+       the manual off-switch — the controller and styles.css both honour it —
+       but nothing sets it automatically any more. */
+    root.setAttribute('data-splash', 'show');
   })();
 </script>
 <meta charset="UTF-8" />
