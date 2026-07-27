@@ -416,6 +416,145 @@
       padding: 2.5rem 3rem;
     }
 
+    /* ============================================================
+       RESPONSIVE
+       ============================================================
+       This file previously had no media queries at all, so the desktop layout
+       was simply squeezed onto phones: a 76px icon rail eating a fifth of a
+       390px screen, 2.5rem display headings wrapping to three lines, and every
+       table clipped with the scrollbar hidden.
+
+       Below 860px the sidebar becomes a horizontal bar pinned to the bottom —
+       thumb-reachable, and it stops competing with the content for width. */
+    @media (max-width: 1100px) {
+      .main-content { padding: 2rem 1.5rem; }
+      .section-title { font-size: 2rem; }
+    }
+
+    @media (max-width: 860px) {
+      body { flex-direction: column; overflow: auto; }
+
+      .sidebar {
+        width: 100%;
+        height: auto;
+        flex-direction: row;
+        align-items: center;
+        gap: 0.4rem;
+        padding: 0.4rem 0.6rem;
+        border-right: none;
+        border-top: 1px solid var(--glass-border);
+        overflow: visible;
+        /* Fixed to the bottom rather than in flow: the page scrolls, and a nav
+           that scrolls away is a nav you cannot reach. */
+        position: fixed;
+        bottom: 0; left: 0; right: 0;
+        z-index: 60;
+        /* Nearly opaque. The sidebar's translucent desktop background let a
+           chart scrolling underneath bleed straight through the bar, which read
+           as a rendering fault rather than as depth. */
+        background: rgba(10, 10, 12, 0.94);
+        box-shadow: 0 -8px 24px rgba(0, 0, 0, 0.45);
+      }
+      :root[data-theme="light"] .sidebar {
+        background: rgba(250, 250, 252, 0.96);
+      }
+      /* Hover-to-expand is meaningless without a pointer. */
+      .sidebar:hover { width: 100%; padding: 0.4rem 0.6rem; }
+
+      /* The header is a flex row with an inline style and a 3rem bottom margin.
+         `display: contents` dissolves it so its two children — the logo and the
+         theme toggle — become direct items of the bar; the logo is then dropped
+         and the toggle survives, which it would not if the header were simply
+         hidden. */
+      .sidebar-header { display: contents !important; }
+      .logo-container, .sidebar-logo { display: none !important; }
+
+      /* The real nav container. Making only `.sidebar` a row laid the header and
+         this <nav> side by side while <nav> kept stacking its items vertically —
+         which is why the bar came out 558px tall. */
+      .sidebar nav {
+        flex: 1 1 auto;
+        min-width: 0;
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        gap: 0.15rem;
+        overflow-x: auto;
+        scrollbar-width: none;
+      }
+      .sidebar nav::-webkit-scrollbar { display: none; }
+
+      /* Lets the grouped Projects item join the row instead of forming a
+         second axis; its hover submenu has no place in a bottom bar. */
+      .nav-group { display: contents; }
+      .submenu { display: none !important; }
+
+      .nav-item {
+        flex: 0 0 auto;
+        padding: 0.55rem 0.6rem;
+        margin: 0;
+        border-radius: 10px;
+      }
+      .nav-item span, .nav-label { display: none; }
+
+      .main-content {
+        padding: 1.25rem 1rem 5.5rem;   /* bottom clears the fixed nav bar */
+        overflow-y: visible;
+        width: 100%;
+      }
+
+      .section-title { font-size: 1.6rem; line-height: 1.15; }
+      .chart-card-title { font-size: 1.05rem; }
+
+      /* Header rows that put a title beside an action button stack instead of
+         squeezing both. */
+      .section-header,
+      .tab-section > div[style*="justify-content: space-between"] {
+        flex-direction: column;
+        align-items: flex-start !important;
+        gap: 0.75rem;
+      }
+
+      /* Exact class names matter here — an earlier pass guessed `.metric-grid`
+         and silently matched nothing. The three that exist are: */
+      /* Exact class names matter here — an earlier pass guessed `.metric-grid`
+         and silently matched nothing. These are the ones that exist, plus the
+         Overview's own two-column layout. The `!important` is doing real work:
+         several of these carry an inline `grid-template-columns`, which no
+         ordinary rule can beat. */
+      .kpi-grid,
+      .metrics-grid,
+      .dashboard-grid,
+      .grid-container-card,
+      .overview-top-row,
+      .kpi-columns-container,
+      .form-group[style*="grid-template-columns"] {
+        grid-template-columns: 1fr !important;
+        gap: 0.75rem !important;
+      }
+
+      .glass-card { padding: 1rem; border-radius: 12px; }
+      .kpi-val, .metric-value { font-size: 1.5rem; }
+
+      table { font-size: 0.82rem; }
+      th, td { padding: 0.6rem 0.5rem; }
+
+      /* Filter bars and the detail panel's add-forms: one control per row
+         rather than a horizontal squeeze. */
+      .filter-bar { flex-direction: column; align-items: stretch; }
+      .filter-bar > * { width: 100%; }
+      .add-payment-form, .add-addon-form { flex-direction: column; align-items: stretch; }
+      .add-payment-form > *, .add-addon-form > * { width: 100% !important; }
+
+      .modal, .modal-content { width: 94vw; max-height: 88vh; }
+    }
+
+    @media (max-width: 480px) {
+      .section-title { font-size: 1.35rem; }
+      .main-content { padding: 1rem 0.75rem 5.5rem; }
+      .kpi-val, .metric-value { font-size: 1.3rem; }
+    }
+
     .tab-section {
       display: none;
       animation: fadeIn 0.4s ease;
@@ -789,14 +928,37 @@
     }
 
     /* Tables */
+    /* Tables scroll sideways when they have to. The scrollbar used to be hidden
+       entirely, which meant a table wider than its container was simply cut off
+       with no hint that anything was there — the Projects table lost its
+       Outstanding and Actions columns that way. A slim visible bar is the
+       affordance; the fade on the right edge (below) signals it before you even
+       try to scroll. */
     .table-container {
       width: 100%;
       overflow-x: auto;
-      scrollbar-width: none; /* Firefox */
-      -ms-overflow-style: none; /* IE/Edge */
+      scrollbar-width: thin;
+      scrollbar-color: var(--glass-border) transparent;
+      position: relative;
     }
-    .table-container::-webkit-scrollbar {
-      display: none; /* Chrome/Safari */
+    .table-container::-webkit-scrollbar { height: 8px; }
+    .table-container::-webkit-scrollbar-track { background: transparent; }
+    .table-container::-webkit-scrollbar-thumb {
+      background: var(--glass-border);
+      border-radius: 4px;
+    }
+    .table-container::-webkit-scrollbar-thumb:hover { background: var(--accent-dim); }
+
+    /* Columns that can be dropped before the numbers are, in priority order.
+       Project name, money and actions always survive. */
+    @media (max-width: 1250px) {
+      .col-deadline { display: none; }
+    }
+    @media (max-width: 1050px) {
+      .col-client { display: none; }
+    }
+    @media (max-width: 900px) {
+      .col-payments { display: none; }
     }
     
     table {
@@ -1306,13 +1468,11 @@
               <tr>
                 <th style="width: 2.2rem;"></th>
                 <th>Project</th>
-                <th>Client</th>
-                <th>Deadline</th>
+                <th class="col-client">Client</th>
+                <th class="col-deadline">Deadline</th>
                 <th>Status</th>
-                <th>Value</th>
-                <th>Add-ons</th>
                 <th>Contract</th>
-                <th>Payments</th>
+                <th class="col-payments">Payments</th>
                 <th style="color: #4ade80;">Collected</th>
                 <th style="color: #f87171;">Outstanding</th>
                 <th>Actions</th>
@@ -1522,6 +1682,38 @@
         <div class="section-header">
           <h1 class="section-title">Cash Flow</h1>
         </div>
+        <p style="color: var(--bone-dim); font-size: 0.88rem; margin-top: -0.5rem; margin-bottom: 1.5rem;">
+          Where the money actually is, where it went, and what is still expected.
+        </p>
+
+        <!-- Charts read from computeFinancials()/project_payments, so they show
+             the same numbers as every other tab by construction. -->
+        <div class="dashboard-grid" style="display: grid; grid-template-columns: 1.4fr 1fr; gap: 1.5rem; margin-bottom: 1.5rem;">
+          <div class="glass-card">
+            <div class="chart-card-title">Cash Position</div>
+            <p style="font-size: 0.75rem; color: var(--bone-dim); margin: -0.8rem 0 1rem;">
+              Closing balance each month, against money in and out.
+            </p>
+            <div style="height: 260px;"><canvas id="cashPositionChart"></canvas></div>
+          </div>
+
+          <div class="glass-card">
+            <div class="chart-card-title">Expected Income</div>
+            <p style="font-size: 0.75rem; color: var(--bone-dim); margin: -0.8rem 0 1rem;">
+              Scheduled payments not yet received, by due month. Red is already overdue.
+            </p>
+            <div style="height: 260px;"><canvas id="expectedIncomeChart"></canvas></div>
+          </div>
+        </div>
+
+        <div class="glass-card" style="margin-bottom: 1.5rem;">
+          <div class="chart-card-title">Outstanding by Project</div>
+          <p style="font-size: 0.75rem; color: var(--bone-dim); margin: -0.8rem 0 1rem;">
+            Contract total against what has actually been collected.
+          </p>
+          <div style="height: 240px;"><canvas id="outstandingChart"></canvas></div>
+        </div>
+
         <div class="glass-card table-container">
           <table>
             <thead>
@@ -3532,13 +3724,14 @@ function getProjectImageUrl(p) {
             </button>
           </td>
           <td style="font-weight: 500; white-space: nowrap;">${p.name}</td>
-          <td style="white-space: nowrap;">${p.client || '-'}</td>
-          <td style="white-space: nowrap;">${formatDate(p.deadline)}</td>
+          <td class="col-client" style="white-space: nowrap;">${p.client || '-'}</td>
+          <td class="col-deadline" style="white-space: nowrap;">${formatDate(p.deadline)}</td>
           <td>${statusSelect}</td>
-          <td style="white-space: nowrap;">${formatMYR(val)}</td>
-          <td style="white-space: nowrap;">${t.addonsTotal ? formatMYR(t.addonsTotal) : '<span style="opacity:0.4;">&mdash;</span>'}</td>
-          <td style="white-space: nowrap; font-weight: 500;">${formatMYR(t.contractTotal)}</td>
-          <td style="white-space: nowrap; font-family: var(--font-mono); font-size: 0.78rem;">${paidCount}/${t.payments.length}${overdueMark}</td>
+          <td style="white-space: nowrap; font-weight: 500;">
+            ${formatMYR(t.contractTotal)}
+            ${t.addonsTotal ? `<div style="font-size:0.68rem;opacity:0.6;font-weight:400;">incl. ${formatMYR(t.addonsTotal)} add-ons</div>` : ''}
+          </td>
+          <td class="col-payments" style="white-space: nowrap; font-family: var(--font-mono); font-size: 0.78rem;">${paidCount}/${t.payments.length}${overdueMark}</td>
           <td style="color: #4ade80; font-weight: 500; white-space: nowrap;">${formatMYR(col)}${warningMarkup}</td>
           <td style="color: ${out > 0.01 ? '#f87171' : 'var(--bone-dim)'}; font-weight: 500; white-space: nowrap;">${formatMYR(out)}</td>
           <td>
@@ -3556,7 +3749,7 @@ function getProjectImageUrl(p) {
         detail.className = 'project-detail-row';
         detail.dataset.detailFor = p.id;
         detail.style.display = 'none';
-        detail.innerHTML = `<td colspan="12" style="padding: 0; background: rgba(0,0,0,0.18);">
+        detail.innerHTML = `<td colspan="10" style="padding: 0; background: rgba(0,0,0,0.18);">
           <div id="detail-${p.id}" style="padding: 1.25rem 1.5rem;"></div></td>`;
         tbody.appendChild(detail);
       });
@@ -3564,11 +3757,13 @@ function getProjectImageUrl(p) {
       // Render totals footer
       tfoot.innerHTML = `
         <tr style="font-weight: bold; background: var(--table-header-bg);">
-          <td colspan="5">Total</td>
-          <td>${formatMYR(totalVal)}</td>
-          <td>${formatMYR(totalAddons)}</td>
-          <td>${formatMYR(totalVal + totalAddons)}</td>
+          <td>Total</td>
           <td></td>
+          <td class="col-client"></td>
+          <td class="col-deadline"></td>
+          <td></td>
+          <td>${formatMYR(totalVal + totalAddons)}</td>
+          <td class="col-payments"></td>
           <td style="color: #4ade80;">${formatMYR(totalCol)}</td>
           <td style="color: #f87171;">${formatMYR(totalOut)}</td>
           <td></td>
@@ -3667,6 +3862,148 @@ function getProjectImageUrl(p) {
     }
 
     // RENDER CASH FLOW
+    /* ==================================================================
+       CASH FLOW CHARTS
+       ==================================================================
+       Three questions the table alone could not answer at a glance: where is
+       the balance heading, what is still owed to us and when, and which client
+       is sitting on the money. All three read the same derived figures as every
+       other tab, so they cannot disagree with the numbers beside them. */
+    let cashPositionChartInstance = null;
+    let expectedIncomeChartInstance = null;
+    let outstandingChartInstance = null;
+
+    function monthLabel(key) {
+      const [y, m] = key.split('-');
+      return new Date(parseInt(y), parseInt(m) - 1, 1)
+        .toLocaleString('en-US', { month: 'short', year: '2-digit' });
+    }
+
+    function renderCashflowCharts(monthlyData, sortedMonths) {
+      const gridColour = 'rgba(255,255,255,0.06)';
+      const tick = { color: 'rgba(255,255,255,0.45)', font: { size: 10 } };
+      const money = v => formatMYR(v);
+
+      // Shared axis/legend styling; the money formatter on the tooltip is the
+      // point of these charts, so it is applied everywhere.
+      const baseOpts = (extra = {}) => ({
+        responsive: true,
+        maintainAspectRatio: false,
+        interaction: { intersect: false, mode: 'index' },
+        plugins: {
+          legend: { labels: { color: 'rgba(255,255,255,0.6)', boxWidth: 12, font: { size: 11 } } },
+          tooltip: { callbacks: { label: c => `${c.dataset.label}: ${money(c.parsed.y ?? c.parsed.x)}` } }
+        },
+        scales: {
+          x: { grid: { color: gridColour }, ticks: tick },
+          y: { grid: { color: gridColour }, ticks: { ...tick, callback: v => 'RM ' + v.toLocaleString() } }
+        },
+        ...extra
+      });
+
+      // ---- 1. cash position: closing balance against in/out ----
+      let running = 0;
+      const closing = sortedMonths.map(k => {
+        running += monthlyData[k].moneyIn - monthlyData[k].moneyOut;
+        return running;
+      });
+
+      if (cashPositionChartInstance) cashPositionChartInstance.destroy();
+      const cpEl = document.getElementById('cashPositionChart');
+      if (cpEl) {
+        cashPositionChartInstance = new Chart(cpEl.getContext('2d'), {
+          data: {
+            labels: sortedMonths.map(monthLabel),
+            datasets: [
+              { type: 'line', label: 'Closing balance', data: closing,
+                borderColor: '#38e0ff', backgroundColor: 'rgba(56,224,255,0.12)',
+                fill: true, tension: 0.35, borderWidth: 2,
+                pointBackgroundColor: '#38e0ff', pointRadius: 3, order: 0 },
+              { type: 'bar', label: 'Money in', data: sortedMonths.map(k => monthlyData[k].moneyIn),
+                backgroundColor: 'rgba(74,222,128,0.55)', borderRadius: 4, order: 1 },
+              { type: 'bar', label: 'Money out', data: sortedMonths.map(k => monthlyData[k].moneyOut),
+                backgroundColor: 'rgba(248,113,113,0.55)', borderRadius: 4, order: 2 }
+            ]
+          },
+          options: baseOpts()
+        });
+      }
+
+      // ---- 2. expected income: unpaid scheduled payments, by due month ----
+      // Overdue is split into its own series rather than coloured per-bar, so it
+      // gets a legend entry and a separate tooltip line.
+      const today = new Date().toISOString().substring(0, 10);
+      const dueBuckets = {};
+      paymentsData.forEach(p => {
+        if (p.received) return;
+        const key = p.due_date ? String(p.due_date).substring(0, 7) : 'No date';
+        if (!dueBuckets[key]) dueBuckets[key] = { due: 0, overdue: 0 };
+        const amt = parseFloat(p.amount) || 0;
+        if (p.due_date && p.due_date < today) dueBuckets[key].overdue += amt;
+        else dueBuckets[key].due += amt;
+      });
+      const dueKeys = Object.keys(dueBuckets).sort();
+
+      if (expectedIncomeChartInstance) expectedIncomeChartInstance.destroy();
+      const eiEl = document.getElementById('expectedIncomeChart');
+      if (eiEl) {
+        expectedIncomeChartInstance = new Chart(eiEl.getContext('2d'), {
+          type: 'bar',
+          data: {
+            labels: dueKeys.length ? dueKeys.map(k => k === 'No date' ? 'No date' : monthLabel(k)) : ['Nothing outstanding'],
+            datasets: [
+              { label: 'Due', data: dueKeys.length ? dueKeys.map(k => dueBuckets[k].due) : [0],
+                backgroundColor: 'rgba(56,224,255,0.6)', borderRadius: 4 },
+              { label: 'Overdue', data: dueKeys.length ? dueKeys.map(k => dueBuckets[k].overdue) : [0],
+                backgroundColor: 'rgba(248,113,113,0.75)', borderRadius: 4 }
+            ]
+          },
+          options: baseOpts({
+            scales: {
+              x: { stacked: true, grid: { color: gridColour }, ticks: tick },
+              y: { stacked: true, grid: { color: gridColour },
+                   ticks: { ...tick, callback: v => 'RM ' + v.toLocaleString() } }
+            }
+          })
+        });
+      }
+
+      // ---- 3. outstanding by project ----
+      const rows = Object.values(fin.byProject)
+        .filter(t => t.contractTotal > 0)
+        .sort((a, b) => b.outstanding - a.outstanding)
+        .slice(0, 8);
+
+      if (outstandingChartInstance) outstandingChartInstance.destroy();
+      const osEl = document.getElementById('outstandingChart');
+      if (osEl) {
+        outstandingChartInstance = new Chart(osEl.getContext('2d'), {
+          type: 'bar',
+          data: {
+            labels: rows.length ? rows.map(t => t.name) : ['No projects'],
+            datasets: [
+              { label: 'Collected', data: rows.length ? rows.map(t => t.collected) : [0],
+                backgroundColor: 'rgba(74,222,128,0.65)', borderRadius: 4 },
+              { label: 'Outstanding', data: rows.length ? rows.map(t => Math.max(0, t.outstanding)) : [0],
+                backgroundColor: 'rgba(248,113,113,0.6)', borderRadius: 4 }
+            ]
+          },
+          options: baseOpts({
+            indexAxis: 'y',    // horizontal: project names need the room
+            plugins: {
+              legend: { labels: { color: 'rgba(255,255,255,0.6)', boxWidth: 12, font: { size: 11 } } },
+              tooltip: { callbacks: { label: c => `${c.dataset.label}: ${money(c.parsed.x)}` } }
+            },
+            scales: {
+              x: { stacked: true, grid: { color: gridColour },
+                   ticks: { ...tick, callback: v => 'RM ' + v.toLocaleString() } },
+              y: { stacked: true, grid: { display: false }, ticks: tick }
+            }
+          })
+        });
+      }
+    }
+
     function renderCashflow() {
       const tbody = document.getElementById('cashflowTableBody');
       tbody.innerHTML = '';
@@ -3691,7 +4028,11 @@ function getProjectImageUrl(p) {
       });
 
       const sortedMonths = Object.keys(monthlyData).sort();
-      
+
+      // Before the early return below, so the charts are still cleared/emptied
+      // when there is nothing to show rather than keeping stale bars on screen.
+      renderCashflowCharts(monthlyData, sortedMonths);
+
       if (sortedMonths.length === 0) {
         tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; color: var(--bone-dim);">No transactions to show cash flow.</td></tr>`;
         return;
