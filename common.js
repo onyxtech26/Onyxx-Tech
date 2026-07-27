@@ -525,25 +525,59 @@
       });
     }
 
-    // ---- Hidden entry to the admin tool ----
+    // ---- Hidden entry to the admin tool: double-click the nav logo ----
     //
-    // The gesture lives on the FOOTER brand mark, not the nav logo.
+    // The logo is a real link to "/", and that is the whole difficulty: the
+    // first click of a double-click starts navigating and tears the page down
+    // before the second one can land, so a plain `dblclick` listener never
+    // fires. The click is therefore intercepted and `event.detail` — the running
+    // click count — decides what happens.
     //
-    // It used to be the nav logo, and that could not be made to work properly.
-    // The nav logo is a real link to "/", so the first click of a double-click
-    // navigates and tears the page down before the second one lands — from an
-    // interior page you just end up on the homepage. Intercepting the click and
-    // delaying the navigation does fix it, but only for double-clicks faster
-    // than the delay: a 250ms delay still lost a 320ms double-click, and
-    // covering the OS default (~500ms) would mean half a second of lag on the
-    // primary home link, on every page, forever. Not worth it for a shortcut.
+    // ON THE HOMEPAGE this costs nothing. A logo click there has nowhere to go,
+    // so it is cancelled outright (scroll to top instead) and the gesture is
+    // instant with no waiting at all.
     //
-    // The footer mark is an <img> with no navigation of its own, so the gesture
-    // is instant and reliable at any double-click speed, and the nav logo stays
-    // a plain fast link. `/admin-login` remains the reliable direct route.
+    // ON OTHER PAGES a single click has to wait out HOME_DELAY before going
+    // home, in case a second click is coming. 420ms covers a comfortably slow
+    // double-click — a 250ms window measurably lost one taken at 320ms — while
+    // staying under the OS maximum, where the lag would start to feel broken.
+    const HOME_DELAY = 420;
+    const onHomePage = (document.body.dataset.page || '') === 'home';
+
+    document.querySelectorAll('.nav-logo').forEach(logo => {
+      let timer = null;
+      logo.title = 'Onyxx Tech — double-click for admin';
+
+      logo.addEventListener('click', (e) => {
+        // detail === 0 is keyboard activation; there is no second click coming,
+        // so let the link behave normally and instantly.
+        if (e.detail === 0) return;
+
+        e.preventDefault();
+
+        if (e.detail >= 2) {
+          clearTimeout(timer);
+          window.location.href = 'admin-login.html';
+          return;
+        }
+
+        clearTimeout(timer);
+        if (onHomePage) {
+          // Already home — reloading would be pointless, so this is free.
+          window.scrollTo({ top: 0, behavior: prefersReducedMotion ? 'auto' : 'smooth' });
+          return;
+        }
+        timer = setTimeout(() => {
+          window.location.href = logo.getAttribute('href') || '/';
+        }, HOME_DELAY);
+      });
+    });
+
+    // Same gesture on the footer mark. It is an <img> with no navigation of its
+    // own, so it needs none of the above and works at any speed — kept as the
+    // zero-latency route for anyone who finds it.
     document.querySelectorAll('.footer-brand-mark').forEach(mark => {
-      mark.style.cursor = 'default';
-      mark.title = 'Onyxx Tech';
+      mark.title = 'Onyxx Tech — double-click for admin';
       mark.addEventListener('dblclick', () => {
         window.location.href = 'admin-login.html';
       });
