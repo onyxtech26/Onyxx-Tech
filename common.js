@@ -525,10 +525,26 @@
       });
     }
 
-    // Double-clicking the logo is the way into the admin tool.
-    document.querySelectorAll('.nav-logo').forEach(logo => {
-      logo.addEventListener('dblclick', (e) => {
-        e.preventDefault();
+    // ---- Hidden entry to the admin tool ----
+    //
+    // The gesture lives on the FOOTER brand mark, not the nav logo.
+    //
+    // It used to be the nav logo, and that could not be made to work properly.
+    // The nav logo is a real link to "/", so the first click of a double-click
+    // navigates and tears the page down before the second one lands — from an
+    // interior page you just end up on the homepage. Intercepting the click and
+    // delaying the navigation does fix it, but only for double-clicks faster
+    // than the delay: a 250ms delay still lost a 320ms double-click, and
+    // covering the OS default (~500ms) would mean half a second of lag on the
+    // primary home link, on every page, forever. Not worth it for a shortcut.
+    //
+    // The footer mark is an <img> with no navigation of its own, so the gesture
+    // is instant and reliable at any double-click speed, and the nav logo stays
+    // a plain fast link. `/admin-login` remains the reliable direct route.
+    document.querySelectorAll('.footer-brand-mark').forEach(mark => {
+      mark.style.cursor = 'default';
+      mark.title = 'Onyxx Tech';
+      mark.addEventListener('dblclick', () => {
         window.location.href = 'admin-login.html';
       });
     });
