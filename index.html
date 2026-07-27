@@ -6,16 +6,43 @@
     var root = document.documentElement;
     root.setAttribute('data-theme', localStorage.getItem('theme') || 'dark');
 
-    /* Splash policy: the homepage plays the curtain on EVERY load — reload it,
-       or come back from another page, and you get it again. There is
-       deliberately no sessionStorage gate here; an earlier version showed it
-       once per session and that is not what's wanted.
+    /* Splash policy, decided before first paint so a page that will not show the
+       curtain never flashes it. The homepage plays it when the visitor ARRIVES
+       or RELOADS, but not when they merely navigate back to it from another page:
 
-       Interior pages have no splash markup at all, so they set `.splash-done`
-       in their own <head> instead. Setting `data-splash="skip"` here is still
-       the manual off-switch — the controller and styles.css both honour it —
-       but nothing sets it automatically any more. */
-    root.setAttribute('data-splash', 'show');
+         first load this session   -> show   (arriving at the site)
+         refresh / F5 on "/"       -> show   (deliberately asking to see it again)
+         clicking Home from /work  -> skip   (mid-visit; a 2.7s curtain here is a
+                                              toll booth on your own navigation)
+         back button to "/"        -> skip   (same reasoning)
+
+       A reload and a first arrival are both navigationType "navigate", so
+       neither signal alone is enough — it takes the nav type AND a
+       session-scoped seen flag together. */
+    var isReload = false;
+    try {
+      var navEntry = (performance.getEntriesByType('navigation') || [])[0];
+      isReload = navEntry
+        ? navEntry.type === 'reload'
+        // performance.navigation is deprecated but is the only signal on
+        // browsers without the Navigation Timing L2 entry. 1 === TYPE_RELOAD.
+        : !!(performance.navigation && performance.navigation.type === 1);
+    } catch (e) { /* no timing API: fall through to the first-visit check */ }
+
+    var firstVisit = true;
+    try {
+      firstVisit = !sessionStorage.getItem('onyx-splash-seen');
+      sessionStorage.setItem('onyx-splash-seen', '1');
+    } catch (e) { /* Safari private mode throws: treat every load as a first visit */ }
+
+    if (isReload || firstVisit) {
+      root.setAttribute('data-splash', 'show');
+    } else {
+      root.setAttribute('data-splash', 'skip');
+      /* No curtain to wait for, so release the hero entrance immediately —
+         otherwise everything gated on .splash-done would never play. */
+      root.classList.add('splash-done');
+    }
   })();
 </script>
 <meta charset="UTF-8" />

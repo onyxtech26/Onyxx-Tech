@@ -1144,6 +1144,8 @@
             <div class="submenu-item" onclick="switchTab('project-showcase')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9"></rect><rect x="14" y="3" width="7" height="5"></rect><rect x="14" y="12" width="7" height="9"></rect><rect x="3" y="16" width="7" height="5"></rect></svg><span>Showcase</span></div>
           </div>
         </div>
+        <div class="nav-item" onclick="switchTab('payments')" title="Payments"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg></div>
+        <div class="nav-item" onclick="switchTab('quotations')" title="Quotations"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="13" y2="17"/></svg></div>
         <div class="nav-item" onclick="switchTab('expenses')" title="Expenses"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"></line><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg> <span>Expenses</span></div>
         <div class="nav-item" onclick="switchTab('cashflow')" title="Cash Flow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg> <span>Cash Flow</span></div>
         <div class="nav-item" onclick="switchTab('partners')" title="Partners"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg> <span>Partners</span></div>
@@ -1302,18 +1304,15 @@
           <table>
             <thead>
               <tr>
+                <th style="width: 2.2rem;"></th>
                 <th>Project</th>
                 <th>Client</th>
-                <th>Start Date</th>
                 <th>Deadline</th>
                 <th>Status</th>
-                <th>Project Value</th>
-                <th>Deposit Amount</th>
-                <th>Deposit Recv?</th>
-                <th>Deposit Date</th>
-                <th>Final Amount</th>
-                <th>Final Recv?</th>
-                <th>Final Date</th>
+                <th>Value</th>
+                <th>Add-ons</th>
+                <th>Contract</th>
+                <th>Payments</th>
                 <th style="color: #4ade80;">Collected</th>
                 <th style="color: #f87171;">Outstanding</th>
                 <th>Actions</th>
@@ -1341,6 +1340,115 @@
       </section>
 
       <!-- EXPENSES TAB -->
+      <section id="tab-payments" class="tab-section">
+        <h1 class="section-title">Payments</h1>
+        <p style="color: var(--bone-dim); font-size: 0.88rem; margin-top: -0.5rem; margin-bottom: 1.5rem;">
+          Every scheduled installment across all projects. Unpaid first, most overdue at the top.
+        </p>
+
+        <div class="kpi-grid" style="margin-bottom: 1.5rem;">
+          <div class="glass-card kpi-card">
+            <div class="kpi-val" id="kpiPaymentsDue">RM 0.00</div>
+            <div class="kpi-lbl">Outstanding (scheduled, unpaid)</div>
+          </div>
+          <div class="glass-card kpi-card">
+            <div class="kpi-val" id="kpiPaymentsOverdue" style="color: #f87171;">RM 0.00</div>
+            <div class="kpi-lbl">Overdue</div>
+          </div>
+          <div class="glass-card kpi-card">
+            <div class="kpi-val" id="kpiPaymentsThisMonth" style="color: #4ade80;">RM 0.00</div>
+            <div class="kpi-lbl">Received this month</div>
+          </div>
+        </div>
+
+        <div class="glass-card table-container">
+          <table>
+            <thead>
+              <tr>
+                <th>Project</th><th>Client</th><th>Payment</th>
+                <th>Amount</th><th>Due</th><th>Status</th>
+              </tr>
+            </thead>
+            <tbody id="paymentsTableBody"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section id="tab-quotations" class="tab-section">
+        <h1 class="section-title">Quotations</h1>
+        <p style="color: var(--bone-dim); font-size: 0.88rem; margin-top: -0.5rem; margin-bottom: 1.5rem;">
+          The quote you sent, its total, and where it got to. Files are stored privately &mdash;
+          links are signed and short-lived.
+        </p>
+
+        <div class="glass-card" style="padding: 1.5rem; margin-bottom: 1.5rem;">
+          <form id="quotationForm" onsubmit="saveQuotation(event)">
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1rem;">
+              <div>
+                <label class="form-label" for="quoteNumber">Quote No.</label>
+                <input id="quoteNumber" class="form-control" placeholder="ONX-2026-014" />
+              </div>
+              <div>
+                <label class="form-label" for="quoteClient">Client</label>
+                <input id="quoteClient" class="form-control" />
+              </div>
+              <div>
+                <label class="form-label" for="quoteProject">Project</label>
+                <select id="quoteProject" class="form-control"></select>
+              </div>
+              <div>
+                <label class="form-label" for="quoteDate">Quote Date</label>
+                <input id="quoteDate" type="date" class="form-control" />
+              </div>
+              <div>
+                <label class="form-label" for="quoteValidUntil">Valid Until</label>
+                <input id="quoteValidUntil" type="date" class="form-control" />
+              </div>
+              <div>
+                <label class="form-label" for="quoteSubtotal">Subtotal</label>
+                <input id="quoteSubtotal" type="number" step="0.01" class="form-control" value="0" />
+              </div>
+              <div>
+                <label class="form-label" for="quoteSst">SST</label>
+                <input id="quoteSst" type="number" step="0.01" class="form-control" value="0" />
+              </div>
+              <div>
+                <label class="form-label" for="quoteTotal">Total (MYR)</label>
+                <input id="quoteTotal" type="number" step="0.01" class="form-control" value="0" required />
+              </div>
+              <div>
+                <label class="form-label" for="quoteStatus">Status</label>
+                <select id="quoteStatus" class="form-control">
+                  <option>Draft</option><option>Sent</option>
+                  <option>Accepted</option><option>Declined</option>
+                </select>
+              </div>
+              <div>
+                <label class="form-label" for="quoteFile">Document (PDF/DOCX)</label>
+                <input id="quoteFile" type="file" class="form-control" accept=".pdf,.doc,.docx" />
+              </div>
+            </div>
+            <div class="form-group" style="margin-top: 1rem;">
+              <label class="form-label" for="quoteNotes">Notes</label>
+              <input id="quoteNotes" class="form-control" />
+            </div>
+            <button type="submit" class="btn-primary" style="width: auto; padding: 0.6rem 1.5rem; margin-top: 1rem;">Save quotation</button>
+          </form>
+        </div>
+
+        <div class="glass-card table-container">
+          <table>
+            <thead>
+              <tr>
+                <th>Quote No.</th><th>Client</th><th>Project</th>
+                <th>Date</th><th>Total</th><th>Status</th><th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="quotationsTableBody"></tbody>
+          </table>
+        </div>
+      </section>
+
       <section id="tab-expenses" class="tab-section">
         <div class="section-header">
           <h1 class="section-title">Expenses</h1>
@@ -1483,6 +1591,21 @@
           </div>
         </div>
 
+        <!-- Who owes whom. With a fixed 50/50 split and all costs fronted
+             personally, the imbalance is a single number. -->
+        <div class="glass-card" id="partnerSettleUpCard"
+             style="padding: 1rem 1.25rem; margin-bottom: 1rem; font-size: 0.9rem;">
+          <div style="font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.14em; color: var(--bone-dim); margin-bottom: 0.4rem;">Settle up</div>
+          <div id="partnerSettleUp">&mdash;</div>
+        </div>
+
+        <!-- Reconciliation. The partners' balances must equal the cash actually
+             in the shared account; if they don't, something was entered wrong and
+             saying so beats quietly reporting numbers that don't add up. -->
+        <div class="glass-card" id="partnerReconcile"
+             style="padding: 0.85rem 1.25rem; margin-bottom: 2rem; font-size: 0.82rem;
+                    border: 1px solid var(--glass-border); line-height: 1.6;">&mdash;</div>
+
         <div class="glass-card table-container" style="margin-bottom: 3rem;">
           <table>
             <thead>
@@ -1490,10 +1613,10 @@
                 <th>Partner</th>
                 <th>Share %</th>
                 <th>Expenses Paid</th>
-                <th>Ideal Expense Share</th>
-                <th>Expense Settlement</th>
+                <th>Half of Expenses</th>
+                <th>Reimbursement Owed</th>
                 <th>Profit Share</th>
-                <th style="color: var(--accent);">Final Amount Due</th>
+                <th style="color: var(--accent);">Balance</th>
               </tr>
             </thead>
             <tbody id="partnersTableBody">
@@ -1710,39 +1833,12 @@
               <input type="number" id="projectValue" step="0.01" class="form-control" required />
             </div>
           </div>
-          <div class="form-group" style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem; border-top: 1px dashed var(--glass-border); padding-top: 1rem;">
-            <div>
-              <label class="form-label" for="projectDepositAmount">Deposit Amount</label>
-              <input type="number" id="projectDepositAmount" step="0.01" class="form-control" required value="0" />
-            </div>
-            <div>
-              <label class="form-label" for="projectDepositReceived">Deposit Received?</label>
-              <select id="projectDepositReceived" class="form-control" required>
-                <option value="No">No</option>
-                <option value="Yes">Yes</option>
-              </select>
-            </div>
-            <div>
-              <label class="form-label" for="projectDepositReceivedDate">Deposit Date</label>
-              <input type="date" id="projectDepositReceivedDate" class="form-control" />
-            </div>
-          </div>
-          <div class="form-group" style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem; padding-bottom: 1rem; border-bottom: 1px dashed var(--glass-border);">
-            <div>
-              <label class="form-label" for="projectFinalPaymentAmount">Final Payment Amount</label>
-              <input type="number" id="projectFinalPaymentAmount" step="0.01" class="form-control" required value="0" />
-            </div>
-            <div>
-              <label class="form-label" for="projectFinalReceived">Final Received?</label>
-              <select id="projectFinalReceived" class="form-control" required>
-                <option value="No">No</option>
-                <option value="Yes">Yes</option>
-              </select>
-            </div>
-            <div>
-              <label class="form-label" for="projectFinalReceivedDate">Final Payment Date</label>
-              <input type="date" id="projectFinalReceivedDate" class="form-control" />
-            </div>
+          <div class="form-group" style="border-top: 1px dashed var(--glass-border); padding-top: 1rem; margin-top: 0.5rem;">
+            <p style="font-size: 0.8rem; color: var(--bone-dim); margin: 0; line-height: 1.6;">
+              <strong style="color: var(--bone);">Payments, add-ons and the quotation</strong> are managed per project
+              from the Projects table &mdash; open the row's chevron. A project can have any number of
+              installments, so they are no longer two fixed fields here.
+            </p>
           </div>
           <div class="form-group" style="margin-top: 1rem;">
             <label class="form-label" for="projectAssignedTo">Assigned Partner / Member</label>
@@ -2063,10 +2159,44 @@
     let servicesData = [];
     let showcaseData = [];
     let withdrawalsData = [];
+    let paymentsData = [];        // project_payments — the installment schedule
+    let addonsData = [];          // project_addons  — scope added after the quote
+    let quotationsData = [];      // quotations      — header totals + the sent file
     let systemSettings = {
       company_profile: { name: "Onyxx Tech Hub", sst_rate: 8, currency: "MYR" },
       partner_split: { Kunacosta: 50, Rooben: 50 },
       financial_targets: { revenue_target: 15000, expense_target: 5000 }
+    };
+
+    // The two partners. Expenses and withdrawals are always attributed to one of
+    // them — there is no company card, so every expense creates a reimbursement.
+    const PARTNERS = ['Kunacosta', 'Rooben'];
+
+    /* ------------------------------------------------------------------
+       DERIVED FINANCIALS — the single source of truth for every number
+       ------------------------------------------------------------------
+       Recomputed by computeFinancials() after each load, then read by Overview,
+       Projects, Cash Flow, Partners and Reports.
+
+       This exists because the money used to be summed independently in nine
+       different places off `deposit_amount` / `final_payment_amount`. Nine
+       hand-rolled sums over the same data drift apart the moment one is edited;
+       several already disagreed. Everything now reads from here. */
+    let fin = {
+      byProject: {},   // project_id -> per-project totals
+      collected: 0,    // received payments, i.e. cash that reached the account
+      scheduled: 0,    // everything invoiced, received or not
+      outstanding: 0,
+      overdue: 0,
+      contractTotal: 0,
+      expenses: 0,
+      netProfit: 0,
+      paid: {},        // partner -> expenses they personally fronted
+      withdrawn: {},   // partner -> cash they have taken out
+      balance: {},     // partner -> what they are actually owed
+      settlement: {},  // partner -> reimbursement owed for fronting costs
+      cashInAccount: 0,
+      reconciled: true
     };
     let categoryChartInstance = null;
     let flowLineChartInstance = null;
@@ -2540,17 +2670,187 @@ function getProjectImageUrl(p) {
     });
 
     // Fetch All Data
+    /* ==================================================================
+       computeFinancials — run once per load, before anything renders
+       ==================================================================
+       PARTNER ACCOUNTING
+       Client money lands in one shared business account, and every expense is
+       fronted by a partner personally. So a partner is owed their half of the
+       profit, PLUS whatever they paid out of pocket, MINUS what they have
+       already withdrawn:
+
+           balance(P) = 0.5 x (collected - expenses) + paid(P) - withdrawn(P)
+
+       The old code computed `settlement = paid - 0.5 x expenses`, displayed it in
+       its own column, and then dropped it on the floor (`kunaFinal =
+       kunaProfitShare`). A partner who fronted RM1,000 was never credited the
+       RM500 the other owed them.
+
+       Note you cannot fix that by simply adding `settlement` to the profit
+       share: the profit share already carries -0.5E and settlement carries
+       another -0.5E, so the sum deducts expenses one and a half times. The
+       correct combination is `0.5 x netProfit + paid(P)`, which is what is
+       implemented below.
+
+       RECONCILIATION
+       Because all expenses are personally fronted, the partners' balances must
+       add up to the cash actually sitting in the account:
+
+           balance(A) + balance(B) === collected - total withdrawn
+
+       `fin.reconciled` reports that. It only goes false on bad data (an expense
+       with no paid_by, a withdrawal by an unknown name), which is exactly when
+       you want to be told. */
+    function computeFinancials() {
+      const today = new Date().toISOString().substring(0, 10);
+
+      const byProject = {};
+      projectsData.forEach(p => {
+        byProject[p.id] = {
+          id: p.id,
+          name: p.name,
+          value: parseFloat(p.value) || 0,
+          addons: [], addonsTotal: 0,
+          payments: [],
+          scheduled: 0, collected: 0, outstanding: 0, overdue: 0,
+          contractTotal: 0,
+          quotations: []
+        };
+      });
+
+      addonsData.forEach(a => {
+        const t = byProject[a.project_id];
+        if (!t) return;                       // orphan row; project was deleted
+        t.addons.push(a);
+        t.addonsTotal += parseFloat(a.amount) || 0;
+      });
+
+      paymentsData.forEach(pay => {
+        const t = byProject[pay.project_id];
+        if (!t) return;
+        t.payments.push(pay);
+        const amt = parseFloat(pay.amount) || 0;
+        t.scheduled += amt;
+        if (pay.received) {
+          t.collected += amt;
+        } else if (pay.due_date && pay.due_date < today) {
+          t.overdue += amt;
+        }
+      });
+
+      quotationsData.forEach(q => {
+        const t = byProject[q.project_id];
+        if (t) t.quotations.push(q);
+      });
+
+      let collected = 0, scheduled = 0, outstanding = 0, overdue = 0, contractTotal = 0;
+      Object.values(byProject).forEach(t => {
+        // What the client owes in total is the agreed value plus anything added
+        // afterwards — not the sum of the payment schedule, which may be
+        // incomplete while installments are still being agreed.
+        t.contractTotal = t.value + t.addonsTotal;
+        t.outstanding = t.contractTotal - t.collected;
+        t.payments.sort((a, b) =>
+          (a.sort_order - b.sort_order) || String(a.due_date || '').localeCompare(String(b.due_date || '')));
+
+        collected += t.collected;
+        scheduled += t.scheduled;
+        outstanding += t.outstanding;
+        overdue += t.overdue;
+        contractTotal += t.contractTotal;
+      });
+
+      // ---- expenses, attributed to whoever fronted them ----
+      let expenses = 0;
+      const paid = {};
+      const unattributed = [];
+      PARTNERS.forEach(p => { paid[p] = 0; });
+
+      expensesData.forEach(e => {
+        const amt = parseFloat(e.amount) || 0;
+        expenses += amt;
+        const who = PARTNERS.find(p => p.toLowerCase() === String(e.paid_by || '').trim().toLowerCase());
+        if (who) paid[who] += amt;
+        else unattributed.push(e);   // drives the reconciliation warning
+      });
+
+      const withdrawn = {};
+      PARTNERS.forEach(p => { withdrawn[p] = 0; });
+      let withdrawnTotal = 0;
+      withdrawalsData.forEach(w => {
+        const amt = parseFloat(w.amount) || 0;
+        withdrawnTotal += amt;
+        const who = PARTNERS.find(p => p.toLowerCase() === String(w.partner || '').trim().toLowerCase());
+        if (who) withdrawn[who] += amt;
+      });
+
+      const netProfit = collected - expenses;
+      const share = {};
+      const balance = {};
+      const settlement = {};
+      PARTNERS.forEach(p => {
+        // Always 50/50, but read the setting so Settings still means something.
+        const pct = (systemSettings.partner_split?.[p] ?? (100 / PARTNERS.length)) / 100;
+        share[p] = netProfit * pct;
+        settlement[p] = paid[p] - expenses * pct;      // reimbursement owed to P
+        balance[p] = share[p] + paid[p] - withdrawn[p];
+      });
+
+      const cashInAccount = collected - withdrawnTotal;
+      const balanceSum = PARTNERS.reduce((s, p) => s + balance[p], 0);
+
+      fin = {
+        byProject, collected, scheduled, outstanding, overdue, contractTotal,
+        expenses, netProfit, share, paid, withdrawn, balance, settlement,
+        withdrawnTotal, cashInAccount, unattributed,
+        // Compare in cents; floats will not land on exact equality.
+        reconciled: Math.abs(balanceSum - cashInAccount) < 0.01 && unattributed.length === 0
+      };
+      return fin;
+    }
+
+    /** Per-project totals, safe for a project with no payments yet. */
+    function projectFin(id) {
+      return fin.byProject[id] || {
+        value: 0, addons: [], addonsTotal: 0, payments: [], quotations: [],
+        scheduled: 0, collected: 0, outstanding: 0, overdue: 0, contractTotal: 0
+      };
+    }
+
+    /**
+     * Received payments bucketed by the month the money actually arrived.
+     * Returns [['YYYY-MM', amount], …].
+     *
+     * One helper because the Overview chart, Cash Flow and Reports all needed
+     * this and each used to hand-roll it off the deposit/final dates — three
+     * copies of the same loop, which is how they ended up disagreeing.
+     */
+    function revenueByMonth() {
+      const buckets = {};
+      paymentsData.forEach(pay => {
+        if (!pay.received || !pay.received_date) return;
+        const key = String(pay.received_date).substring(0, 7);
+        if (key.length !== 7) return;
+        buckets[key] = (buckets[key] || 0) + (parseFloat(pay.amount) || 0);
+      });
+      return Object.entries(buckets).sort((a, b) => a[0].localeCompare(b[0]));
+    }
+
     async function loadAllData() {
       try {
         // Parallel fetching
-        const [projectsRes, expensesRes, teamRes, servicesRes, showcaseRes, settingsRes, withdrawalsRes] = await Promise.all([
+        const [projectsRes, expensesRes, teamRes, servicesRes, showcaseRes, settingsRes,
+               withdrawalsRes, paymentsRes, addonsRes, quotationsRes] = await Promise.all([
           supabaseClient.from('projects').select('*').order('created_at', { ascending: false }),
           supabaseClient.from('expenses').select('*').order('date', { ascending: false }),
           supabaseClient.from('team_members').select('*').order('name'),
           supabaseClient.from('services').select('*').order('num'),
           supabaseClient.from('showcase_projects').select('*').order('created_at', { ascending: false }),
           supabaseClient.from('system_settings').select('*'),
-          supabaseClient.from('partner_withdrawals').select('*').order('date', { ascending: false })
+          supabaseClient.from('partner_withdrawals').select('*').order('date', { ascending: false }),
+          supabaseClient.from('project_payments').select('*').order('sort_order'),
+          supabaseClient.from('project_addons').select('*').order('date', { ascending: false }),
+          supabaseClient.from('quotations').select('*').order('quote_date', { ascending: false })
         ]);
 
         if (projectsRes.error) console.error("Error fetching projects:", projectsRes.error);
@@ -2560,6 +2860,11 @@ function getProjectImageUrl(p) {
         if (showcaseRes.error) console.error("Error fetching showcase projects:", showcaseRes.error);
         if (settingsRes.error) console.error("Error fetching system settings:", settingsRes.error);
         if (withdrawalsRes.error) console.error("Error fetching withdrawals:", withdrawalsRes.error);
+        // These three arrive with migration 02. Report clearly rather than
+        // failing silently, since every financial figure depends on them.
+        if (paymentsRes.error) console.error("Error fetching project_payments (run supabase_migration_02_financials.sql):", paymentsRes.error);
+        if (addonsRes.error) console.error("Error fetching project_addons (run supabase_migration_02_financials.sql):", addonsRes.error);
+        if (quotationsRes.error) console.error("Error fetching quotations (run supabase_migration_02_financials.sql):", quotationsRes.error);
 
         projectsData = projectsRes.data || [];
         expensesData = expensesRes.data || [];
@@ -2567,6 +2872,9 @@ function getProjectImageUrl(p) {
         servicesData = servicesRes.data || [];
         showcaseData = showcaseRes.data || [];
         withdrawalsData = withdrawalsRes.data || [];
+        paymentsData = paymentsRes.data || [];
+        addonsData = addonsRes.data || [];
+        quotationsData = quotationsRes.data || [];
 
         if (settingsRes.data) {
           settingsRes.data.forEach(item => {
@@ -2574,12 +2882,17 @@ function getProjectImageUrl(p) {
           });
         }
 
+        // Everything below reads `fin`, so this has to run before any render.
+        computeFinancials();
+
         // Populate dropdowns first
         populateDropdowns();
 
         // Render UI parts
         renderOverview();
         renderProjects();
+        renderPayments();
+        renderQuotations();
         renderExpenses();
         renderCashflow();
         renderPartners();
@@ -2690,18 +3003,18 @@ function getProjectImageUrl(p) {
     }
 
     function populateDropdowns() {
+      // Partners only — NOT the wider team. Two reasons: partner balances are
+      // computed from who fronted each cost, so a non-partner payer has nowhere
+      // to be charged; and the DB now constrains paid_by to these two names, so
+      // offering a team member here would fail on insert with a raw constraint
+      // error. Who *does the work* is projectAssignedTo, below, which does still
+      // include the team.
       const paidBySelect = document.getElementById('expensePaidBy');
       if (paidBySelect) {
         const prevVal = paidBySelect.value;
-        paidBySelect.innerHTML = '<option value="">Select Member</option>';
-        const names = new Set(['Kunacosta', 'Rooben']);
-        teamData.forEach(m => {
-          if (m.name) names.add(m.name);
-        });
-        names.forEach(name => {
-          paidBySelect.innerHTML += `<option value="${name}">${name}</option>`;
-        });
-        paidBySelect.value = prevVal;
+        paidBySelect.innerHTML = '<option value="">Select partner</option>' +
+          PARTNERS.map(name => `<option value="${name}">${name}</option>`).join('');
+        paidBySelect.value = PARTNERS.includes(prevVal) ? prevVal : '';
       }
       
       const assignSelect = document.getElementById('projectAssignedTo');
@@ -2761,86 +3074,6 @@ function getProjectImageUrl(p) {
       const p = projectsData.find(item => item.id === projectId);
       if (!p) { showToast('Project not found', 'error'); return; }
 
-      // ── DEPOSIT RECEIVED ──
-      if (field === 'deposit_received') {
-        const isReceived = value === 'Yes';
-        if (isReceived) {
-          // Open prompt modal to ask deposit amount
-          const result = await openDepositPrompt(
-            projectId,
-            parseFloat(p.value) || 0,
-            parseFloat(p.deposit_amount) || 0,
-            p.deposit_received_date || ''
-          );
-          if (!result.confirmed) {
-            // User cancelled — revert dropdown
-            if (selectEl) selectEl.value = 'No';
-            return;
-          }
-          if (selectEl) selectEl.disabled = true;
-          showToast('Saving deposit...', 'info');
-          try {
-            const { error } = await supabaseClient.from('projects').update({
-              deposit_received: true,
-              deposit_amount: result.amount,
-              deposit_received_date: result.date
-            }).eq('id', projectId);
-            if (error) throw error;
-            showToast('Deposit saved successfully', 'success');
-            await loadAllData();
-          } catch (err) {
-            showToast('Failed: ' + err.message, 'error');
-            if (selectEl) { selectEl.disabled = false; selectEl.value = 'No'; }
-          }
-        } else {
-          // Setting deposit to No — clear amount and date
-          if (selectEl) selectEl.disabled = true;
-          showToast('Clearing deposit...', 'info');
-          try {
-            const { error } = await supabaseClient.from('projects').update({
-              deposit_received: false,
-              deposit_amount: 0,
-              deposit_received_date: null
-            }).eq('id', projectId);
-            if (error) throw error;
-            showToast('Deposit cleared', 'success');
-            await loadAllData();
-          } catch (err) {
-            showToast('Failed: ' + err.message, 'error');
-            if (selectEl) { selectEl.disabled = false; selectEl.value = 'Yes'; }
-          }
-        }
-        return;
-      }
-
-      // ── FINAL RECEIVED ──
-      if (field === 'final_received') {
-        const isReceived = value === 'Yes';
-        if (selectEl) selectEl.disabled = true;
-        showToast('Saving changes...', 'info');
-        try {
-          let updateData = { final_received: isReceived };
-          if (isReceived) {
-            // Auto-calculate: final = project value - deposit amount
-            const projectValue = parseFloat(p.value) || 0;
-            const depositAmt = parseFloat(p.deposit_amount) || 0;
-            const finalAmt = Math.max(0, projectValue - depositAmt);
-            updateData.final_payment_amount = finalAmt;
-            updateData.final_payment_received_date = p.final_payment_received_date || new Date().toISOString().substring(0, 10);
-          } else {
-            updateData.final_payment_amount = 0;
-            updateData.final_payment_received_date = null;
-          }
-          const { error } = await supabaseClient.from('projects').update(updateData).eq('id', projectId);
-          if (error) throw error;
-          showToast('Final payment updated', 'success');
-          await loadAllData();
-        } catch (err) {
-          showToast('Failed: ' + err.message, 'error');
-          if (selectEl) { selectEl.disabled = false; selectEl.value = isReceived ? 'No' : 'Yes'; }
-        }
-        return;
-      }
 
       // ── STATUS ──
       if (selectEl) selectEl.disabled = true;
@@ -2868,20 +3101,12 @@ function getProjectImageUrl(p) {
       const now = new Date();
       now.setHours(0,0,0,0);
 
+      // Money comes from computeFinancials(); this loop only handles the
+      // non-financial bits (active count, next deadline).
       projectsData.forEach(p => {
-        const val = parseFloat(p.value) || 0;
-        const depositAmt = parseFloat(p.deposit_amount) || 0;
-        const finalAmt = parseFloat(p.final_payment_amount) || 0;
-        const isDepositReceived = p.deposit_received === true;
-        const isFinalReceived = p.final_received === true;
-        const col = (isDepositReceived ? depositAmt : 0) + (isFinalReceived ? finalAmt : 0);
-
-        totalProjectValue += val;
-        totalCollected += col;
-        
         if (p.status === 'In Progress') {
           activeProjects++;
-          
+
           if (p.deadline) {
             const deadlineDate = parseLocalDate(p.deadline);
             if (deadlineDate && deadlineDate >= now) {
@@ -2893,13 +3118,18 @@ function getProjectImageUrl(p) {
         }
       });
 
-      expensesData.forEach(e => {
-        totalExpenses += parseFloat(e.amount) || 0;
-      });
+      // Contract value = agreed value + approved add-ons, so an upsell shows up
+      // in the pipeline instead of being invisible until it is invoiced.
+      totalProjectValue = fin.contractTotal;
+      totalCollected = fin.collected;
+      totalExpenses = fin.expenses;
 
-      const totalOutstanding = Math.max(0, totalProjectValue - totalCollected);
-      const cashBalance = totalCollected - totalExpenses;
-      const netProfitCollected = totalCollected - totalExpenses;
+      const totalOutstanding = Math.max(0, fin.outstanding);
+      // Cash in the shared account is what was collected less what the partners
+      // have withdrawn. Expenses were fronted personally, so they do not leave
+      // this account -- they become a reimbursement owed instead.
+      const cashBalance = fin.cashInAccount;
+      const netProfitCollected = fin.netProfit;
       const expectedProfit = totalProjectValue - totalExpenses;
       const profitMargin = totalProjectValue > 0 ? (expectedProfit / totalProjectValue) * 100 : 0;
 
@@ -3024,21 +3254,12 @@ function getProjectImageUrl(p) {
 
       // Aggregate monthly cashflow data for Line Chart & Bar Chart
       const monthlyData = {};
-      projectsData.forEach(p => {
-        if (p.deposit_received && p.deposit_received_date) {
-          const mKey = String(p.deposit_received_date).substring(0, 7);
-          if (mKey.length === 7) {
-            if (!monthlyData[mKey]) monthlyData[mKey] = { rev: 0, exp: 0 };
-            monthlyData[mKey].rev += parseFloat(p.deposit_amount) || 0;
-          }
-        }
-        if (p.final_received && p.final_payment_received_date) {
-          const mKey = String(p.final_payment_received_date).substring(0, 7);
-          if (mKey.length === 7) {
-            if (!monthlyData[mKey]) monthlyData[mKey] = { rev: 0, exp: 0 };
-            monthlyData[mKey].rev += parseFloat(p.final_payment_amount) || 0;
-          }
-        }
+      // Revenue is every received payment, bucketed by the month it arrived.
+      // The DB constraint guarantees a received payment has a received_date, so
+      // nothing can silently fall out of these buckets.
+      revenueByMonth().forEach(([mKey, amt]) => {
+        if (!monthlyData[mKey]) monthlyData[mKey] = { rev: 0, exp: 0 };
+        monthlyData[mKey].rev += amt;
       });
 
       expensesData.forEach(e => {
@@ -3270,30 +3491,31 @@ function getProjectImageUrl(p) {
       }
 
       let totalVal = 0;
-      let totalDep = 0;
-      let totalFinal = 0;
+      let totalAddons = 0;
       let totalCol = 0;
       let totalOut = 0;
 
       filtered.forEach(p => {
-        const val = parseFloat(p.value) || 0;
-        const depositAmt = parseFloat(p.deposit_amount) || 0;
-        const finalAmt = parseFloat(p.final_payment_amount) || 0;
-        const isDepositReceived = p.deposit_received === true;
-        const isFinalReceived = p.final_received === true;
-        
-        const col = (isDepositReceived ? depositAmt : 0) + (isFinalReceived ? finalAmt : 0);
-        const out = Math.max(0, val - col);
-        
+        const t = projectFin(p.id);
+        const val = t.value;
+        const col = t.collected;
+        const out = t.outstanding;
+
         totalVal += val;
-        totalDep += depositAmt;
-        totalFinal += finalAmt;
+        totalAddons += t.addonsTotal;
         totalCol += col;
         totalOut += out;
 
-        const warningMarkup = col > val ? ' <span title="Collected amount exceeds project value!" style="color: #fbbf24; cursor: help; font-weight: bold;">⚠️</span>' : '';
+        // Overcollected is worth flagging: usually a payment entered twice, or an
+        // add-on that was billed but never recorded against the project.
+        const warningMarkup = col > t.contractTotal + 0.01
+          ? ' <span title="Collected more than the contract total \u2014 duplicated payment, or an unrecorded add-on?" style="color: #fbbf24; cursor: help; font-weight: bold;">&#9888;</span>'
+          : '';
 
-        // Status select dropdown
+        const paidCount = t.payments.filter(x => x.received).length;
+        const overdueMark = t.overdue > 0
+          ? ` <span title="${formatMYR(t.overdue)} overdue" style="color: #f87171;">&#9679;</span>` : '';
+
         const statusSelect = `
           <select class="inline-select status-select" data-id="${p.id}">
             ${['Lead', 'Quotation Sent', 'Confirmed', 'In Progress', 'Waiting Client', 'Completed', 'On Hold', 'Cancelled'].map(st => `
@@ -3302,38 +3524,23 @@ function getProjectImageUrl(p) {
           </select>
         `;
 
-        // Deposit select dropdown
-        const depositSelect = `
-          <select class="inline-select dep-select" data-id="${p.id}">
-            <option value="No" ${!p.deposit_received ? 'selected' : ''}>No</option>
-            <option value="Yes" ${p.deposit_received ? 'selected' : ''}>Yes</option>
-          </select>
-        `;
-
-        // Final select dropdown
-        const finalSelect = `
-          <select class="inline-select final-select" data-id="${p.id}">
-            <option value="No" ${!p.final_received ? 'selected' : ''}>No</option>
-            <option value="Yes" ${p.final_received ? 'selected' : ''}>Yes</option>
-          </select>
-        `;
-
         const tr = document.createElement('tr');
         tr.innerHTML = `
+          <td style="text-align: center;">
+            <button class="action-btn expand-btn" data-id="${p.id}" title="Payments, add-ons and quotation" style="width: 1.6rem; height: 1.6rem;">
+              <svg viewBox="0 0 24 24" style="pointer-events:none;"><polyline points="6 9 12 15 18 9"/></svg>
+            </button>
+          </td>
           <td style="font-weight: 500; white-space: nowrap;">${p.name}</td>
-          <td style="white-space: nowrap;">${p.client}</td>
-          <td style="white-space: nowrap;">${formatDate(p.start_date)}</td>
+          <td style="white-space: nowrap;">${p.client || '-'}</td>
           <td style="white-space: nowrap;">${formatDate(p.deadline)}</td>
           <td>${statusSelect}</td>
           <td style="white-space: nowrap;">${formatMYR(val)}</td>
-          <td style="white-space: nowrap;">${formatMYR(depositAmt)}</td>
-          <td>${depositSelect}</td>
-          <td style="white-space: nowrap;">${formatDate(p.deposit_received_date)}</td>
-          <td style="white-space: nowrap;">${formatMYR(finalAmt)}</td>
-          <td>${finalSelect}</td>
-          <td style="white-space: nowrap;">${formatDate(p.final_payment_received_date)}</td>
+          <td style="white-space: nowrap;">${t.addonsTotal ? formatMYR(t.addonsTotal) : '<span style="opacity:0.4;">&mdash;</span>'}</td>
+          <td style="white-space: nowrap; font-weight: 500;">${formatMYR(t.contractTotal)}</td>
+          <td style="white-space: nowrap; font-family: var(--font-mono); font-size: 0.78rem;">${paidCount}/${t.payments.length}${overdueMark}</td>
           <td style="color: #4ade80; font-weight: 500; white-space: nowrap;">${formatMYR(col)}${warningMarkup}</td>
-          <td style="color: #f87171; font-weight: 500; white-space: nowrap;">${formatMYR(out)}</td>
+          <td style="color: ${out > 0.01 ? '#f87171' : 'var(--bone-dim)'}; font-weight: 500; white-space: nowrap;">${formatMYR(out)}</td>
           <td>
             <div class="actions-cell">
               <button class="action-btn edit-btn" title="Edit" onclick="openProjectModal('${p.id}')"><svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>
@@ -3342,6 +3549,16 @@ function getProjectImageUrl(p) {
           </td>
         `;
         tbody.appendChild(tr);
+
+        // Detail row, collapsed until the chevron is clicked. Rendered on demand
+        // by toggleProjectDetail so a long project list stays cheap.
+        const detail = document.createElement('tr');
+        detail.className = 'project-detail-row';
+        detail.dataset.detailFor = p.id;
+        detail.style.display = 'none';
+        detail.innerHTML = `<td colspan="12" style="padding: 0; background: rgba(0,0,0,0.18);">
+          <div id="detail-${p.id}" style="padding: 1.25rem 1.5rem;"></div></td>`;
+        tbody.appendChild(detail);
       });
 
       // Render totals footer
@@ -3349,11 +3566,8 @@ function getProjectImageUrl(p) {
         <tr style="font-weight: bold; background: var(--table-header-bg);">
           <td colspan="5">Total</td>
           <td>${formatMYR(totalVal)}</td>
-          <td>${formatMYR(totalDep)}</td>
-          <td></td>
-          <td></td>
-          <td>${formatMYR(totalFinal)}</td>
-          <td></td>
+          <td>${formatMYR(totalAddons)}</td>
+          <td>${formatMYR(totalVal + totalAddons)}</td>
           <td></td>
           <td style="color: #4ade80;">${formatMYR(totalCol)}</td>
           <td style="color: #f87171;">${formatMYR(totalOut)}</td>
@@ -3367,15 +3581,11 @@ function getProjectImageUrl(p) {
           handleInlineProjectUpdate(sel.dataset.id, 'status', e.target.value, sel);
         });
       });
-      tbody.querySelectorAll('.dep-select').forEach(sel => {
-        sel.addEventListener('change', (e) => {
-          handleInlineProjectUpdate(sel.dataset.id, 'deposit_received', e.target.value, sel);
-        });
-      });
-      tbody.querySelectorAll('.final-select').forEach(sel => {
-        sel.addEventListener('change', (e) => {
-          handleInlineProjectUpdate(sel.dataset.id, 'final_received', e.target.value, sel);
-        });
+      // The deposit/final "Received?" dropdowns are gone. A project can now have
+      // any number of payments, so each is ticked off individually in the detail
+      // panel below rather than through two fixed columns.
+      tbody.querySelectorAll('.expand-btn').forEach(btn => {
+        btn.addEventListener('click', () => toggleProjectDetail(btn.dataset.id, btn));
       });
     }
 
@@ -3456,22 +3666,10 @@ function getProjectImageUrl(p) {
 
       const monthlyData = {};
 
-      // Gather Deposit Money In (if deposit_received is true and deposit_received_date is valid)
-      projectsData.forEach(p => {
-        if (p.deposit_received && p.deposit_received_date) {
-          const monthKey = String(p.deposit_received_date).substring(0, 7); // YYYY-MM
-          if (monthKey.length === 7) {
-            if (!monthlyData[monthKey]) monthlyData[monthKey] = { moneyIn: 0, moneyOut: 0 };
-            monthlyData[monthKey].moneyIn += parseFloat(p.deposit_amount) || 0;
-          }
-        }
-        if (p.final_received && p.final_payment_received_date) {
-          const monthKey = String(p.final_payment_received_date).substring(0, 7); // YYYY-MM
-          if (monthKey.length === 7) {
-            if (!monthlyData[monthKey]) monthlyData[monthKey] = { moneyIn: 0, moneyOut: 0 };
-            monthlyData[monthKey].moneyIn += parseFloat(p.final_payment_amount) || 0;
-          }
-        }
+      // Money in = every received payment, by the month it arrived.
+      revenueByMonth().forEach(([monthKey, amt]) => {
+        if (!monthlyData[monthKey]) monthlyData[monthKey] = { moneyIn: 0, moneyOut: 0 };
+        monthlyData[monthKey].moneyIn += amt;
       });
 
       // Gather Expenses Money Out
@@ -3521,118 +3719,618 @@ function getProjectImageUrl(p) {
     }
 
     // RENDER PARTNERS & SETTLEMENT
+
+    /* ==================================================================
+       PROJECT DETAIL PANEL — payments, add-ons and the quotation
+       ==================================================================
+       Rendered on demand into the collapsed row that renderProjects() puts
+       after each project, so a long list stays cheap. This is where the money
+       for a project is actually managed: the schedule can hold any number of
+       installments, which is what replaced the old two fixed columns. */
+
+    const openProjectDetails = new Set();
+
+    function toggleProjectDetail(projectId, btn) {
+      const row = document.querySelector(`tr.project-detail-row[data-detail-for="${projectId}"]`);
+      if (!row) return;
+      const isOpen = row.style.display !== 'none';
+      if (isOpen) {
+        row.style.display = 'none';
+        openProjectDetails.delete(projectId);
+      } else {
+        renderProjectDetail(projectId);
+        row.style.display = '';
+        openProjectDetails.add(projectId);
+      }
+      if (btn) btn.style.transform = isOpen ? '' : 'rotate(180deg)';
+    }
+
+    function renderProjectDetail(projectId) {
+      const host = document.getElementById(`detail-${projectId}`);
+      if (!host) return;
+      const t = projectFin(projectId);
+      const today = new Date().toISOString().substring(0, 10);
+
+      // Does the schedule actually add up to what the client owes? Warning here
+      // rather than blocking the project form, because this is the only place
+      // the whole schedule is visible at once.
+      const scheduleGap = t.contractTotal - t.scheduled;
+      let gapNote = '';
+      if (Math.abs(scheduleGap) > 0.01) {
+        gapNote = scheduleGap > 0
+          ? `<span style="color:#fbbf24;">${formatMYR(scheduleGap)} of the contract is not scheduled yet</span>`
+          : `<span style="color:#f87171;">scheduled ${formatMYR(-scheduleGap)} more than the contract total</span>`;
+      } else {
+        gapNote = `<span style="color:#4ade80;">schedule matches the contract total</span>`;
+      }
+
+      const paymentRows = t.payments.length ? t.payments.map(pay => {
+        const overdue = !pay.received && pay.due_date && pay.due_date < today;
+        return `
+          <tr>
+            <td>
+              <input class="inline-input pay-label" data-id="${pay.id}" value="${(pay.label || '').replace(/"/g, '&quot;')}"
+                     style="background:transparent;border:1px solid transparent;color:inherit;font:inherit;padding:0.2rem 0.3rem;border-radius:4px;width:9rem;" />
+            </td>
+            <td style="white-space:nowrap;font-weight:500;">${formatMYR(pay.amount)}</td>
+            <td style="white-space:nowrap;color:${overdue ? '#f87171' : 'inherit'};">
+              ${pay.due_date ? formatDate(pay.due_date) : '<span style="opacity:0.4;">&mdash;</span>'}
+              ${overdue ? ' <strong>overdue</strong>' : ''}
+            </td>
+            <td>
+              <label style="display:inline-flex;align-items:center;gap:0.4rem;cursor:pointer;">
+                <input type="checkbox" class="pay-received" data-id="${pay.id}" ${pay.received ? 'checked' : ''} />
+                <span style="color:${pay.received ? '#4ade80' : 'var(--bone-dim)'};font-size:0.8rem;">
+                  ${pay.received ? 'Received ' + formatDate(pay.received_date) : 'Not yet'}
+                </span>
+              </label>
+            </td>
+            <td style="text-align:right;">
+              <button class="action-btn delete-btn" title="Delete payment" onclick="deletePayment('${pay.id}')">
+                <svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/></svg>
+              </button>
+            </td>
+          </tr>`;
+      }).join('') : `<tr><td colspan="5" style="color:var(--bone-dim);padding:0.75rem 0;">
+            No payments scheduled. Add the deposit and any installments below.</td></tr>`;
+
+      const addonRows = t.addons.length ? t.addons.map(a => `
+          <tr>
+            <td>${a.description}</td>
+            <td style="white-space:nowrap;font-weight:500;">${formatMYR(a.amount)}</td>
+            <td style="white-space:nowrap;">${a.date ? formatDate(a.date) : '<span style="opacity:0.4;">&mdash;</span>'}</td>
+            <td style="text-align:right;">
+              <button class="action-btn delete-btn" title="Delete add-on" onclick="deleteAddon('${a.id}')">
+                <svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/></svg>
+              </button>
+            </td>
+          </tr>`).join('') : `<tr><td colspan="4" style="color:var(--bone-dim);padding:0.75rem 0;">
+            No add-ons. Add one when the client agrees extra scope after the quote.</td></tr>`;
+
+      const quotes = t.quotations.length ? t.quotations.map(q => `
+          <div style="display:flex;align-items:center;gap:0.75rem;flex-wrap:wrap;font-size:0.82rem;">
+            <span style="font-family:var(--font-mono);">${q.quote_number || 'no ref'}</span>
+            <span>${formatMYR(q.total)}</span>
+            <span style="opacity:0.7;">${q.quote_date ? formatDate(q.quote_date) : ''}</span>
+            <span class="badge" style="font-size:0.7rem;">${q.status}</span>
+            ${q.file_url ? `<button class="btn-outline" style="padding:0.15rem 0.6rem;font-size:0.72rem;margin:0;width:auto;" onclick="openQuotationFile('${q.file_url}')">Open file</button>` : ''}
+          </div>`).join('') : `<span style="color:var(--bone-dim);font-size:0.82rem;">
+            No quotation linked. Add one from the Quotations tab.</span>`;
+
+      host.innerHTML = `
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:1rem;margin-bottom:1.25rem;">
+          ${[['Project value', formatMYR(t.value), 'inherit'],
+             ['Add-ons', formatMYR(t.addonsTotal), 'inherit'],
+             ['Contract total', formatMYR(t.contractTotal), 'var(--accent)'],
+             ['Collected', formatMYR(t.collected), '#4ade80'],
+             ['Outstanding', formatMYR(t.outstanding), t.outstanding > 0.01 ? '#f87171' : 'var(--bone-dim)'],
+             ['Overdue', formatMYR(t.overdue), t.overdue > 0.01 ? '#f87171' : 'var(--bone-dim)']]
+            .map(([lbl, val, col]) => `
+              <div>
+                <div style="font-size:0.68rem;text-transform:uppercase;letter-spacing:0.12em;color:var(--bone-dim);">${lbl}</div>
+                <div style="font-weight:600;color:${col};font-family:var(--font-mono);">${val}</div>
+              </div>`).join('')}
+        </div>
+
+        <div style="font-size:0.78rem;margin-bottom:1rem;">${gapNote}</div>
+
+        <h4 style="font-size:0.8rem;text-transform:uppercase;letter-spacing:0.14em;color:var(--bone-dim);margin:0 0 0.5rem;">Payment schedule</h4>
+        <table style="width:100%;font-size:0.85rem;margin-bottom:0.75rem;"><tbody>${paymentRows}</tbody></table>
+        <form class="add-payment-form" data-project="${projectId}"
+              style="display:flex;gap:0.5rem;flex-wrap:wrap;align-items:flex-end;margin-bottom:1.75rem;">
+          <input name="label" class="form-control" placeholder="Label (e.g. Installment 2)" style="width:12rem;" required />
+          <input name="amount" class="form-control" type="number" step="0.01" min="0.01" placeholder="Amount" style="width:8rem;" required />
+          <input name="due" class="form-control" type="date" style="width:10rem;" />
+          <button type="submit" class="btn-primary" style="margin:0;width:auto;padding:0.5rem 1rem;">Add payment</button>
+        </form>
+
+        <h4 style="font-size:0.8rem;text-transform:uppercase;letter-spacing:0.14em;color:var(--bone-dim);margin:0 0 0.5rem;">Add-ons</h4>
+        <table style="width:100%;font-size:0.85rem;margin-bottom:0.75rem;"><tbody>${addonRows}</tbody></table>
+        <form class="add-addon-form" data-project="${projectId}"
+              style="display:flex;gap:0.5rem;flex-wrap:wrap;align-items:flex-end;margin-bottom:1.75rem;">
+          <input name="description" class="form-control" placeholder="What was added" style="width:16rem;" required />
+          <input name="amount" class="form-control" type="number" step="0.01" min="0" placeholder="Amount" style="width:8rem;" required />
+          <input name="date" class="form-control" type="date" style="width:10rem;" />
+          <button type="submit" class="btn-primary" style="margin:0;width:auto;padding:0.5rem 1rem;">Add add-on</button>
+        </form>
+
+        <h4 style="font-size:0.8rem;text-transform:uppercase;letter-spacing:0.14em;color:var(--bone-dim);margin:0 0 0.5rem;">Quotation</h4>
+        <div style="display:flex;flex-direction:column;gap:0.4rem;">${quotes}</div>
+      `;
+
+      // ---- wire it up ----
+      host.querySelectorAll('.pay-received').forEach(cb => {
+        cb.addEventListener('change', () => setPaymentReceived(cb.dataset.id, cb.checked, cb));
+      });
+      host.querySelectorAll('.pay-label').forEach(inp => {
+        inp.addEventListener('change', () => updatePaymentLabel(inp.dataset.id, inp.value, inp));
+      });
+      host.querySelector('.add-payment-form')?.addEventListener('submit', e => {
+        e.preventDefault();
+        addPayment(projectId, e.target);
+      });
+      host.querySelector('.add-addon-form')?.addEventListener('submit', e => {
+        e.preventDefault();
+        addAddon(projectId, e.target);
+      });
+    }
+
+    /** Re-render only the panels the user has open, after data changes. */
+    function refreshOpenDetails() {
+      openProjectDetails.forEach(id => {
+        const row = document.querySelector(`tr.project-detail-row[data-detail-for="${id}"]`);
+        if (row) {
+          renderProjectDetail(id);
+          row.style.display = '';
+          const btn = document.querySelector(`.expand-btn[data-id="${id}"]`);
+          if (btn) btn.style.transform = 'rotate(180deg)';
+        }
+      });
+    }
+
+    async function addPayment(projectId, form) {
+      const label = form.label.value.trim() || 'Installment';
+      const amount = parseFloat(form.amount.value);
+      const due = form.due.value || null;
+      if (!(amount > 0)) { showToast('Amount must be greater than zero', 'error'); return; }
+
+      const existing = projectFin(projectId).payments.length;
+      try {
+        const { error } = await supabaseClient.from('project_payments').insert([{
+          project_id: projectId, label, amount, due_date: due, sort_order: existing
+        }]);
+        if (error) throw error;
+        showToast('Payment added', 'success');
+        form.reset();
+        await loadAllData();
+        refreshOpenDetails();
+      } catch (err) {
+        showToast('Failed: ' + err.message, 'error');
+      }
+    }
+
+    async function setPaymentReceived(paymentId, received, cb) {
+      if (cb) cb.disabled = true;
+      // received_date is NOT NULL when received (DB constraint), because revenue
+      // is reported by month and a dateless payment would vanish from the charts.
+      const patch = received
+        ? { received: true, received_date: new Date().toISOString().substring(0, 10) }
+        : { received: false, received_date: null };
+      try {
+        const { error } = await supabaseClient.from('project_payments').update(patch).eq('id', paymentId);
+        if (error) throw error;
+        showToast(received ? 'Payment marked received' : 'Payment marked unpaid', 'success');
+        await loadAllData();
+        refreshOpenDetails();
+      } catch (err) {
+        showToast('Failed: ' + err.message, 'error');
+        if (cb) { cb.disabled = false; cb.checked = !received; }
+      }
+    }
+
+    async function updatePaymentLabel(paymentId, label, inp) {
+      const clean = (label || '').trim() || 'Installment';
+      try {
+        const { error } = await supabaseClient.from('project_payments')
+          .update({ label: clean }).eq('id', paymentId);
+        if (error) throw error;
+        if (inp) inp.value = clean;
+        await loadAllData();
+      } catch (err) {
+        showToast('Failed: ' + err.message, 'error');
+      }
+    }
+
+    async function deletePayment(paymentId) {
+      if (!confirm('Delete this payment from the schedule?')) return;
+      try {
+        const { error } = await supabaseClient.from('project_payments').delete().eq('id', paymentId);
+        if (error) throw error;
+        showToast('Payment deleted', 'success');
+        await loadAllData();
+        refreshOpenDetails();
+      } catch (err) {
+        showToast('Failed: ' + err.message, 'error');
+      }
+    }
+
+    async function addAddon(projectId, form) {
+      const description = form.description.value.trim();
+      const amount = parseFloat(form.amount.value);
+      const date = form.date.value || null;
+      if (!description) { showToast('Describe what was added', 'error'); return; }
+      if (!(amount >= 0)) { showToast('Amount must be a number', 'error'); return; }
+      try {
+        const { error } = await supabaseClient.from('project_addons').insert([{
+          project_id: projectId, description, amount, date
+        }]);
+        if (error) throw error;
+        showToast('Add-on recorded', 'success');
+        form.reset();
+        await loadAllData();
+        refreshOpenDetails();
+      } catch (err) {
+        showToast('Failed: ' + err.message, 'error');
+      }
+    }
+
+    async function deleteAddon(addonId) {
+      if (!confirm('Delete this add-on?')) return;
+      try {
+        const { error } = await supabaseClient.from('project_addons').delete().eq('id', addonId);
+        if (error) throw error;
+        showToast('Add-on deleted', 'success');
+        await loadAllData();
+        refreshOpenDetails();
+      } catch (err) {
+        showToast('Failed: ' + err.message, 'error');
+      }
+    }
+
+    /**
+     * Quotations live in a PRIVATE bucket, so they need a short-lived signed URL
+     * rather than a public link — a quotation exposes what you charge a specific
+     * client.
+     */
+    async function openQuotationFile(path) {
+      try {
+        const { data, error } = await supabaseClient.storage
+          .from('quotations').createSignedUrl(path, 60);
+        if (error) throw error;
+        window.open(data.signedUrl, '_blank', 'noopener');
+      } catch (err) {
+        showToast('Could not open file: ' + err.message, 'error');
+      }
+    }
+
+    /* ==================================================================
+       PAYMENTS TAB — "who owes me money right now"
+       ==================================================================
+       One list across every project, sorted so the most overdue is first. This
+       is the view the old two-column model could not produce at all. */
+    function renderPayments() {
+      const tbody = document.getElementById('paymentsTableBody');
+      if (!tbody) return;
+      const today = new Date().toISOString().substring(0, 10);
+      const thisMonth = today.substring(0, 7);
+
+      const rows = paymentsData.map(pay => {
+        const proj = projectsData.find(p => p.id === pay.project_id);
+        return { pay, proj, overdue: !pay.received && pay.due_date && pay.due_date < today };
+      });
+
+      let due = 0, overdue = 0, receivedThisMonth = 0;
+      rows.forEach(({ pay, overdue: od }) => {
+        const amt = parseFloat(pay.amount) || 0;
+        if (!pay.received) { due += amt; if (od) overdue += amt; }
+        else if (String(pay.received_date || '').startsWith(thisMonth)) receivedThisMonth += amt;
+      });
+
+      const set = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
+      set('kpiPaymentsDue', formatMYR(due));
+      set('kpiPaymentsOverdue', formatMYR(overdue));
+      set('kpiPaymentsThisMonth', formatMYR(receivedThisMonth));
+
+      // Unpaid first, most overdue at the top; then received, most recent first.
+      rows.sort((a, b) => {
+        if (a.pay.received !== b.pay.received) return a.pay.received ? 1 : -1;
+        if (!a.pay.received) return String(a.pay.due_date || '9999').localeCompare(String(b.pay.due_date || '9999'));
+        return String(b.pay.received_date || '').localeCompare(String(a.pay.received_date || ''));
+      });
+
+      tbody.innerHTML = rows.length ? '' :
+        `<tr><td colspan="6" style="text-align:center;color:var(--bone-dim);padding:2rem;">
+          No payments scheduled yet. Open a project's chevron on the Projects tab to add its schedule.</td></tr>`;
+
+      rows.forEach(({ pay, proj, overdue: od }) => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td style="font-weight:500;white-space:nowrap;">${proj ? proj.name : '<span style="opacity:0.5;">(deleted project)</span>'}</td>
+          <td style="white-space:nowrap;">${proj ? (proj.client || '-') : '-'}</td>
+          <td>${pay.label || 'Installment'}</td>
+          <td style="white-space:nowrap;font-weight:500;">${formatMYR(pay.amount)}</td>
+          <td style="white-space:nowrap;color:${od ? '#f87171' : 'inherit'};">
+            ${pay.due_date ? formatDate(pay.due_date) : '<span style="opacity:0.4;">&mdash;</span>'}
+            ${od ? ' <strong>overdue</strong>' : ''}
+          </td>
+          <td style="white-space:nowrap;">
+            ${pay.received
+              ? `<span style="color:#4ade80;">Received ${formatDate(pay.received_date)}</span>`
+              : `<button class="btn-outline" style="padding:0.2rem 0.7rem;font-size:0.74rem;margin:0;width:auto;"
+                    onclick="setPaymentReceived('${pay.id}', true)">Mark received</button>`}
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    /* ==================================================================
+       QUOTATIONS TAB
+       ==================================================================
+       Header totals plus the document that was actually sent. Accepting a quote
+       can push its total onto the project's value, so the number the client
+       agreed to and the number being tracked cannot drift apart. */
+    function renderQuotations() {
+      const tbody = document.getElementById('quotationsTableBody');
+      if (!tbody) return;
+
+      tbody.innerHTML = quotationsData.length ? '' :
+        `<tr><td colspan="7" style="text-align:center;color:var(--bone-dim);padding:2rem;">
+          No quotations yet.</td></tr>`;
+
+      const statusColour = { Draft: 'var(--bone-dim)', Sent: '#fbbf24', Accepted: '#4ade80', Declined: '#f87171' };
+
+      quotationsData.forEach(q => {
+        const proj = projectsData.find(p => p.id === q.project_id);
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td style="font-family:var(--font-mono);white-space:nowrap;">${q.quote_number || '-'}</td>
+          <td style="white-space:nowrap;">${q.client || (proj ? proj.client : '') || '-'}</td>
+          <td style="white-space:nowrap;">${proj ? proj.name : '<span style="opacity:0.5;">unlinked</span>'}</td>
+          <td style="white-space:nowrap;">${q.quote_date ? formatDate(q.quote_date) : '-'}</td>
+          <td style="white-space:nowrap;font-weight:500;">${formatMYR(q.total)}</td>
+          <td>
+            <select class="inline-select quote-status" data-id="${q.id}" style="color:${statusColour[q.status] || 'inherit'};">
+              ${['Draft', 'Sent', 'Accepted', 'Declined'].map(s =>
+                `<option value="${s}" ${q.status === s ? 'selected' : ''}>${s}</option>`).join('')}
+            </select>
+          </td>
+          <td>
+            <div class="actions-cell">
+              ${q.file_url ? `<button class="action-btn" title="Open file" onclick="openQuotationFile('${q.file_url}')">
+                <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></button>` : ''}
+              ${(q.status === 'Accepted' && proj) ? `<button class="btn-outline" style="padding:0.2rem 0.6rem;font-size:0.72rem;margin:0;width:auto;"
+                    onclick="applyQuoteToProject('${q.id}')">Set project value</button>` : ''}
+              <button class="action-btn delete-btn" title="Delete" onclick="deleteQuotation('${q.id}')">
+                <svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/></svg></button>
+            </div>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+
+      tbody.querySelectorAll('.quote-status').forEach(sel => {
+        sel.addEventListener('change', () => updateQuotationStatus(sel.dataset.id, sel.value, sel));
+      });
+
+      // Project picker on the quotation form
+      const sel = document.getElementById('quoteProject');
+      if (sel) {
+        const cur = sel.value;
+        sel.innerHTML = '<option value="">Not linked to a project</option>' +
+          projectsData.map(p => `<option value="${p.id}">${p.name}</option>`).join('');
+        sel.value = cur;
+      }
+    }
+
+    async function saveQuotation(e) {
+      e.preventDefault();
+      const f = e.target;
+      const file = document.getElementById('quoteFile').files[0];
+      const total = parseFloat(document.getElementById('quoteTotal').value) || 0;
+
+      const row = {
+        project_id: document.getElementById('quoteProject').value || null,
+        client: document.getElementById('quoteClient').value.trim() || null,
+        quote_number: document.getElementById('quoteNumber').value.trim() || null,
+        quote_date: document.getElementById('quoteDate').value || null,
+        valid_until: document.getElementById('quoteValidUntil').value || null,
+        subtotal: parseFloat(document.getElementById('quoteSubtotal').value) || 0,
+        sst_amount: parseFloat(document.getElementById('quoteSst').value) || 0,
+        total,
+        status: document.getElementById('quoteStatus').value,
+        notes: document.getElementById('quoteNotes').value.trim() || null
+      };
+
+      const btn = f.querySelector('button[type="submit"]');
+      if (btn) { btn.disabled = true; btn.textContent = 'Saving…'; }
+
+      try {
+        if (file) {
+          // Namespaced by timestamp so re-uploading the same filename doesn't
+          // silently overwrite a previous client's quote.
+          const path = `${Date.now()}_${file.name.replace(/[^\w.\-]/g, '_')}`;
+          const { error: upErr } = await supabaseClient.storage.from('quotations').upload(path, file);
+          if (upErr) throw upErr;
+          row.file_url = path;
+        }
+        const { error } = await supabaseClient.from('quotations').insert([row]);
+        if (error) throw error;
+        showToast('Quotation saved', 'success');
+        f.reset();
+        await loadAllData();
+      } catch (err) {
+        showToast('Failed: ' + err.message, 'error');
+      } finally {
+        if (btn) { btn.disabled = false; btn.textContent = 'Save quotation'; }
+      }
+    }
+
+    async function updateQuotationStatus(id, status, sel) {
+      if (sel) sel.disabled = true;
+      try {
+        const { error } = await supabaseClient.from('quotations').update({ status }).eq('id', id);
+        if (error) throw error;
+        showToast(`Quotation marked ${status}`, 'success');
+        await loadAllData();
+      } catch (err) {
+        showToast('Failed: ' + err.message, 'error');
+        if (sel) sel.disabled = false;
+      }
+    }
+
+    /** Accepted quote -> the project's value, so the two cannot disagree. */
+    async function applyQuoteToProject(id) {
+      const q = quotationsData.find(x => x.id === id);
+      if (!q || !q.project_id) return;
+      const proj = projectsData.find(p => p.id === q.project_id);
+      if (!proj) return;
+      if (!confirm(`Set "${proj.name}" project value to ${formatMYR(q.total)} from quotation ${q.quote_number || ''}?`)) return;
+      try {
+        const { error } = await supabaseClient.from('projects').update({ value: q.total }).eq('id', q.project_id);
+        if (error) throw error;
+        showToast('Project value updated from quotation', 'success');
+        await loadAllData();
+        refreshOpenDetails();
+      } catch (err) {
+        showToast('Failed: ' + err.message, 'error');
+      }
+    }
+
+    async function deleteQuotation(id) {
+      if (!confirm('Delete this quotation?')) return;
+      const q = quotationsData.find(x => x.id === id);
+      try {
+        const { error } = await supabaseClient.from('quotations').delete().eq('id', id);
+        if (error) throw error;
+        // Best effort: an orphaned object in the bucket is untidy but harmless,
+        // so a storage failure must not block the row being removed.
+        if (q && q.file_url) {
+          await supabaseClient.storage.from('quotations').remove([q.file_url]).catch(() => {});
+        }
+        showToast('Quotation deleted', 'success');
+        await loadAllData();
+      } catch (err) {
+        showToast('Failed: ' + err.message, 'error');
+      }
+    }
+
     function renderPartners() {
       const tbody = document.getElementById('partnersTableBody');
       tbody.innerHTML = '';
 
-      let totalCollected = 0;
-      projectsData.forEach(p => {
-        const depositAmt = parseFloat(p.deposit_amount) || 0;
-        const finalAmt = parseFloat(p.final_payment_amount) || 0;
-        const isDepositReceived = p.deposit_received === true;
-        const isFinalReceived = p.final_received === true;
-        totalCollected += (isDepositReceived ? depositAmt : 0) + (isFinalReceived ? finalAmt : 0);
+      // Every figure comes from computeFinancials(). See the comment on that
+      // function for why `share + paid` is the correct balance and why adding the
+      // settlement column to the profit share (what the old code looked like it
+      // was trying to do) double-deducts the expenses.
+      const { collected, expenses, netProfit, share, paid, withdrawn, balance,
+              settlement, withdrawnTotal, cashInAccount, reconciled, unattributed } = fin;
+
+      const pct = p => (systemSettings.partner_split?.[p] ?? 50);
+
+      document.getElementById('partnerNetProfit').textContent = formatMYR(netProfit);
+
+      // ---- headline cards ----
+      const cards = {
+        Kunacosta: { label: 'kunaProfitShareLabel', bal: 'kunaRemainingBalance',
+                     share: 'kunaTotalShare', drawn: 'kunaTotalWithdrawn' },
+        Rooben:    { label: 'roobenProfitShareLabel', bal: 'roobenRemainingBalance',
+                     share: 'roobenTotalShare', drawn: 'roobenTotalWithdrawn' }
+      };
+      PARTNERS.forEach(p => {
+        const ids = cards[p];
+        if (!ids) return;
+        const set = (id, txt) => { const el = document.getElementById(id); if (el) el.textContent = txt; };
+        set(ids.label, `${p} Balance (${pct(p)}%)`);
+        set(ids.bal, formatMYR(balance[p]));
+        set(ids.share, formatMYR(share[p]));
+        set(ids.drawn, formatMYR(withdrawn[p]));
+        const balEl = document.getElementById(ids.bal);
+        // Negative means they have drawn more than they are owed.
+        if (balEl) balEl.style.color = balance[p] < 0 ? '#f87171' : 'var(--accent)';
       });
 
-      let totalExpenses = 0;
-      expensesData.forEach(e => {
-        totalExpenses += parseFloat(e.amount) || 0;
+      // ---- per-partner table ----
+      PARTNERS.forEach(p => {
+        const tr = document.createElement('tr');
+        const s = settlement[p];
+        tr.innerHTML = `
+          <td style="font-weight: 500;">${p}</td>
+          <td>${pct(p)}%</td>
+          <td>${formatMYR(paid[p])}</td>
+          <td>${formatMYR(expenses * (pct(p) / 100))}</td>
+          <td style="color: ${s >= 0 ? '#4ade80' : '#f87171'}">${s >= 0 ? '+' : ''}${formatMYR(s)}</td>
+          <td>${formatMYR(share[p])}</td>
+          <td style="font-weight: bold; color: ${balance[p] < 0 ? '#f87171' : 'var(--accent)'};">${formatMYR(balance[p])}</td>
+        `;
+        tbody.appendChild(tr);
       });
 
-      const splitKuna = (systemSettings.partner_split?.Kunacosta ?? 50);
-      const splitRooben = (systemSettings.partner_split?.Rooben ?? 50);
-      
-      const pctKuna = splitKuna / 100;
-      const pctRooben = splitRooben / 100;
-
-      const netProfitCollected = totalCollected - totalExpenses;
-      
-      // Calculate withdrawals
-      const kunaWithdrawn = withdrawalsData
-        .filter(w => String(w.partner).trim().toLowerCase() === 'kunacosta')
-        .reduce((sum, w) => sum + (parseFloat(w.amount) || 0), 0);
-
-      const roobenWithdrawn = withdrawalsData
-        .filter(w => String(w.partner).trim().toLowerCase() === 'rooben')
-        .reduce((sum, w) => sum + (parseFloat(w.amount) || 0), 0);
-
-      const kunaProfitShare = netProfitCollected * pctKuna;
-      const roobenProfitShare = netProfitCollected * pctRooben;
-      
-      const kunaRemaining = kunaProfitShare - kunaWithdrawn;
-      const roobenRemaining = roobenProfitShare - roobenWithdrawn;
-
-      // Update KPI Cards
-      document.getElementById('partnerNetProfit').textContent = formatMYR(netProfitCollected);
-      
-      document.getElementById('kunaProfitShareLabel').textContent = `Kunacosta Remaining Balance (${splitKuna}%)`;
-      document.getElementById('kunaRemainingBalance').textContent = formatMYR(kunaRemaining);
-      document.getElementById('kunaTotalShare').textContent = formatMYR(kunaProfitShare);
-      document.getElementById('kunaTotalWithdrawn').textContent = formatMYR(kunaWithdrawn);
-
-      document.getElementById('roobenProfitShareLabel').textContent = `Rooben Remaining Balance (${splitRooben}%)`;
-      document.getElementById('roobenRemainingBalance').textContent = formatMYR(roobenRemaining);
-      document.getElementById('roobenTotalShare').textContent = formatMYR(roobenProfitShare);
-      document.getElementById('roobenTotalWithdrawn').textContent = formatMYR(roobenWithdrawn);
-
-      // Partner paid expenses
-      const kunaPaid = expensesData
-        .filter(e => String(e.paid_by).trim().toLowerCase() === 'kunacosta')
-        .reduce((sum, e) => sum + (parseFloat(e.amount) || 0), 0);
-
-      const roobenPaid = expensesData
-        .filter(e => String(e.paid_by).trim().toLowerCase() === 'rooben')
-        .reduce((sum, e) => sum + (parseFloat(e.amount) || 0), 0);
-
-      const kunaIdealShare = totalExpenses * pctKuna;
-      const roobenIdealShare = totalExpenses * pctRooben;
-      
-      const kunaSettlement = kunaPaid - kunaIdealShare;
-      const roobenSettlement = roobenPaid - roobenIdealShare;
-
-      const kunaFinal = kunaProfitShare;
-      const roobenFinal = roobenProfitShare;
-
-      // Partner 1: Kunacosta
-      const trKuna = document.createElement('tr');
-      trKuna.innerHTML = `
-        <td style="font-weight: 500;">Kunacosta</td>
-        <td>${splitKuna}%</td>
-        <td>${formatMYR(kunaPaid)}</td>
-        <td>${formatMYR(kunaIdealShare)}</td>
-        <td style="color: ${kunaSettlement >= 0 ? '#4ade80' : '#f87171'}">${kunaSettlement >= 0 ? '+' : ''}${formatMYR(kunaSettlement)}</td>
-        <td>${formatMYR(kunaProfitShare)}</td>
-        <td style="font-weight: bold; color: var(--accent);">${formatMYR(kunaFinal)}</td>
-      `;
-      tbody.appendChild(trKuna);
-
-      // Partner 2: Rooben
-      const trRooben = document.createElement('tr');
-      trRooben.innerHTML = `
-        <td style="font-weight: 500;">Rooben</td>
-        <td>${splitRooben}%</td>
-        <td>${formatMYR(roobenPaid)}</td>
-        <td>${formatMYR(roobenIdealShare)}</td>
-        <td style="color: ${roobenSettlement >= 0 ? '#4ade80' : '#f87171'}">${roobenSettlement >= 0 ? '+' : ''}${formatMYR(roobenSettlement)}</td>
-        <td>${formatMYR(roobenProfitShare)}</td>
-        <td style="font-weight: bold; color: var(--accent);">${formatMYR(roobenFinal)}</td>
-      `;
-      tbody.appendChild(trRooben);
-
-      // Totals Row
       const trTotal = document.createElement('tr');
       trTotal.style.fontWeight = 'bold';
       trTotal.style.background = 'var(--table-header-bg)';
+      const sumPaid = PARTNERS.reduce((s, p) => s + paid[p], 0);
+      const sumSettle = PARTNERS.reduce((s, p) => s + settlement[p], 0);
+      const sumShare = PARTNERS.reduce((s, p) => s + share[p], 0);
+      const sumBal = PARTNERS.reduce((s, p) => s + balance[p], 0);
       trTotal.innerHTML = `
         <td>Total</td>
         <td>100%</td>
-        <td>${formatMYR(kunaPaid + roobenPaid)}</td>
-        <td>${formatMYR(totalExpenses)}</td>
-        <td>${formatMYR(kunaSettlement + roobenSettlement)}</td>
-        <td>${formatMYR(kunaProfitShare + roobenProfitShare)}</td>
-        <td style="color: var(--accent);">${formatMYR(kunaFinal + roobenFinal)}</td>
+        <td>${formatMYR(sumPaid)}</td>
+        <td>${formatMYR(expenses)}</td>
+        <td>${formatMYR(sumSettle)}</td>
+        <td>${formatMYR(sumShare)}</td>
+        <td style="color: var(--accent);">${formatMYR(sumBal)}</td>
       `;
       tbody.appendChild(trTotal);
+
+      // ---- who owes whom ----
+      // With a fixed 50/50 split and all costs personally fronted, the imbalance
+      // is one number: whoever fronted more than half is owed the difference.
+      const settleEl = document.getElementById('partnerSettleUp');
+      if (settleEl) {
+        const [a, b] = PARTNERS;
+        const gap = settlement[a];        // > 0 means a fronted more than their share
+        if (Math.abs(gap) < 0.01) {
+          settleEl.innerHTML = `<span style="color: var(--bone-dim);">Expenses are even &mdash; nothing to settle between you.</span>`;
+        } else {
+          const ower = gap > 0 ? b : a;
+          const owed = gap > 0 ? a : b;
+          settleEl.innerHTML =
+            `<strong style="color: #fbbf24;">${ower}</strong> owes ` +
+            `<strong style="color: #4ade80;">${owed}</strong> ` +
+            `<strong style="color: var(--accent);">${formatMYR(Math.abs(gap))}</strong> ` +
+            `<span style="color: var(--bone-dim);">for expenses fronted out of pocket.</span>`;
+        }
+      }
+
+      // ---- reconciliation ----
+      // The partners' balances must equal the cash actually in the account. If
+      // they don't, something was entered wrong; say so rather than quietly
+      // reporting numbers that don't add up.
+      const recEl = document.getElementById('partnerReconcile');
+      if (recEl) {
+        if (reconciled) {
+          recEl.innerHTML =
+            `<span style="color: #4ade80;">&#10003; Balanced</span> ` +
+            `<span style="color: var(--bone-dim);">&mdash; partner balances (${formatMYR(sumBal)}) ` +
+            `match cash in the account (collected ${formatMYR(collected)} ` +
+            `&minus; withdrawn ${formatMYR(withdrawnTotal)} = ${formatMYR(cashInAccount)}).</span>`;
+          recEl.style.borderColor = 'rgba(74, 222, 128, 0.3)';
+        } else {
+          const reasons = [];
+          if (unattributed && unattributed.length) {
+            reasons.push(`${unattributed.length} expense(s) have no "Paid By" set, so they cannot be charged to a partner`);
+          }
+          if (Math.abs(sumBal - cashInAccount) >= 0.01) {
+            reasons.push(`balances total ${formatMYR(sumBal)} but the account holds ${formatMYR(cashInAccount)} (out by ${formatMYR(sumBal - cashInAccount)})`);
+          }
+          recEl.innerHTML =
+            `<span style="color: #f87171; font-weight: 600;">&#9888; Does not balance</span> ` +
+            `<span style="color: var(--bone-dim);">&mdash; ${reasons.join('; ')}.</span>`;
+          recEl.style.borderColor = 'rgba(248, 113, 113, 0.4)';
+        }
+      }
 
       // Render withdrawals history table
       const wTbody = document.getElementById('withdrawalsTableBody');
@@ -3712,11 +4410,10 @@ function getProjectImageUrl(p) {
       oBody.innerHTML = '';
       let oCount = 0;
       projectsData.forEach(p => {
-        const val = parseFloat(p.value) || 0;
-        const depositAmt = parseFloat(p.deposit_amount) || 0;
-        const finalAmt = parseFloat(p.final_payment_amount) || 0;
-        const col = (p.deposit_received ? depositAmt : 0) + (p.final_received ? finalAmt : 0);
-        const out = Math.max(0, val - col);
+        const t = projectFin(p.id);
+        const val = t.contractTotal;
+        const col = t.collected;
+        const out = Math.max(0, t.outstanding);
         if (out > 0) {
           oCount++;
           const tr = document.createElement('tr');
@@ -3759,21 +4456,9 @@ function getProjectImageUrl(p) {
     
     function renderReportsCharts() {
       const monthlyFin = {};
-      projectsData.forEach(p => {
-        if (p.deposit_received && p.deposit_received_date) {
-          const monthKey = String(p.deposit_received_date).substring(0, 7);
-          if (monthKey.length === 7) {
-            if (!monthlyFin[monthKey]) monthlyFin[monthKey] = { revenue: 0, expenses: 0 };
-            monthlyFin[monthKey].revenue += parseFloat(p.deposit_amount) || 0;
-          }
-        }
-        if (p.final_received && p.final_payment_received_date) {
-          const monthKey = String(p.final_payment_received_date).substring(0, 7);
-          if (monthKey.length === 7) {
-            if (!monthlyFin[monthKey]) monthlyFin[monthKey] = { revenue: 0, expenses: 0 };
-            monthlyFin[monthKey].revenue += parseFloat(p.final_payment_amount) || 0;
-          }
-        }
+      revenueByMonth().forEach(([monthKey, amt]) => {
+        if (!monthlyFin[monthKey]) monthlyFin[monthKey] = { revenue: 0, expenses: 0 };
+        monthlyFin[monthKey].revenue += amt;
       });
       
       expensesData.forEach(e => {
@@ -3983,13 +4668,7 @@ function getProjectImageUrl(p) {
           document.getElementById('projectStatus').value = p.status || 'In Progress';
           document.getElementById('projectValue').value = p.value || 0;
           
-          document.getElementById('projectDepositAmount').value = p.deposit_amount || 0;
-          document.getElementById('projectDepositReceived').value = p.deposit_received ? 'Yes' : 'No';
-          document.getElementById('projectDepositReceivedDate').value = p.deposit_received_date || '';
           
-          document.getElementById('projectFinalPaymentAmount').value = p.final_payment_amount || 0;
-          document.getElementById('projectFinalReceived').value = p.final_received ? 'Yes' : 'No';
-          document.getElementById('projectFinalReceivedDate').value = p.final_payment_received_date || '';
           
           document.getElementById('projectAssignedTo').value = p.assigned_to || '';
           document.getElementById('projectNotes').value = p.notes || '';
@@ -3997,10 +4676,6 @@ function getProjectImageUrl(p) {
       } else {
         document.getElementById('projectModalTitle').textContent = 'Add Project';
         document.getElementById('projectId').value = '';
-        document.getElementById('projectDepositAmount').value = 0;
-        document.getElementById('projectFinalPaymentAmount').value = 0;
-        document.getElementById('projectDepositReceived').value = 'No';
-        document.getElementById('projectFinalReceived').value = 'No';
       }
       openModal('projectModal');
     }
@@ -4016,14 +4691,6 @@ function getProjectImageUrl(p) {
       const status = document.getElementById('projectStatus').value;
       
       const value = parseFloat(document.getElementById('projectValue').value) || 0;
-      const deposit_amount = parseFloat(document.getElementById('projectDepositAmount').value) || 0;
-      const deposit_received = document.getElementById('projectDepositReceived').value === 'Yes';
-      let deposit_received_date = document.getElementById('projectDepositReceivedDate').value || null;
-      
-      const final_payment_amount = parseFloat(document.getElementById('projectFinalPaymentAmount').value) || 0;
-      const final_received = document.getElementById('projectFinalReceived').value === 'Yes';
-      let final_payment_received_date = document.getElementById('projectFinalReceivedDate').value || null;
-      
       const assigned_to = document.getElementById('projectAssignedTo').value || null;
       const notes = document.getElementById('projectNotes').value || null;
 
@@ -4032,41 +4699,15 @@ function getProjectImageUrl(p) {
         showToast("Project value cannot be negative", "error");
         return;
       }
-      if (deposit_amount < 0 || final_payment_amount < 0) {
-        showToast("Payment amounts cannot be negative", "error");
-        return;
-      }
-      if (deposit_amount + final_payment_amount > value) {
-        if (!confirm(`Deposit (${formatMYR(deposit_amount)}) + Final Payment (${formatMYR(final_payment_amount)}) exceeds Project Value (${formatMYR(value)}). Do you want to proceed?`)) {
-          return;
-        }
-      }
       if (deadline && start_date && new Date(deadline) < new Date(start_date)) {
         showToast("Deadline cannot be before start date", "error");
         return;
       }
-      
-      // Auto-set date to today if received but date is empty
-      if (deposit_received && !deposit_received_date) {
-        deposit_received_date = new Date().toISOString().substring(0, 10);
-      }
-      if (!deposit_received) {
-        deposit_received_date = null;
-      }
-      if (final_received && !final_payment_received_date) {
-        final_payment_received_date = new Date().toISOString().substring(0, 10);
-      }
-      if (!final_received) {
-        final_payment_received_date = null;
-      }
 
-      // Warn if received is Yes and amount is 0
-      if (deposit_received && deposit_amount === 0) {
-        showToast("Deposit is marked as received but amount is RM 0.00", "warning");
-      }
-      if (final_received && final_payment_amount === 0) {
-        showToast("Final payment is marked as received but amount is RM 0.00", "warning");
-      }
+      // The old "deposit + final must not exceed project value" check is gone:
+      // installments live in project_payments now, and the detail panel warns
+      // when the schedule and the contract total disagree, where the whole
+      // schedule is actually visible.
 
       const row = {
         name,
@@ -4075,12 +4716,6 @@ function getProjectImageUrl(p) {
         deadline,
         status,
         value,
-        deposit_amount,
-        deposit_received,
-        deposit_received_date,
-        final_payment_amount,
-        final_received,
-        final_payment_received_date,
         assigned_to,
         notes
       };

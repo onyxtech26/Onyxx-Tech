@@ -7,6 +7,94 @@ Format each entry: what was done, why it mattered, and any key decisions.
 
 ## 2026-07-26
 
+### Admin portal rebuilt: real project financials and correct partner accounting
+
+Migration `supabase_migration_02_financials.sql` **applied to production**.
+
+**The accounting bug.** `renderPartners()` computed each partner's expense
+settlement, printed it in its own column, then dropped it:
+
+```js
+const kunaSettlement = kunaPaid - kunaIdealShare;   // computed
+const kunaFinal      = kunaProfitShare;             // discarded
+```
+
+A partner who fronted RM1,000 of costs was never credited the RM500 the other
+owed them. `paid_by` was already being captured — only the arithmetic ignored it.
+With one shared account and every expense fronted personally:
+
+```
+balance(P) = 0.5 x (collected - expenses) + paid(P) - withdrawn(P)
+```
+
+- **The trap:** you cannot fix this by adding `settlement` to `profitShare`. The
+  profit share already carries −½E and the settlement carries another −½E, so
+  the sum deducts expenses one and a half times. Probably why it was left
+  disconnected rather than wired in.
+- Verified against hand-worked figures by running the *shipped* function in a
+  browser JS context with fixture data, not a reimplementation: collected
+  16,000, expenses 1,200, net 14,800 → Kuna 7,900, Rooben 7,600, and the
+  invariant `balance(A) + balance(B) == collected − withdrawn` holding at 15,500.
+- The Partners tab shows that invariant as a reconciliation row and turns it
+  **red** when it fails — which it does if any expense has no `paid_by`, the one
+  input that silently corrupts both partners' numbers.
+
+**Installments replace the two fixed payment slots.** `project_payments`,
+`project_addons` and `quotations` are new tables; the `deposit_*` /
+`final_payment_*` columns are gone. A project row expands into a financial panel
+(value, add-ons, contract total, collected, outstanding, overdue, the schedule
+with tick-to-receive, linked quotation) and warns when the schedule doesn't add
+up to the contract. New **Payments** and **Quotations** tabs.
+
+- **One source of truth.** The old model was summed independently in **nine**
+  places and several already disagreed. `computeFinancials()` produces every
+  figure once; Overview, Projects, Cash Flow, Partners and Reports all read it.
+  Three hand-rolled monthly-revenue loops collapsed into `revenueByMonth()`.
+- `paid_by` is restricted to the two partners in the UI *and* by a DB
+  constraint. The dropdown previously offered every team member, which the
+  constraint would now reject with a raw error.
+- Verified: 36 inline handlers defined, 13 render functions present, 18 new
+  element ids matched, zero references to the retired model, and the dashboard
+  renders against fixtures with **zero page and console errors**.
+
+### Correction: the "financial data is public" finding was wrong
+
+An earlier entry claimed `projects`, `expenses`, `partner_withdrawals` and
+`system_settings` were all world-readable. **Two of those four were fine.**
+
+The mistake: reading `HTTP 200 + 0 rows` from PostgREST as "readable and empty".
+When RLS filters every row it still answers **200 with a count of 0** — only a
+missing table errors. Because the tables were also believed to be empty, both
+wrong readings agreed and neither got questioned. The real row counts (3
+projects, 10 expenses) exposed the contradiction.
+
+What `pg_policies` actually showed:
+
+| Table | Public SELECT policy | Verdict |
+|---|---|---|
+| `projects`, `expenses` | none — only `ALL` to `{authenticated}` | already private |
+| `partner_withdrawals` | `USING (true)` | exposed, but 0 rows |
+| `system_settings` | `USING (true)` | exposed, 3 rows |
+
+Only the latter two were closed. Confirmed after applying: `system_settings`
+went from 3 rows visible to anon to 0, every private table reports 0, and all
+seven public pages still render (Services 5, Work 6, Founders 2).
+
+- **The probe script now reports row counts, not status codes**, and flags
+  anything non-zero outside the public-by-design set. Its old label said
+  "READABLE" for any 200, which is precisely what produced the false alarm.
+- **The pre-flight check earned its place.** The first draft of the migration
+  assumed empty tables and `DROP`ped the deposit/final columns; running it
+  would have destroyed four real payments.
+
+**Deliberately not done: the `receipts` bucket stays public.** Receipts are
+uploaded with `getPublicUrl()` and that URL is stored in
+`expenses.invoice_link` and rendered as a plain link, so flipping the bucket
+would break every existing receipt. Doing it properly means storing the object
+path and signing on click, plus converting existing rows — a dashboard change,
+not a migration. The new `quotations` bucket is private from the start, having
+no legacy URLs.
+
 ### Restored the hero rotator, and fixed the homepage teaser cards rendering as raw links
 
 **Hero rotator is back.** The tail of the headline cycles through "modern
@@ -68,7 +156,35 @@ centres it on the pointer and keeps `will-change: transform` honest.
   bounding-box centre compared against each — **0.0px offset at all five** — and
   the transform confirmed to stop being rewritten while idle.
 
-### Splash now plays on every homepage load (reverses the once-per-session gate)
+### Splash: on arrival and on reload, but not on navigating back to home
+
+Final shape of a rule that took two passes. The homepage plays the curtain when
+the visitor **arrives** or **reloads**, and stays silent when they merely
+navigate back to `/` from another page:
+
+| Arriving at `/` | Nav type | Splash |
+|---|---|---|
+| First load this session | `navigate`, unseen | yes |
+| Refresh / F5 | `reload` | yes, every time |
+| Clicking Home from `/work` | `navigate`, seen | no |
+| Browser back button | `back_forward` | no |
+
+**The catch:** a first arrival and a reload are both navigationType `navigate`,
+so neither the nav type nor a session flag is sufficient alone — the condition is
+`isReload || firstVisit`, using both. `performance.navigation.type === 1` is kept
+as a fallback for engines without a Navigation Timing L2 entry, and both the
+timing read and the `sessionStorage` write are wrapped (Safari private mode
+throws on the latter) so a failure errs toward *showing* the brand.
+
+- Verified across all ten cases in one browser session plus a fresh context:
+  arrival, two consecutive F5s, `/services`, link back to `/`, `/work`, the
+  browser back button, an F5 after navigating, and a new session.
+- Also re-verified the hero entrance still plays on the **no-splash** path,
+  which is the easy thing to break here — that path sets `.splash-done` in
+  `<head>`, and the lines were measured rising 117 → 0px staggered, 102.8px
+  widest gap, exactly as on the splash path.
+
+### Splash previously played on every homepage load (superseded by the above)
 
 At the user's request the `sessionStorage` gate added earlier the same day is
 gone: reloading `/`, or returning to it from another page, plays the curtain
