@@ -432,7 +432,12 @@
     loginForm.addEventListener('submit', async (e) => {
       e.preventDefault();
       
-      const email = emailInput.value;
+      // Trimmed because Supabase compares the address literally: a trailing
+      // space picked up from autofill or a paste comes back as the generic
+      // "Invalid login credentials", which reads as a wrong password and sends
+      // you looking in the wrong place. The password is deliberately NOT
+      // trimmed — spaces there may be intentional.
+      const email = emailInput.value.trim();
       const password = passwordInput.value;
       
       setLoginBtnLoading(true);
