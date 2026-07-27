@@ -3626,7 +3626,14 @@ function getProjectImageUrl(p) {
 
         const proj = projectsData.find(p => p.id === e.linked_project_id);
         const projName = proj ? proj.name : 'None';
-        const invoiceLink = e.invoice_link ? `<a href="${e.invoice_link}" target="_blank" style="color: var(--accent); text-decoration: underline; font-weight: 500; font-size: 0.85rem;">View</a>` : '<span style="color: var(--bone-faint); font-size: 0.85rem;">None</span>';
+        // Routed through openReceiptFile rather than a bare href: the stored
+        // value is an object path now, which only resolves via a signed URL.
+        // The single quotes in the attribute are escaped because a filename can
+        // legally contain one and would otherwise break out of the handler.
+        const invoiceLink = e.invoice_link
+          ? `<button type="button" onclick="openReceiptFile('${String(e.invoice_link).replace(/'/g, "\\'")}')"
+                     style="background:none;border:none;padding:0;cursor:pointer;color: var(--accent); text-decoration: underline; font-weight: 500; font-size: 0.85rem;">View</button>`
+          : '<span style="color: var(--bone-faint); font-size: 0.85rem;">None</span>';
 
         const tr = document.createElement('tr');
         tr.innerHTML = `
@@ -3992,6 +3999,32 @@ function getProjectImageUrl(p) {
      * rather than a public link — a quotation exposes what you charge a specific
      * client.
      */
+    /**
+     * Open a receipt. New rows store the object path in the private-capable
+     * `receipts` bucket and get a short-lived signed URL; rows written before
+     * that change stored a full public URL, so those are opened directly.
+     *
+     * The legacy branch is what makes the bucket safe to flip private without a
+     * data migration — old links keep working as long as the bucket is still
+     * public, and once it is closed only the path-based rows resolve, which is
+     * the intended end state.
+     */
+    async function openReceiptFile(ref) {
+      if (!ref) return;
+      if (/^https?:\/\//i.test(ref)) {
+        window.open(ref, '_blank', 'noopener');
+        return;
+      }
+      try {
+        const { data, error } = await supabaseClient.storage
+          .from('receipts').createSignedUrl(ref, 60);
+        if (error) throw error;
+        window.open(data.signedUrl, '_blank', 'noopener');
+      } catch (err) {
+        showToast('Could not open receipt: ' + err.message, 'error');
+      }
+    }
+
     async function openQuotationFile(path) {
       try {
         const { data, error } = await supabaseClient.storage
@@ -4775,7 +4808,8 @@ function getProjectImageUrl(p) {
           
           const previewEl = document.getElementById('expenseInvoicePreview');
           if (exp.invoice_link) {
-            previewEl.innerHTML = `<a href="${exp.invoice_link}" target="_blank" style="color: var(--accent); text-decoration: underline;">View Current File</a>`;
+            previewEl.innerHTML = `<button type="button" onclick="openReceiptFile('${String(exp.invoice_link).replace(/'/g, "\\'")}')"
+                     style="background:none;border:none;padding:0;cursor:pointer;color: var(--accent); text-decoration: underline;">View Current File</button>`;
           } else {
             previewEl.innerHTML = '';
           }
@@ -4827,9 +4861,14 @@ function getProjectImageUrl(p) {
         try {
           const { error } = await supabaseClient.storage.from('receipts').upload(fileName, file);
           if (error) throw error;
-          
-          const { data: publicUrlData } = supabaseClient.storage.from('receipts').getPublicUrl(fileName);
-          invoice_link = publicUrlData.publicUrl;
+
+          // Store the OBJECT PATH, not a public URL. Receipts are financial
+          // paperwork; a public URL is readable by anyone who has or guesses it,
+          // and it also pins the bucket open forever — you cannot make the
+          // bucket private later without breaking every stored link. The path is
+          // resolved to a short-lived signed URL at click time instead
+          // (openReceiptFile below), the same as quotations.
+          invoice_link = fileName;
         } catch (uploadErr) {
           showToast('Failed to upload file: ' + uploadErr.message, 'error');
           return; // Stop saving expense if file upload fails
