@@ -1970,11 +1970,12 @@
               <tr>
                 <th>Partner</th>
                 <th>Share %</th>
-                <th title="Their percentage of collected money, less SST">Share of Collected</th>
+                <th title="Their percentage of the pool: collected, less SST, less company expenses">Share of Profit</th>
+                <th title="Company purchases they fronted — the account owes this back">Owed Back</th>
                 <th>Withdrawn</th>
-                <th style="color: var(--accent);" title="Still available for them to withdraw">Balance</th>
-                <th title="Spent personally. Borne entirely by this partner — not reimbursed, not split.">Spent Personally</th>
-                <th title="Balance minus personal spending — this partner's real result">Net Position</th>
+                <th style="color: var(--accent);" title="Share + owed back − withdrawn. What they can take from the account.">Balance</th>
+                <th title="Bought for themselves. Not reimbursed, not split — this is what makes it theirs alone.">Spent on Self</th>
+                <th title="Balance minus everything they paid out of their own pocket, company and personal — who is actually ahead">Net Position</th>
               </tr>
             </thead>
             <tbody id="partnersTableBody">
@@ -2269,6 +2270,14 @@
                 <option value="">Select Member</option>
               </select>
             </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="expenseScope">Who was this for?</label>
+            <select id="expenseScope" class="form-control" required>
+              <option value="company">The company — split 50/50</option>
+              <option value="personal">Just me — I carry it alone</option>
+            </select>
+            <p id="expenseScopeHint" style="font-size: 0.75rem; color: var(--bone-dim); margin-top: 0.4rem; line-height: 1.5;"></p>
           </div>
           <div class="form-group" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; border-top: 1px dashed var(--glass-border); padding-top: 1rem;">
             <div>
@@ -2592,8 +2601,11 @@
       paid: {},        // partner -> expenses they personally fronted
       withdrawn: {},   // partner -> cash they have taken out
       balance: {},     // partner -> what they are actually owed
-      outOfPocket: {}, // partner -> what they spent personally, never reimbursed
-      netPosition: {}, // partner -> balance minus out-of-pocket
+      companyExpenses: 0,
+      reimbursable: {},  // partner -> company expenses they fronted, owed back
+      personalSpend: {}, // partner -> own purchases, never reimbursed
+      outOfPocket: {},   // alias of personalSpend, used by the Partners table
+      netPosition: {},   // partner -> balance minus personal spending
       distributablePool: 0,
       cashInAccount: 0,
       sstReserved: 0,   // SST collected and owed onward — in the account, not income
@@ -3189,47 +3201,64 @@ function getProjectImageUrl(p) {
        computeFinancials — run once per load, before anything renders
        ==================================================================
        PARTNER ACCOUNTING
-       Client money lands in one shared business account. Every expense is paid
-       by a partner personally, and — this is the studio's rule — is borne
-       ENTIRELY by whoever paid it. Buying something for the business does not
-       put the other partner on the hook for half of it.
+       Client money lands in one shared business account, and expenses are paid
+       by a partner personally. THE RULE TURNS ON WHO THE PURCHASE WAS FOR:
 
-       So the account pays out the collected money, split by the agreed
-       percentages, and expenses simply never enter that calculation:
+         * FOR THE COMPANY  — cost shared 50/50, and the payer gets their money
+                              back. A laptop for the studio is not one partner's
+                              problem.
+         * FOR THE PARTNER  — borne entirely by whoever bought it, and NOT
+                              reimbursed. Headphones for yourself are yours.
 
-           share(P)   = pct(P) x (collected - SST)
-           balance(P) = share(P) - withdrawn(P)
+       That is `expenses.scope`, 'company' or 'personal'.
 
-       There is NO reimbursement term. That is the whole point: if Kunacosta
-       spends RM1,000, Rooben's figure must not move, and Kunacosta must not get
-       the RM1,000 back out of shared money.
+       Only company expenses come out of the pool being divided; personal ones
+       never enter the company's arithmetic at all:
 
-       Worked example. Collected RM10,000, Kunacosta pays a RM1,000 expense:
+           pool       = collected - SST - companyExpenses
+           share(P)   = pct(P) x pool
+           balance(P) = share(P) + reimbursable(P) - withdrawn(P)
 
-           share      Kunacosta 5,000   Rooben 5,000
-           balance    Kunacosta 5,000   Rooben 5,000     <- what each can withdraw
-           outOfPocket Kunacosta 1,000  Rooben 0
-           net        Kunacosta 4,000   Rooben 5,000     <- true economic result
+       where reimbursable(P) is the COMPANY expenses P fronted. Personal
+       spending is deliberately absent from that line — that absence IS how the
+       cost lands on the buyer. They spent their own money and do not get it
+       back, so they end up behind the other partner by exactly that amount.
 
-       Rooben is untouched, and the RM1,000 comes off Kunacosta alone.
+       Worked example. Collected RM10,000; Kunacosta buys a RM1,000 company
+       laptop and RM300 of headphones for himself, both from his own pocket:
 
-       WHAT THIS REPLACED
-       The previous model reimbursed the payer — `share(P) + paid(P)` on a pool
-       of `collected - expenses`. That is the conventional partnership treatment
-       and it silently SPLIT every cost 50/50: on the numbers above it produced
-       Kunacosta 5,500 / Rooben 4,500, so Rooben absorbed RM500 of a purchase he
-       had no part in. Correct for a shared-cost business, wrong for this one.
+           pool         10,000 - 1,000 = 9,000
+           share        Kunacosta 4,500   Rooben 4,500
+           reimbursable Kunacosta 1,000   Rooben 0
+           balance      Kunacosta 5,500   Rooben 4,500   <- available to withdraw
+           personal     Kunacosta   300   Rooben 0
+           net          Kunacosta 4,200   Rooben 4,500   <- true economic result
 
-       `netProfit` below is kept as `collected - SST - expenses`, but it is now a
-       REPORTING figure only — real company profitability — and is deliberately
-       NOT what the shares are computed from. Do not wire it back into share().
+       Read the net line: the gap is exactly RM300, the headphones. The laptop
+       cost them RM500 each. Both rules hold simultaneously.
+
+       Kunacosta's BALANCE being higher than Rooben's is correct and not a bug —
+       the company owes him RM1,000 for the laptop. Net Position is the column
+       that answers "who is actually ahead".
+
+       IF A PERSONAL ITEM IS BOUGHT WITH COMPANY MONEY, do not record it here.
+       That is money leaving the account for one partner, which is exactly what
+       `partner_withdrawals` is for. Logging it as a personal expense would
+       understate what that partner has taken.
+
+       `netProfit` below is `collected - SST - expenses` INCLUDING personal ones,
+       and is a REPORTING figure only — never what shares derive from. Do not
+       wire it into share().
 
        RECONCILIATION
-       Expenses never move money in or out of the account, so the balances still
-       have to add up to the cash sitting in it, less anything owed to the tax
-       authority:
+       Company expenses are reimbursed out of the account and personal ones never
+       touch it, so the balances still have to add up to the cash sitting there,
+       less anything owed to the tax authority:
 
            balance(A) + balance(B) === collected - SST - total withdrawn
+
+       (companyExpenses cancels: it comes off the pool and goes straight back on
+       as reimbursement.)
 
        `fin.reconciled` reports that. It only goes false on bad data (an expense
        with no paid_by, a withdrawal by an unknown name), which is exactly when
@@ -3313,19 +3342,39 @@ function getProjectImageUrl(p) {
         contractTotal += t.contractTotal;
       });
 
-      // ---- expenses, attributed to whoever fronted them ----
-      let expenses = 0;
-      const paid = {};
+      // ---- expenses, split by WHO THE PURCHASE WAS FOR ----
+      //
+      // company  -> comes off the shared pool, and the payer is reimbursed
+      // personal -> never touches the pool, and is NOT reimbursed
+      //
+      // Rows written before `scope` existed have no value; they are treated as
+      // 'company', which is what every expense meant at the time.
+      let expenses = 0;             // everything, for reporting
+      let companyExpenses = 0;      // the only kind that reduces the pool
+      const reimbursable = {};      // company expenses P fronted -> owed back
+      const personalSpend = {};     // P's own purchases -> never owed back
       const unattributed = [];
-      PARTNERS.forEach(p => { paid[p] = 0; });
+      PARTNERS.forEach(p => { reimbursable[p] = 0; personalSpend[p] = 0; });
 
       expensesData.forEach(e => {
         const amt = parseFloat(e.amount) || 0;
         expenses += amt;
+        const isPersonal = String(e.scope || 'company').trim().toLowerCase() === 'personal';
         const who = PARTNERS.find(p => p.toLowerCase() === String(e.paid_by || '').trim().toLowerCase());
-        if (who) paid[who] += amt;
-        else unattributed.push(e);   // drives the reconciliation warning
+
+        if (!who) {
+          // Cannot be charged to anyone; drives the reconciliation warning.
+          unattributed.push(e);
+          if (!isPersonal) companyExpenses += amt;
+          return;
+        }
+        if (isPersonal) personalSpend[who] += amt;
+        else { companyExpenses += amt; reimbursable[who] += amt; }
       });
+
+      // Kept under the old name so nothing downstream had to change: `paid` has
+      // always meant "what the company owes this partner back".
+      const paid = reimbursable;
 
       const withdrawn = {};
       PARTNERS.forEach(p => { withdrawn[p] = 0; });
@@ -3358,26 +3407,35 @@ function getProjectImageUrl(p) {
         sstReserved += (t.collected || 0) * ratio;
       });
 
-      // Company profitability, for REPORTING only. The shares below are
-      // deliberately not computed from this — see the header comment.
+      // Company profitability, for REPORTING only — includes personal spending,
+      // which is why it is NOT what the shares derive from. See the header.
       const netProfit = collected - sstReserved - expenses;
 
-      // What the account can actually pay out. Expenses are excluded because
-      // they were paid personally and never left this account.
-      const distributablePool = collected - sstReserved;
+      // The pot being divided. Company expenses come off it, because both
+      // partners carry those. Personal spending does not appear at all.
+      const distributablePool = collected - sstReserved - companyExpenses;
 
       const share = {};
       const balance = {};
-      const outOfPocket = {};   // what P spent personally and does NOT get back
-      const netPosition = {};   // balance minus out-of-pocket: P's real result
+      const netPosition = {};   // balance minus personal spending: P's real result
       PARTNERS.forEach(p => {
         // Always 50/50, but read the setting so Settings still means something.
         const pct = (systemSettings.partner_split?.[p] ?? (100 / PARTNERS.length)) / 100;
         share[p] = distributablePool * pct;
-        outOfPocket[p] = paid[p];
-        balance[p] = share[p] - withdrawn[p];
-        netPosition[p] = balance[p] - outOfPocket[p];
+        // + reimbursable: the company owes P for what they fronted ON ITS
+        // BEHALF. Personal spending is deliberately NOT added back — that
+        // omission is exactly how the cost lands on the buyer alone.
+        balance[p] = share[p] + reimbursable[p] - withdrawn[p];
+        // Everything P laid out of their own pocket, company AND personal —
+        // not just the personal part. The company half is already added back
+        // into balance as reimbursement, so subtracting only personalSpend
+        // would leave that reimbursement counted as if it were profit and
+        // overstate P by the full amount they fronted.
+        netPosition[p] = balance[p] - reimbursable[p] - personalSpend[p];
       });
+
+      // Kept for the Partners table, which labels this "Spent Personally".
+      const outOfPocket = personalSpend;
 
       const cashInAccount = collected - withdrawnTotal;
       const balanceSum = PARTNERS.reduce((s, p) => s + balance[p], 0);
@@ -3388,8 +3446,8 @@ function getProjectImageUrl(p) {
       fin = {
         byProject, collected, scheduled, outstanding, outstandingOwed, overpaidTotal,
         overdue, contractTotal,
-        expenses, netProfit, share, paid, withdrawn, balance,
-        outOfPocket, netPosition, distributablePool,
+        expenses, companyExpenses, netProfit, share, paid, withdrawn, balance,
+        reimbursable, personalSpend, outOfPocket, netPosition, distributablePool,
         withdrawnTotal, cashInAccount, sstReserved, distributable, unattributed,
         // `loadErrors.length` is part of this on purpose. The arithmetic
         // invariant cannot detect a table that failed to load — drop `expenses`
@@ -4379,7 +4437,13 @@ function getProjectImageUrl(p) {
           <td style="font-weight: 500;">${esc(e.item)}</td>
           <td style="white-space: nowrap;"><span class="status-badge" style="background: rgba(255,255,255,0.05); color: var(--bone); border-color: rgba(255,255,255,0.1);">${esc(e.category)}</span></td>
           <td style="color: var(--warn); font-weight: 500;">${formatMYR(amt)}</td>
-          <td>${esc(e.paid_by)}</td>
+          <td style="white-space: nowrap;">
+            ${esc(e.paid_by)}
+            ${String(e.scope || 'company').toLowerCase() === 'personal'
+              ? `<span class="status-badge" title="Carried by ${esc(e.paid_by)} alone — not reimbursed, and the other partner is unaffected."
+                       style="margin-left:0.35rem;background:rgba(251,191,36,0.12);color:var(--warn);border-color:rgba(251,191,36,0.3);">personal</span>`
+              : ''}
+          </td>
           <td>${e.recurring ? 'Yes' : 'No'}</td>
           <td>${e.recurring_type || 'None'}</td>
           <td>${esc(projName)}</td>
@@ -5372,8 +5436,8 @@ function getProjectImageUrl(p) {
       // Every figure comes from computeFinancials(). Expenses are borne wholly
       // by whoever paid them, so there is no reimbursement term and no
       // cross-settlement between partners — see the comment on that function.
-      const { collected, expenses, netProfit, share, paid, withdrawn, balance,
-              outOfPocket, netPosition, withdrawnTotal, cashInAccount,
+      const { collected, expenses, companyExpenses, netProfit, share, withdrawn, balance,
+              reimbursable, personalSpend, netPosition, withdrawnTotal, cashInAccount,
               sstReserved, distributable, reconciled, unattributed } = fin;
 
       const pct = p => (systemSettings.partner_split?.[p] ?? 50);
@@ -5407,14 +5471,18 @@ function getProjectImageUrl(p) {
           <td style="font-weight: 500;">${p}</td>
           <td>${pct(p)}%</td>
           <td>${formatMYR(share[p])}</td>
+          <td style="color: ${reimbursable[p] > 0.01 ? 'var(--pos)' : 'var(--bone-dim)'};"
+              title="Company purchases ${p} paid for personally. The account owes this back, on top of their share.">
+            ${reimbursable[p] > 0.01 ? '+' : ''}${formatMYR(reimbursable[p])}
+          </td>
           <td>${formatMYR(withdrawn[p])}</td>
           <td style="font-weight: bold; color: ${balance[p] < 0 ? 'var(--neg)' : 'var(--accent)'};">${formatMYR(balance[p])}</td>
-          <td style="color: ${outOfPocket[p] > 0.01 ? 'var(--warn)' : 'var(--bone-dim)'};"
-              title="Spent personally. Borne entirely by this partner — not reimbursed and not shared.">
-            ${outOfPocket[p] > 0.01 ? '&minus;' : ''}${formatMYR(outOfPocket[p])}
+          <td style="color: ${personalSpend[p] > 0.01 ? 'var(--warn)' : 'var(--bone-dim)'};"
+              title="Bought for themselves. Not reimbursed and not shared — this is what puts the cost on them alone.">
+            ${personalSpend[p] > 0.01 ? '&minus;' : ''}${formatMYR(personalSpend[p])}
           </td>
           <td style="color: ${netPosition[p] < 0 ? 'var(--neg)' : 'inherit'};"
-              title="Balance minus what they spent personally — this partner's real result.">
+              title="Balance minus everything they paid out of their own pocket, company and personal. Two partners who only ever bought for the company end up equal here.">
             ${formatMYR(netPosition[p])}
           </td>
         `;
@@ -5424,7 +5492,8 @@ function getProjectImageUrl(p) {
       const trTotal = document.createElement('tr');
       trTotal.style.fontWeight = 'bold';
       trTotal.style.background = 'var(--table-header-bg)';
-      const sumOop = PARTNERS.reduce((s, p) => s + outOfPocket[p], 0);
+      const sumOop = PARTNERS.reduce((s, p) => s + personalSpend[p], 0);
+      const sumReimb = PARTNERS.reduce((s, p) => s + reimbursable[p], 0);
       const sumShare = PARTNERS.reduce((s, p) => s + share[p], 0);
       const sumBal = PARTNERS.reduce((s, p) => s + balance[p], 0);
       const sumNet = PARTNERS.reduce((s, p) => s + netPosition[p], 0);
@@ -5433,6 +5502,7 @@ function getProjectImageUrl(p) {
         <td>Total</td>
         <td>100%</td>
         <td>${formatMYR(sumShare)}</td>
+        <td>${formatMYR(sumReimb)}</td>
         <td>${formatMYR(sumDrawn)}</td>
         <td style="color: var(--accent);">${formatMYR(sumBal)}</td>
         <td>${formatMYR(sumOop)}</td>
@@ -5440,23 +5510,28 @@ function getProjectImageUrl(p) {
       `;
       tbody.appendChild(trTotal);
 
-      // ---- who owes whom ----
-      // Nobody, by design. Each partner bears their own costs, so there is no
-      // cross-settlement to compute — this panel now just states the position
-      // rather than implying a debt that does not exist.
+      // ---- what the account owes, and who spent on themselves ----
+      // Company purchases create a real debt from the account to whoever
+      // fronted them; personal ones create nothing. Stating both stops the
+      // Balance column looking wrong when one partner is owed a lot.
       const settleEl = document.getElementById('partnerSettleUp');
       if (settleEl) {
-        if (sumOop < 0.01) {
-          settleEl.innerHTML = `<span style="color: var(--bone-dim);">No personal spending recorded.</span>`;
-        } else {
-          const lines = PARTNERS
-            .filter(p => outOfPocket[p] > 0.01)
-            .map(p => `<strong>${esc(p)}</strong> ${formatMYR(outOfPocket[p])}`)
-            .join(' &middot; ');
-          settleEl.innerHTML =
-            `<span style="color: var(--bone-dim);">Spent personally &mdash; ${lines}. ` +
-            `Each partner carries their own costs, so there is nothing to settle between you.</span>`;
+        const parts = [];
+        if (sumReimb > 0.01) {
+          const who = PARTNERS.filter(p => reimbursable[p] > 0.01)
+            .map(p => `<strong>${esc(p)}</strong> ${formatMYR(reimbursable[p])}`).join(' &middot; ');
+          parts.push(`The account owes ${who} for company purchases they paid for &mdash; ` +
+                     `that is why their Balance sits above their Share.`);
         }
+        if (sumOop > 0.01) {
+          const who = PARTNERS.filter(p => personalSpend[p] > 0.01)
+            .map(p => `<strong>${esc(p)}</strong> ${formatMYR(personalSpend[p])}`).join(' &middot; ');
+          parts.push(`Spent on themselves: ${who}. Not reimbursed, and it does not touch the other partner &mdash; ` +
+                     `see Net Position for who is actually ahead.`);
+        }
+        settleEl.innerHTML = parts.length
+          ? `<span style="color: var(--bone-dim);">${parts.join('<br>')}</span>`
+          : `<span style="color: var(--bone-dim);">No expenses recorded yet.</span>`;
       }
 
       // ---- reconciliation ----
@@ -5967,6 +6042,9 @@ function getProjectImageUrl(p) {
           document.getElementById('expensePaidBy').value = exp.paid_by;
           document.getElementById('expenseRecurring').value = exp.recurring ? 'Yes' : 'No';
           document.getElementById('expenseRecurringType').value = exp.recurring_type || 'None';
+          // Rows predating this field were all company expenses.
+          const scopeEl = document.getElementById('expenseScope');
+          if (scopeEl) scopeEl.value = exp.scope || 'company';
           document.getElementById('expenseLinkedProject').value = exp.linked_project_id || '';
           document.getElementById('expenseExistingInvoiceLink').value = exp.invoice_link || '';
           const notesEl = document.getElementById('expenseNotes');
@@ -5986,8 +6064,39 @@ function getProjectImageUrl(p) {
         document.getElementById('expenseRecurring').value = 'No';
         document.getElementById('expenseRecurringType').value = 'None';
         document.getElementById('expenseLinkedProject').value = '';
+        const scopeEl = document.getElementById('expenseScope');
+        if (scopeEl) scopeEl.value = 'company';
       }
+      updateExpenseScopeHint();
       openModal('expenseModal');
+    }
+
+    /**
+     * Spell out the consequence of the Company/Personal choice in the form.
+     *
+     * The two options move money in opposite directions and the difference is
+     * not guessable from the labels alone, so the hint states it in ringgit
+     * using whatever amount has been typed.
+     */
+    function updateExpenseScopeHint() {
+      const hint = document.getElementById('expenseScopeHint');
+      const scopeEl = document.getElementById('expenseScope');
+      if (!hint || !scopeEl) return;
+      const amt = parseFloat(document.getElementById('expenseAmount')?.value) || 0;
+      const who = document.getElementById('expensePaidBy')?.value || 'whoever paid';
+      const other = PARTNERS.find(p => p !== who) || 'the other partner';
+
+      if (scopeEl.value === 'personal') {
+        hint.innerHTML = amt
+          ? `<strong>${esc(who)}</strong> carries the whole ${formatMYR(amt)}. `
+            + `${esc(other)}'s figures do not move, and it is not paid back.`
+          : 'Carried entirely by whoever bought it. Not reimbursed, and the other partner is unaffected.';
+      } else {
+        hint.innerHTML = amt
+          ? `Split ${formatMYR(amt / 2)} each. <strong>${esc(who)}</strong> is paid back the full `
+            + `${formatMYR(amt)} from the account, so the cost lands on both of you equally.`
+          : 'Cost shared 50/50, and whoever fronted it is reimbursed from the account.';
+      }
     }
 
     async function saveExpense(e) {
@@ -5999,6 +6108,9 @@ function getProjectImageUrl(p) {
       const item = document.getElementById('expenseItem').value;
       const amount = parseFloat(document.getElementById('expenseAmount').value) || 0;
       const paid_by = document.getElementById('expensePaidBy').value;
+      // 'company' splits the cost 50/50 and reimburses the payer; 'personal'
+      // leaves it entirely with whoever bought it.
+      const scope = document.getElementById('expenseScope')?.value || 'company';
       const recurring = document.getElementById('expenseRecurring').value === 'Yes';
       const recurring_type = document.getElementById('expenseRecurringType').value || 'None';
       const linked_project_id = document.getElementById('expenseLinkedProject').value || null;
@@ -6049,6 +6161,7 @@ function getProjectImageUrl(p) {
         paid_by,
         recurring,
         recurring_type,
+        scope,
         linked_project_id,
         invoice_link,
         notes
@@ -6354,6 +6467,12 @@ function getProjectImageUrl(p) {
       document.getElementById('projectFilterStatus')?.addEventListener('change', renderProjects);
       document.getElementById('projectFilterDate')?.addEventListener('change', renderProjects);
       
+      ['expenseScope', 'expenseAmount', 'expensePaidBy'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.addEventListener('input', updateExpenseScopeHint);
+        if (el) el.addEventListener('change', updateExpenseScopeHint);
+      });
+
       document.getElementById('expenseFilterCategory')?.addEventListener('change', renderExpenses);
       document.getElementById('expenseFilterPaidBy')?.addEventListener('change', renderExpenses);
       document.getElementById('expenseFilterRecurring')?.addEventListener('change', renderExpenses);

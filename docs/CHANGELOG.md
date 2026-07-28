@@ -5,6 +5,65 @@ Format each entry: what was done, why it mattered, and any key decisions.
 
 ---
 
+## 2026-07-28 (late)
+
+### Expenses split by who the purchase was for
+
+Refines this morning's change. Charging every expense to whoever paid was too
+blunt: a laptop for the studio is not one partner's problem. The rule now turns
+on **who the purchase was for**, recorded as `expenses.scope`:
+
+- **company** — cost shared 50/50, and the payer is reimbursed from the account
+- **personal** — carried entirely by the buyer, never reimbursed, other partner untouched
+
+```
+pool       = collected - SST - companyExpenses
+share(P)   = pct(P) x pool
+balance(P) = share(P) + reimbursable(P) - withdrawn(P)
+```
+
+`reimbursable(P)` is only the **company** expenses P fronted. Personal spending
+is deliberately absent from that line — that absence is precisely how the cost
+lands on the buyer.
+
+Worked example, collected RM10,000, Kunacosta buys a RM1,000 company laptop and
+RM300 of headphones for himself, both from his own pocket:
+
+| | Kunacosta | Rooben |
+|---|---|---|
+| Share of pool (9,000) | 4,500 | 4,500 |
+| Owed back | 1,000 | 0 |
+| **Balance** | **5,500** | **4,500** |
+| Spent on self | 300 | 0 |
+| **Net position** | **4,200** | **4,500** |
+
+The gap in net position is exactly RM300, the headphones. The laptop cost them
+RM500 each. Both rules hold at once, and the reconciliation identity is
+unchanged — `companyExpenses` cancels, coming off the pool and going straight
+back on as reimbursement.
+
+**A bug the tests caught, not review.** `netPosition` was first written as
+`balance − personalSpend`, which left Kunacosta at 5,200 instead of 4,200 and
+made the two partners unequal on a company-only purchase. The reimbursement is
+already inside `balance`, so net position has to subtract **everything** the
+partner laid out of pocket — company and personal — or the money they fronted
+reads as profit.
+
+`supabase_migration_05_expense_scope.sql` adds the column, defaulting existing
+rows to `'company'` (which is what every expense meant before the distinction
+existed) with a CHECK constraint and an index. **This one is a hard prerequisite,
+not housekeeping** — the dashboard writes `scope` on every save, so recording an
+expense fails until it is run.
+
+The Partners table gets an **Owed Back** column, since reimbursement is real
+again. The expense form gains a "Who was this for?" field whose hint states the
+consequence in ringgit as you type, because the two options move money in
+opposite directions and the labels alone do not convey that. Also documented:
+if a personal item is bought with **company** money, record it as a withdrawal,
+not an expense — otherwise it understates what that partner has taken.
+
+---
+
 ## 2026-07-28 (night)
 
 ### Password reset, migration 04, and the last of the audit backlog

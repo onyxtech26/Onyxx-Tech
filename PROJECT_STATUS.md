@@ -13,15 +13,34 @@
 **Two migrations are written but NOT run:** `03_admin_allowlist` (needs Rooben's email filled in first) and `04_integrity`. Both are in "Next / To do" with the order they need.
 
 **⚠️ THE ACCOUNTING RULE CHANGED — read this before looking at any figure.**
-Expenses used to be reimbursed and therefore split 50/50. They are now borne **entirely by whoever paid**. On collected RM10,000 with a RM1,000 expense paid by Kunacosta:
+Expenses are now split by **who the purchase was for** (`expenses.scope`):
 
-| | old | new |
+- **company** — cost shared 50/50, payer reimbursed from the account
+- **personal** — carried entirely by the buyer, never reimbursed, other partner untouched
+
+```
+pool       = collected − SST − companyExpenses
+share(P)   = pct(P) × pool
+balance(P) = share(P) + reimbursable(P) − withdrawn(P)
+```
+
+`reimbursable(P)` counts **only company** expenses. Personal spending's absence from that line is what puts the cost on the buyer. Collected RM10,000, Kunacosta buys a RM1,000 company laptop and RM300 of headphones for himself:
+
+| | Kunacosta | Rooben |
 |---|---|---|
-| Kunacosta balance | 5,500 | **5,000** |
-| Rooben balance | 4,500 | **5,000** |
-| Kunacosta net, after their own spend | 4,500 | **4,000** |
+| Share of pool (9,000) | 4,500 | 4,500 |
+| Owed back | 1,000 | 0 |
+| **Balance** | **5,500** | **4,500** |
+| Spent on self | 300 | 0 |
+| **Net position** | **4,200** | **4,500** |
 
-So `balance(P) = pct(P) × (collected − SST) − withdrawn(P)`, with **no reimbursement term**. `netProfit` still exists as `collected − SST − expenses` but is a **reporting figure only** — do not wire it back into `share()`. The Partners table lost Settlement/Reimbursement (nothing to settle any more) and gained *Spent Personally* and *Net Position*.
+Gap in net = RM300, the headphones. Laptop cost RM500 each.
+
+**A higher Balance is not a bug** — it means the account owes that partner for something they fronted. *Net Position* is the column that says who is ahead, and it subtracts **everything** they paid out of pocket, company and personal. (Subtracting only the personal part was a bug the tests caught.)
+
+**If a personal item is bought with company money, log it as a withdrawal, not an expense** — otherwise it understates what that partner has taken.
+
+`netProfit` remains `collected − SST − expenses` as a **reporting figure only** — never wire it into `share()`.
 
 **Closed a live exposure:** production was serving `/supabase_migration.sql` (full schema + every RLS policy), `/PROJECT_STATUS.md`, `/CLAUDE.md` and `/docs/CHANGELOG.md` as public static assets — no build step means every tracked file becomes a URL. Added `.vercelignore`; all four now return 404, verified against the live domain.
 
@@ -115,9 +134,10 @@ leaves you unable to onboard Rooben.
 1. **Set Site URL + Redirect URLs.** Authentication → URL Configuration. Site URL is still `http://localhost:3000`, so every recovery and invite link is dead. Set it to `https://onyxx-tech.vercel.app` and add `https://onyxx-tech.vercel.app/admin-reset` to Redirect URLs. **`admin-reset` must be the only redirect target** — supabase-js defaults `detectSessionInUrl: true`, so a recovery link landing anywhere else signs the user in with their old password still set and never offers to change it.
 2. **Turn OFF public signup.** Authentication → Sign In / Providers → Email → "Allow new users to sign up". Currently ON (`"disable_signup": false`), and every RLS policy trusts any `authenticated` user — so anyone can self-register into full read/write on all financial data.
 3. **Run `supabase_migration_03_admin_allowlist.sql`** — no edits needed as it stands. **Both partners share one account** (decided 2026-07-28), so section 2 lists one address and the guard expects one row. When Rooben gets his own login: uncomment his line, raise `expected` to 2, re-run the file. It raises rather than locking anyone out, but it can only protect you if the list is right. **03 must always be the last policy-touching file run**: re-running 01 or 02 afterwards silently re-grants access, because Postgres OR-s permissive policies together.
-4. **Run `supabase_migration_04_integrity.sql`** — constraints, `updated_at` triggers, indexes. Housekeeping only: no DROP, no DELETE, nothing that changes a reported figure. Touches no policies, so it is safe either side of 03. **Genuinely not urgent** — the partner/quotation CHECKs mostly guard paths the UI does not expose, and the indexes are irrelevant at current row counts. The one reason not to defer it indefinitely is `updated_at`: audit history cannot be backfilled, so the trigger has to exist before a change happens for that change to be recorded.
-5. ~~Create Rooben's account~~ — **not needed.** Both partners share one login for now. The consequence to be aware of: `updated_at` (migration 04) records *when* something changed but there is no way to tell *who* did it, and a password reset affects both of you. If that becomes a problem, see the "ADDING AN ACCOUNT LATER" note in migration 03.
-6. **Re-key the financial data.** 3 projects and 10 expenses were cleared on 2026-07-26 for re-entry (backups were exported to a local text file first), and the expense rule changed on 2026-07-28 — anything recorded under the old rule had its costs split 50/50 rather than charged to the payer, so those balances now compute differently. Re-enter rather than assuming the old figures carry over. Then check the Partners tab reconciliation row reads "Balanced".
+4. **Run `supabase_migration_05_expense_scope.sql` — REQUIRED, not optional.** Adds `expenses.scope`. The dashboard writes it on every save, so **recording an expense fails until this is run**. Existing rows default to `'company'`, which is what every expense meant before the distinction existed. Touches no policies, safe either side of 03.
+5. **Run `supabase_migration_04_integrity.sql`** — constraints, `updated_at` triggers, indexes. Housekeeping only: no DROP, no DELETE, nothing that changes a reported figure. Touches no policies, so it is safe either side of 03. **Genuinely not urgent** — the partner/quotation CHECKs mostly guard paths the UI does not expose, and the indexes are irrelevant at current row counts. The one reason not to defer it indefinitely is `updated_at`: audit history cannot be backfilled, so the trigger has to exist before a change happens for that change to be recorded.
+6. ~~Create Rooben's account~~ — **not needed.** Both partners share one login for now. The consequence to be aware of: `updated_at` (migration 04) records *when* something changed but there is no way to tell *who* did it, and a password reset affects both of you. If that becomes a problem, see the "ADDING AN ACCOUNT LATER" note in migration 03.
+7. **Re-key the financial data.** 3 projects and 10 expenses were cleared on 2026-07-26 for re-entry (backups were exported to a local text file first). When re-entering expenses, set **Who was this for?** on each one — company purchases get shared 50/50 and reimbursed, personal ones stay with the buyer. Anything migrated in without that field is treated as a company expense. Then check the Partners tab reconciliation row reads "Balanced".
 
 **Standing notes (not tasks):**
 - **`LOCAL_IMAGE_MAP` breaks silently** whenever a showcase image is re-uploaded — it is keyed on the upload filename, and the only symptom is `/work` getting slower. Verify with `GET /rest/v1/showcase_projects?select=title,image_url`.
