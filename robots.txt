@@ -1,7 +1,12 @@
 User-agent: *
 Allow: /
-Disallow: /admin.html
-Disallow: /admin-login.html
-Disallow: /admin-dashboard.html
 
-Sitemap: /sitemap.xml
+# cleanUrls is on, so Vercel 308-redirects /admin-login.html to /admin-login.
+# Disallowing only the .html form therefore blocked nothing — /admin-login
+# itself returned 200 and was fully crawlable. These are the URLs really served.
+Disallow: /admin
+Disallow: /admin-login
+Disallow: /admin-dashboard
+
+# Must be absolute. A relative Sitemap: value is ignored by the protocol.
+Sitemap: https://onyxx-tech.vercel.app/sitemap.xml

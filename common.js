@@ -896,6 +896,26 @@
     <circle cx="24" cy="24" r="10"/><path d="M24 10 L24 38 M10 24 L38 24 M14 14 L34 34 M14 34 L34 14"/>
   </svg>`;
 
+
+  /**
+   * Escape a value before it is interpolated into an innerHTML template.
+   *
+   * Card markup below is built from database strings — service names, project
+   * titles, client names, team emails. Without this, an "&" in a company name
+   * produces broken markup and a value containing a tag executes in every
+   * visitor's browser. Applies to attribute positions too, hence the quote
+   * escaping.
+   */
+  function esc(v) {
+    if (v === null || v === undefined) return '';
+    return String(v)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+  }
+
   function renderServices(grid, services, limit) {
     if (!grid) return;
     const list = limit ? services.slice(0, limit) : services;
@@ -903,15 +923,15 @@
     list.forEach(s => {
       const num = s.num || '/00';
       const tags = Array.isArray(s.tags)
-        ? s.tags.map(t => `<span class="service-tag">${t}</span>`).join('') : '';
+        ? s.tags.map(t => `<span class="service-tag">${esc(t)}</span>`).join('') : '';
       const card = document.createElement('div');
       card.className = 'service-card';
       card.setAttribute('data-service', '');
       card.innerHTML = `
-        <div class="service-num">${num}</div>
+        <div class="service-num">${esc(num)}</div>
         ${SERVICE_ICONS[num] || SERVICE_ICON_DEFAULT}
-        <h3 class="service-name">${s.name}</h3>
-        <p class="service-desc">${s.description}</p>
+        <h3 class="service-name">${esc(s.name)}</h3>
+        <p class="service-desc">${esc(s.description)}</p>
         <div class="service-tags">${tags}</div>
       `;
       grid.appendChild(card);
@@ -933,15 +953,33 @@
   }
 
   // ---- project cards ----
-  // Five showcase rows point at Supabase storage originals that were 5-8MB
-  // each; these map them to the local optimised copies. Keep in sync if the
-  // storage records change.
+  // showcase_projects.image_url points at the Supabase storage originals, which
+  // are 5-8MB PNGs. This maps them to the optimised local copies.
+  //
+  // It had drifted badly: two keys matched nothing at all (those rows were
+  // re-uploaded and got new filenames), so only 3 of the 10 projects resolved
+  // locally and /work was pulling ~28MB. The three that did resolve pointed at
+  // the heavy .png/.jpg while an optimised .webp sat beside it on disk —
+  // xcraft.png is 1,032,816 B against xcraft.webp's 25,832 B, a 40x difference.
+  //
+  // Now: all 9 available locals, every one a .webp. Total ~520KB.
+  //
+  // This map is keyed on an upload filename, so it breaks SILENTLY every time
+  // someone re-uploads an image through the admin tool — the page just gets
+  // slower, nothing errors. Verify against the live rows when touching it:
+  //   GET /rest/v1/showcase_projects?select=title,image_url
   const LOCAL_IMAGE_MAP = {
-    '1783223293991_9suav.png': 'images/Policy_Snap.png',
-    '1783223786542_nzlr5n.png': 'images/Carousel_Maker.png',
-    '1783223573215_jmhlwn.png': 'images/xcraft.png',
-    '1783223485403_rkdjse.png': 'images/Mpt.jpg',
-    '1783223367629_bkbf9k.png': 'images/Watch_bot.png'
+    '1783223293991_9suav.png':  'images/Policy_Snap.webp',
+    '1783350472356_oftj.png':   'images/SunToursRoma.webp',
+    '1783351117063_6olrku.png': 'images/Conglomerate.webp',
+    '1783223786542_nzlr5n.png': 'images/Carousel_Maker.webp',
+    '1783223708224_314sh7.png': 'images/Walletwise.webp',
+    '1783223573215_jmhlwn.png': 'images/xcraft.webp',
+    '1783356161162_kajzr.png':  'images/LogicLens.webp',
+    '1783522411782_gr7p72.png': 'images/Watch_bot.webp',
+    '1783522442252_m3w30f.png': 'images/Mpt.webp'
+    // POS System (1784540735392_9327ps.png) has no local copy, but the original
+    // is only 28KB, so it is left to load from storage.
   };
 
   function projectImage(p) {
@@ -977,28 +1015,28 @@
       const grad = CARD_GRADIENTS[idx % CARD_GRADIENTS.length];
       const stack = Array.isArray(p.tech_stack) ? p.tech_stack.join(', ') : '';
       const tags = Array.isArray(p.tech_stack)
-        ? p.tech_stack.slice(0, 3).map(t => `<span class="project-tag">${t}</span>`).join('') : '';
+        ? p.tech_stack.slice(0, 3).map(t => `<span class="project-tag">${esc(t)}</span>`).join('') : '';
 
       let thumb;
       if (p.image_url) {
         const url = projectImage(p);
         const contain = /portal|mpt/i.test(p.title || '');
         thumb = `<div class="project-thumb${contain ? ' project-thumb--contain' : ''}" style="background:${grad}">
-          <img src="${url}" alt="${p.title}" data-fade loading="lazy" decoding="async"
+          <img src="${esc(url)}" alt="${esc(p.title)}" data-fade loading="lazy" decoding="async"
                onerror="this.onerror=null;this.src='images/onyxx_logo_transparent.png';">
         </div>`;
       } else {
         thumb = `<div class="project-thumb"><div class="project-thumb-bg" style="background:${grad}">
-          <span class="project-thumb-label">${p.title}</span></div></div>`;
+          <span class="project-thumb-label">${esc(p.title)}</span></div></div>`;
       }
 
       const body = `
         ${thumb}
         <div class="project-body">
-          <div class="project-category">${p.category || ''}</div>
-          <div class="project-name">${p.title}</div>
-          <div class="project-client">${p.client || ''}</div>
-          <p class="project-desc">${p.description || ''}</p>
+          <div class="project-category">${esc(p.category)}</div>
+          <div class="project-name">${esc(p.title)}</div>
+          <div class="project-client">${esc(p.client)}</div>
+          <p class="project-desc">${esc(p.description)}</p>
           <div class="project-footer">
             <div class="project-tags">${tags}</div>
             <span class="project-more">${o.linkTo ? 'View' : 'Details'} →</span>
@@ -1013,8 +1051,16 @@
         card.href = o.linkTo;
         card.className = 'project-card project-card--link';
       } else {
-        card = document.createElement('div');
+        // /work opens a modal rather than navigating, so there is no href to
+        // hang this on — but a bare <div> with only a click listener made the
+        // entire case-study content mouse-only, while the page header tells
+        // people to "click any project to see the full story". A real <button>
+        // gets focus, Enter and Space for free.
+        card = document.createElement('button');
+        card.type = 'button';
         card.className = 'project-card';
+        card.setAttribute('aria-haspopup', 'dialog');
+        card.setAttribute('aria-label', `${p.title || 'Project'} — view details`);
       }
 
       if (p.image_url) card.setAttribute('data-img', projectImage(p));
@@ -1049,13 +1095,13 @@
       const card = document.createElement('div');
       card.className = 'founder-card';
       card.innerHTML = `
-        <div class="founder-avatar"><img src="${avatar}" alt="${t.name}" data-fade loading="lazy" decoding="async"
+        <div class="founder-avatar"><img src="${esc(avatar)}" alt="${esc(t.name)}" data-fade loading="lazy" decoding="async"
              onerror="this.onerror=null;this.src='images/onyxx_logo_transparent.png';"></div>
-        <h3 class="founder-name">${t.name}</h3>
-        <div class="founder-role">${t.role || ''}</div>
+        <h3 class="founder-name">${esc(t.name)}</h3>
+        <div class="founder-role">${esc(t.role)}</div>
         <div class="founder-contact">
-          ${waClean ? `<a href="https://wa.me/${waClean}" target="_blank" rel="noopener">${WA_ICON}${t.whatsapp}</a>` : ''}
-          ${t.email ? `<a href="mailto:${t.email}">${MAIL_ICON}${t.email}</a>` : ''}
+          ${waClean ? `<a href="https://wa.me/${esc(waClean)}" target="_blank" rel="noopener">${WA_ICON}${esc(t.whatsapp)}</a>` : ''}
+          ${t.email ? `<a href="mailto:${esc(t.email)}">${MAIL_ICON}${esc(t.email)}</a>` : ''}
         </div>`;
       grid.appendChild(card);
     });

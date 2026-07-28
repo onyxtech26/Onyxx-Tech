@@ -1,6 +1,26 @@
 -- ============================================================
 -- Onyxx Tech - Supabase Schema Migration (Consolidated)
 -- Run this in your Supabase SQL Editor (Dashboard > SQL Editor)
+--
+-- *** SUPERSEDED IN PART BY supabase_migration_02_financials.sql ***
+--
+-- DO NOT RE-RUN THIS FILE. It is written to be re-runnable in isolation, but
+-- running it AFTER migration 02 silently reverts three security fixes:
+--
+--   * the public read policy on system_settings (below) is exactly the one
+--     migration 02 exists to remove
+--   * the same for partner_withdrawals
+--   * the storage.objects SELECT policy below has no TO clause and includes
+--     'receipts', which would let anonymous callers enumerate and sign receipt
+--     files again
+--
+-- Those three statements are commented out for that reason and their live
+-- versions now live in migration 02. Nothing enforces file ordering, so this
+-- notice is the only thing standing between a re-run and a silent regression.
+--
+-- NOTE: this file ALTERs projects, expenses, services and team_members without
+-- creating them — they predate it. There is no schema of record for those four
+-- in the repo, so a fresh environment cannot be rebuilt from what is checked in.
 -- ============================================================
 
 -- 1. PROJECTS TABLE: Add deposit/final payment tracking columns
@@ -20,8 +40,11 @@ ALTER TABLE expenses ADD COLUMN IF NOT EXISTS invoice_link TEXT;
 ALTER TABLE expenses ADD COLUMN IF NOT EXISTS notes TEXT;
 
 -- 3. STORAGE BUCKETS: Create public buckets for files
-INSERT INTO storage.buckets (id, name, public) VALUES ('receipts', 'receipts', true)
-ON CONFLICT (id) DO NOTHING;
+-- Receipts are PRIVATE. Uploads store the object path and the dashboard
+-- resolves it through a short-lived signed URL, so a public bucket would be
+-- both unnecessary and a leak of financial paperwork.
+INSERT INTO storage.buckets (id, name, public) VALUES ('receipts', 'receipts', false)
+ON CONFLICT (id) DO UPDATE SET public = false;
 
 INSERT INTO storage.buckets (id, name, public) VALUES ('avatars', 'avatars', true)
 ON CONFLICT (id) DO NOTHING;
@@ -74,9 +97,11 @@ CREATE TABLE IF NOT EXISTS system_settings (
 ALTER TABLE system_settings ENABLE ROW LEVEL SECURITY;
 
 -- System Settings Policies
-DROP POLICY IF EXISTS "Allow public read access to system_settings" ON system_settings;
-CREATE POLICY "Allow public read access to system_settings" 
-ON system_settings FOR SELECT USING (true);
+-- SUPERSEDED by migration 02 section 2 — this grants anonymous read of the
+-- company profile, the partner split and the financial targets.
+-- DROP POLICY IF EXISTS "Allow public read access to system_settings" ON system_settings;
+-- CREATE POLICY "Allow public read access to system_settings" 
+-- ON system_settings FOR SELECT USING (true);
 
 DROP POLICY IF EXISTS "Allow auth admin insert access to system_settings" ON system_settings;
 CREATE POLICY "Allow auth admin insert access to system_settings" 
@@ -99,10 +124,14 @@ ON CONFLICT (key) DO NOTHING;
 
 -- 6. STORAGE OBJECTS RLS POLICIES
 -- Drop and recreate storage access policies for showcase, avatars, and receipts buckets
-DROP POLICY IF EXISTS "Allow public read access to storage objects" ON storage.objects;
-CREATE POLICY "Allow public read access to storage objects" 
-ON storage.objects FOR SELECT 
-USING ( bucket_id IN ('showcase', 'avatars', 'receipts') );
+-- SUPERSEDED by migration 02 — no TO clause and it includes 'receipts', so this
+-- lets the anon role enumerate and sign receipt files. Receipts are financial
+-- paperwork and that bucket is private now; the live policy covers only the two
+-- site-asset buckets.
+-- DROP POLICY IF EXISTS "Allow public read access to storage objects" ON storage.objects;
+-- CREATE POLICY "Allow public read access to storage objects" 
+-- ON storage.objects FOR SELECT 
+-- USING ( bucket_id IN ('showcase', 'avatars', 'receipts') );
 
 DROP POLICY IF EXISTS "Allow auth upload access to storage objects" ON storage.objects;
 CREATE POLICY "Allow auth upload access to storage objects" 
@@ -137,9 +166,11 @@ CREATE TABLE IF NOT EXISTS partner_withdrawals (
 ALTER TABLE partner_withdrawals ENABLE ROW LEVEL SECURITY;
 
 -- Policies
-DROP POLICY IF EXISTS "Allow public read access to partner_withdrawals" ON partner_withdrawals;
-CREATE POLICY "Allow public read access to partner_withdrawals" 
-ON partner_withdrawals FOR SELECT USING (true);
+-- SUPERSEDED by migration 02 section 2 — this grants anonymous read of every
+-- partner withdrawal. The live policy is authenticated-only.
+-- DROP POLICY IF EXISTS "Allow public read access to partner_withdrawals" ON partner_withdrawals;
+-- CREATE POLICY "Allow public read access to partner_withdrawals" 
+-- ON partner_withdrawals FOR SELECT USING (true);
 
 DROP POLICY IF EXISTS "Allow auth admin insert access to partner_withdrawals" ON partner_withdrawals;
 CREATE POLICY "Allow auth admin insert access to partner_withdrawals" 

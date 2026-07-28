@@ -5,6 +5,80 @@ Format each entry: what was done, why it mattered, and any key decisions.
 
 ---
 
+## 2026-07-27
+
+### Four-agent audit of the whole system; security and accessibility fixes
+
+Triggered by a report of invisible icons in the Add Project modal. Four parallel
+audits: admin CSS/visual, admin JS/business logic, public site, and data
+layer/auth.
+
+**The reported bug.** No `color-scheme` was ever declared, so Chrome painted all
+*native* control chrome — date picker glyph, number spinners, select arrows,
+scrollbars — for a light UI. On the dark background they were invisible. Inline
+SVG icons were unaffected, which is why only *some* icons vanished. Fixed with
+`color-scheme: dark` on `:root` and `light` on `[data-theme="light"]`. Number
+inputs were set to `appearance: textfield` in the same change, because
+`color-scheme` would otherwise have made spinner arrows appear on money fields.
+
+**Internal files were public on production.** No `.vercelignore` existed, and
+there is no build step, so every tracked file deployed as a static asset.
+Verified live: `/supabase_migration.sql` (200, full schema + every RLS policy),
+`/PROJECT_STATUS.md`, `/docs/CHANGELOG.md`, `/CLAUDE.md`. The SQL handed an
+attacker the exact table/column/policy layout to aim the public anon key at.
+Added `.vercelignore`.
+
+**`escArg()` was backwards and did nothing.** It HTML-escaped first, so `'`
+became `&#39;` — which the browser decodes back to a live quote *before* the JS
+parser sees the attribute. Confirmed by execution: `');alert(1)//` broke out and
+ran, while a legitimate `O'Brien` threw a SyntaxError. The JS-string escape has
+to happen first, then the HTML escape. Now 8/8 hostile inputs round-trip inert.
+Writing U+2028/U+2029 literally into the regex was itself a SyntaxError (they
+are line terminators to the parser) — they must be `\u` escapes.
+
+**`/work` shipped 28.2 MB.** `LOCAL_IMAGE_MAP` had drifted: two keys matched
+nothing (rows re-uploaded, new filenames), so 3 of 10 projects resolved locally,
+and those 3 pointed at the heavy source rather than the optimised `.webp` beside
+it (`xcraft.png` 1,032,816 B vs `xcraft.webp` 25,832 B). Rebuilt against the
+live rows — 9 of 10 now local `.webp`, ~520 KB total. The map is keyed on an
+upload filename, so it re-breaks silently on every admin re-upload; noted in
+the code.
+
+**Accessibility.** `/work` case studies were mouse-only — cards were bare
+`<div>`s with a click listener, on a page that says "click any project to see
+the full story". Now `<button>`s. The *closed* project modal and mobile nav
+drawer both kept their controls in the tab order (`opacity:0` stops the mouse,
+not the keyboard); both got `visibility: hidden`.
+
+**Other.** Money colours moved to `--pos`/`--warn`/`--neg` with light-theme
+values (the hardcoded set measured 1.5–2.5:1 on light); Cash Flow charts made
+theme-aware via a `chartPalette()` helper that reads the computed properties,
+since canvas cannot resolve `var()`; three custom properties that were used but
+never defined (`--accent-faint`, `--accent-dim`, `--bone-faint`) added; the
+global scrollbar kill was overriding the table container's own `!important`-less
+rules, re-breaking a documented past fix; `.custom-modal` capped at `90vh` with
+`overflow-y: auto` (Add Project measured 900px on a phone, clipped at both
+ends); two mobile rules targeting classes that do not exist (`.filter-bar`,
+`.modal`/`.modal-content`) repointed at the real ones; services copy corrected
+from "Four disciplines" to five; `robots.txt` rewritten (it disallowed only
+`.html` paths, which `cleanUrls` redirects away from — `/admin-login` itself was
+returning 200 and fully crawlable).
+
+**Key decision.** `supabase_migration_03_admin_allowlist.sql` was written and
+then substantially reworked before being run. Every RLS policy keys on
+`auth.role() = 'authenticated'` while public signup is open
+(`"disable_signup": false`), so anyone could self-register into full financial
+access. 03 introduces an `admin_users` allowlist + `is_admin()`. The first draft
+would have locked a partner out: it seeded one email and "guarded" with a bare
+`SELECT`, but the SQL Editor renders only the last statement and nothing halts
+on an unexpected row count. Now a `DO` block raises, which rolls back the whole
+script. Also: 01 and 02 re-grant `authenticated` access if re-run, because
+Postgres OR-s permissive policies — so **03 must always be run last**.
+
+Verified with Playwright: 8/8 pages load with zero console errors and zero 4xx.
+
+---
+
 ## 2026-07-26
 
 ### Admin portal rebuilt: real project financials and correct partner accounting

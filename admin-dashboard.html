@@ -37,6 +37,13 @@
 
   <style>
     :root {
+      /* Tells the browser to paint NATIVE control chrome for a dark UI: the
+         date field's calendar button, number spinners, the select arrow,
+         checkboxes and scrollbars. Without it Chrome draws all of those as
+         dark glyphs, which on this background are invisible — that is the
+         "missing icons" in the Add Project modal's date fields. */
+      color-scheme: dark;
+
       --onyx: #0a0a0a;
       --bone: #ffffff;
       --bone-dim: #d8d8d2;
@@ -59,6 +66,21 @@
       --modal-input-bg: rgba(0, 0, 0, 0.3);
       --modal-input-focus-bg: rgba(0, 0, 0, 0.5);
 
+      /* These three were referenced but never defined, so each declaration
+         using them was dropped as invalid: the focus glow on .form-control
+         never rendered, the scrollbar thumb had no hover state, and the "None"
+         placeholder text got no colour at all. */
+      --accent-faint: rgba(56, 224, 255, 0.25);
+      --accent-dim: rgba(56, 224, 255, 0.45);
+      --bone-faint: rgba(255, 255, 255, 0.35);
+
+      /* Money semantics. These were hardcoded as #4ade80 / #fbbf24 / #f87171 in
+         ~20 inline styles, which drop to 1.5–2.5:1 on the light background —
+         unreadable, on figures like Current Cash Balance and Outstanding. */
+      --pos: #4ade80;
+      --warn: #fbbf24;
+      --neg: #f87171;
+
       /* Neon glow overrides */
       --card-neon-border: rgba(56, 224, 255, 0.2);
       --card-neon-glow: 0 0 15px rgba(56, 224, 255, 0.08);
@@ -67,6 +89,8 @@
     }
 
     :root[data-theme="light"] {
+      color-scheme: light;
+
       --onyx: #f5f5f7;
       --bone: #1d1d1f;
       --bone-dim: #515154;
@@ -84,6 +108,17 @@
       --modal-border: rgba(0, 0, 0, 0.08);
       --modal-input-bg: rgba(0, 0, 0, 0.05);
       --modal-input-focus-bg: rgba(0, 0, 0, 0.02);
+
+      --accent-faint: rgba(0, 102, 204, 0.22);
+      --accent-dim: rgba(0, 102, 204, 0.4);
+      --bone-faint: rgba(0, 0, 0, 0.4);
+
+      /* Darkened so money figures stay legible on #f5f5f7: the dark-theme
+         values measure 1.58:1 (green), 1.52:1 (amber) and 2.52:1 (red) here.
+         These clear 4.5:1. */
+      --pos: #15803d;
+      --warn: #b45309;
+      --neg: #b91c1c;
 
       --card-neon-border: rgba(0, 102, 204, 0.15);
       --card-neon-glow: 0 0 15px rgba(0, 102, 204, 0.05);
@@ -540,13 +575,16 @@
       th, td { padding: 0.6rem 0.5rem; }
 
       /* Filter bars and the detail panel's add-forms: one control per row
-         rather than a horizontal squeeze. */
-      .filter-bar { flex-direction: column; align-items: stretch; }
-      .filter-bar > * { width: 100%; }
+         rather than a horizontal squeeze.
+         The class is .search-filter-bar — a plain .filter-bar rule here matched
+         nothing at all, so these bars were still overflowing on mobile. */
+      .search-filter-bar { flex-direction: column; align-items: stretch; }
+      .search-filter-bar > * { width: 100%; }
       .add-payment-form, .add-addon-form { flex-direction: column; align-items: stretch; }
       .add-payment-form > *, .add-addon-form > * { width: 100% !important; }
 
-      .modal, .modal-content { width: 94vw; max-height: 88vh; }
+      /* Likewise: the classes are .modal-backdrop and .custom-modal. */
+      .custom-modal { width: 94vw; }
     }
 
     @media (max-width: 480px) {
@@ -934,20 +972,42 @@
        Outstanding and Actions columns that way. A slim visible bar is the
        affordance; the fade on the right edge (below) signals it before you even
        try to scroll. */
+    /* !important throughout, because the blanket `html, body, *` scrollbar kill
+       near the top of this file is itself !important and was silently winning —
+       which is exactly how the bug described above came back after being fixed.
+       Specificity does not enter into it; only !important beats !important. */
     .table-container {
       width: 100%;
       overflow-x: auto;
-      scrollbar-width: thin;
+      scrollbar-width: thin !important;
       scrollbar-color: var(--glass-border) transparent;
       position: relative;
     }
-    .table-container::-webkit-scrollbar { height: 8px; }
+    .table-container::-webkit-scrollbar {
+      display: block !important;
+      height: 8px !important;
+    }
     .table-container::-webkit-scrollbar-track { background: transparent; }
     .table-container::-webkit-scrollbar-thumb {
       background: var(--glass-border);
       border-radius: 4px;
     }
     .table-container::-webkit-scrollbar-thumb:hover { background: var(--accent-dim); }
+
+    /* Same reasoning for the modal, which now scrolls on short viewports. */
+    .custom-modal {
+      scrollbar-width: thin !important;
+      scrollbar-color: var(--glass-border) transparent;
+    }
+    .custom-modal::-webkit-scrollbar {
+      display: block !important;
+      width: 8px !important;
+    }
+    .custom-modal::-webkit-scrollbar-track { background: transparent; }
+    .custom-modal::-webkit-scrollbar-thumb {
+      background: var(--glass-border);
+      border-radius: 4px;
+    }
 
     /* Columns that can be dropped before the numbers are, in priority order.
        Project name, money and actions always survive. */
@@ -1077,6 +1137,11 @@
       padding: 2rem;
       width: 100%;
       max-width: 500px;
+      /* The backdrop is fixed and centres this, so nothing outside can scroll.
+         Without a cap, a tall modal (Add Project is ~900px) is clipped at BOTH
+         ends on a phone — title and Save button both cut off, unreachable. */
+      max-height: 90vh;
+      overflow-y: auto;
       box-shadow: 0 20px 50px rgba(0, 0, 0, 0.25);
       transform: scale(0.9);
       transition: transform 0.3s ease, background 0.3s ease, border-color 0.3s ease;
@@ -1136,7 +1201,32 @@
     }
     .form-control::placeholder {
       color: var(--bone-dim);
-      opacity: 0.5;
+      /* 0.5 put this at ~4.0:1 against the input background, under the 4.5:1
+         floor — the Project Name hint was legible only if you knew it was
+         there. Deliberately not 1.0, so a placeholder still reads as a hint
+         rather than as a filled-in value. */
+      opacity: 0.75;
+    }
+
+    /* The calendar button is drawn by the browser, so `color-scheme` above is
+       what makes it visible at all. These rules only make it a comfortable
+       target: it defaults to a small, flush glyph with no pointer cursor. */
+    .form-control::-webkit-calendar-picker-indicator {
+      cursor: pointer;
+      padding: 2px;
+      border-radius: 3px;
+      opacity: 0.85;
+      transition: opacity 0.2s ease, background 0.2s ease;
+    }
+    .form-control::-webkit-calendar-picker-indicator:hover {
+      opacity: 1;
+      background: var(--nav-item-hover-bg);
+    }
+    /* Firefox has no picker indicator to style, but it does render the
+       spinner; hide it so a number field is not two controls wide. */
+    .form-control[type="number"] {
+      -moz-appearance: textfield;
+      appearance: textfield;
     }
     select.form-control option {
       background: var(--onyx);
@@ -1473,8 +1563,8 @@
                 <th>Status</th>
                 <th>Contract</th>
                 <th class="col-payments">Payments</th>
-                <th style="color: #4ade80;">Collected</th>
-                <th style="color: #f87171;">Outstanding</th>
+                <th style="color: var(--pos);">Collected</th>
+                <th style="color: var(--neg);">Outstanding</th>
                 <th>Actions</th>
               </tr>
             </thead>
@@ -1512,11 +1602,11 @@
             <div class="kpi-lbl">Outstanding (scheduled, unpaid)</div>
           </div>
           <div class="glass-card kpi-card">
-            <div class="kpi-val" id="kpiPaymentsOverdue" style="color: #f87171;">RM 0.00</div>
+            <div class="kpi-val" id="kpiPaymentsOverdue" style="color: var(--neg);">RM 0.00</div>
             <div class="kpi-lbl">Overdue</div>
           </div>
           <div class="glass-card kpi-card">
-            <div class="kpi-val" id="kpiPaymentsThisMonth" style="color: #4ade80;">RM 0.00</div>
+            <div class="kpi-val" id="kpiPaymentsThisMonth" style="color: var(--pos);">RM 0.00</div>
             <div class="kpi-lbl">Received this month</div>
           </div>
         </div>
@@ -1658,7 +1748,7 @@
                 <th>Date</th>
                 <th>Item / Description</th>
                 <th>Category</th>
-                <th style="color: #fbbf24;">Amount</th>
+                <th style="color: var(--warn);">Amount</th>
                 <th>Paid By</th>
                 <th>Recurring?</th>
                 <th>Recurring Type</th>
@@ -1720,8 +1810,9 @@
               <tr>
                 <th>Month</th>
                 <th>Opening Balance</th>
-                <th style="color: #4ade80;">Collected</th>
-                <th style="color: #f87171;">Expenses</th>
+                <th style="color: var(--pos);">Collected</th>
+                <th style="color: var(--warn);">Withdrawn</th>
+                <th style="color: var(--neg);">Expenses (fronted)</th>
                 <th style="color: var(--accent);">Net Cash Flow</th>
                 <th>Closing Balance</th>
               </tr>
@@ -1765,20 +1856,20 @@
         <div class="metrics-grid" style="margin-bottom: 2rem;">
           <div class="glass-card">
             <div class="metric-label">Net Profit (Collected)</div>
-            <div class="metric-value" id="partnerNetProfit" style="color: #4ade80;">RM 0.00</div>
+            <div class="metric-value" id="partnerNetProfit" style="color: var(--pos);">RM 0.00</div>
           </div>
           <div class="glass-card">
             <div class="metric-label" id="kunaProfitShareLabel">Kunacosta Remaining Balance</div>
             <div class="metric-value" id="kunaRemainingBalance" style="color: var(--accent);">RM 0.00</div>
             <div style="font-size: 0.8rem; opacity: 0.7; margin-top: 0.3rem; font-family: var(--font-mono);">
-              Share: <span id="kunaTotalShare">RM 0.00</span> | Withdrawn: <span id="kunaTotalWithdrawn" style="color: #f87171;">RM 0.00</span>
+              Share: <span id="kunaTotalShare">RM 0.00</span> | Withdrawn: <span id="kunaTotalWithdrawn" style="color: var(--neg);">RM 0.00</span>
             </div>
           </div>
           <div class="glass-card">
             <div class="metric-label" id="roobenProfitShareLabel">Rooben Remaining Balance</div>
             <div class="metric-value" id="roobenRemainingBalance" style="color: var(--accent);">RM 0.00</div>
             <div style="font-size: 0.8rem; opacity: 0.7; margin-top: 0.3rem; font-family: var(--font-mono);">
-              Share: <span id="roobenTotalShare">RM 0.00</span> | Withdrawn: <span id="roobenTotalWithdrawn" style="color: #f87171;">RM 0.00</span>
+              Share: <span id="roobenTotalShare">RM 0.00</span> | Withdrawn: <span id="roobenTotalWithdrawn" style="color: var(--neg);">RM 0.00</span>
             </div>
           </div>
         </div>
@@ -1826,7 +1917,7 @@
               <tr>
                 <th>Date</th>
                 <th>Partner</th>
-                <th style="color: #fbbf24;">Amount</th>
+                <th style="color: var(--warn);">Amount</th>
                 <th>Notes</th>
                 <th>Actions</th>
               </tr>
@@ -1855,7 +1946,7 @@
           </div>
           <div class="glass-card">
             <div class="metric-label">Deadlines (Next 14 Days)</div>
-            <div class="metric-value" id="repDeadlinesCount" style="color: #fbbf24;">0</div>
+            <div class="metric-value" id="repDeadlinesCount" style="color: var(--warn);">0</div>
           </div>
         </div>
 
@@ -1876,7 +1967,7 @@
 
         <div class="dashboard-grid" style="margin-top: 2rem;">
           <div class="glass-card table-container">
-            <h3 class="metric-label" style="margin-bottom: 1rem; color: #fbbf24;">Outstanding Payments</h3>
+            <h3 class="metric-label" style="margin-bottom: 1rem; color: var(--warn);">Outstanding Payments</h3>
             <table>
               <thead>
                 <tr>
@@ -1950,7 +2041,7 @@
                 <label class="form-label" style="margin-bottom: 0;">Rooben Share (%)</label>
                 <input type="number" id="splitRoobenVal" class="form-control" min="0" max="100" required oninput="syncPartnerSplit('rooben')" />
               </div>
-              <p id="partnerSplitError" style="color: #f87171; font-size: 0.75rem; margin-top: 0.5rem; display: none;">Values must total 100%</p>
+              <p id="partnerSplitError" style="color: var(--neg); font-size: 0.75rem; margin-top: 0.5rem; display: none;">Values must total 100%</p>
               <button type="submit" class="btn-primary" id="btnSavePartner" style="margin-top: 1rem; width: 100%;">Save Partner Split</button>
             </form>
           </div>
@@ -2363,6 +2454,68 @@
     // The two partners. Expenses and withdrawals are always attributed to one of
     // them — there is no company card, so every expense creates a reimbursement.
     const PARTNERS = ['Kunacosta', 'Rooben'];
+
+    // Tables that failed to load on the last refresh. Non-empty means every
+    // derived figure on screen is suspect — see the comment in loadAllData.
+    let loadErrors = [];
+
+    /**
+     * Escape text before it goes into an innerHTML template.
+     *
+     * The dashboard builds almost all of its markup with template literals, and
+     * the values come from the database — client names, project titles, expense
+     * items, filenames. Without this an ampersand in a company name or an
+     * apostrophe in a receipt filename corrupts the markup, and a value
+     * containing a tag executes. Use it for every interpolated DB string,
+     * including inside attributes.
+     */
+    function esc(v) {
+      if (v === null || v === undefined) return '';
+      return String(v)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+
+    /**
+     * Escape a value destined for a single-quoted inline handler argument,
+     * i.e. onclick="fn('HERE')".
+     *
+     * ORDER IS THE WHOLE POINT, and getting it backwards is silently useless.
+     * An attribute value is HTML-entity-decoded BEFORE it is parsed as JS. So
+     * escaping to HTML first — esc() then backslashes — turns ' into &#39;,
+     * which the parser decodes straight back into a live quote:
+     *
+     *   value    ');alert(1)//
+     *   emitted  onclick="fn('&#39;);alert(1)//')"
+     *   parsed   fn('');alert(1)//')      <-- breaks out and runs
+     *
+     * Escape for the JS string context FIRST, then for HTML. The backslash
+     * survives the round trip because esc() does not touch it:
+     *
+     *   emitted  onclick="fn('\&#39;);alert(1)//')"
+     *   parsed   fn('\');alert(1)//')     <-- one inert string argument
+     *
+     * The line terminators matter too: a raw newline inside a JS string literal
+     * is a SyntaxError, and U+2028/U+2029 are line terminators to a JS parser
+     * even though they survive HTML decoding untouched.
+     *
+     * Better still is not to need this at all — the data-id + addEventListener
+     * pattern used for the project rows has no second escaping context.
+     */
+    function escArg(v) {
+      if (v === null || v === undefined) return '';
+      const js = String(v)
+        .replace(/\\/g, '\\\\')
+        .replace(/'/g, "\\'")
+        .replace(/\r/g, '\\r')
+        .replace(/\n/g, '\\n')
+        .replace(/\u2028/g, '\\u2028')
+        .replace(/\u2029/g, '\\u2029');
+      return esc(js);
+    }
 
     /* ------------------------------------------------------------------
        DERIVED FINANCIALS — the single source of truth for every number
@@ -2995,10 +3148,61 @@ function getProjectImageUrl(p) {
         byProject, collected, scheduled, outstanding, overdue, contractTotal,
         expenses, netProfit, share, paid, withdrawn, balance, settlement,
         withdrawnTotal, cashInAccount, unattributed,
+        // `loadErrors.length` is part of this on purpose. The arithmetic
+        // invariant cannot detect a table that failed to load — drop `expenses`
+        // and it balances perfectly at the wrong numbers, because the missing
+        // amount cancels on both sides. Incomplete input means "not reconciled",
+        // regardless of what the sums say.
+        //
         // Compare in cents; floats will not land on exact equality.
-        reconciled: Math.abs(balanceSum - cashInAccount) < 0.01 && unattributed.length === 0
+        reconciled: loadErrors.length === 0
+                    && Math.abs(balanceSum - cashInAccount) < 0.01
+                    && unattributed.length === 0
       };
       return fin;
+    }
+
+    /**
+     * Persistent banner when any table failed to load.
+     *
+     * Deliberately loud and not dismissible. The failure mode this guards
+     * against is silent: the page renders complete, plausible, wrong numbers,
+     * and every other indicator agrees with them.
+     */
+    function renderLoadErrorBanner() {
+      const host = document.querySelector('.main-content');
+      if (!host) return;
+      let el = document.getElementById('loadErrorBanner');
+
+      if (!loadErrors.length) {
+        if (el) el.remove();
+        return;
+      }
+
+      if (!el) {
+        el = document.createElement('div');
+        el.id = 'loadErrorBanner';
+        el.setAttribute('role', 'alert');
+        el.style.cssText =
+          'background: rgba(248,113,113,0.12); border: 1px solid rgba(248,113,113,0.5);' +
+          'border-radius: 12px; padding: 1rem 1.25rem; margin-bottom: 1.5rem;' +
+          'font-size: 0.85rem; line-height: 1.6;';
+        host.prepend(el);
+      }
+
+      const rows = loadErrors.map(e =>
+        `<li><strong>${esc(e.table)}</strong> — ${esc(e.message)}${e.hint ? ` <em>(${esc(e.hint)})</em>` : ''}</li>`
+      ).join('');
+
+      el.innerHTML = `
+        <div style="color:var(--neg);font-weight:600;margin-bottom:0.4rem;">
+          &#9888; Some data could not be loaded — the figures below are incomplete
+        </div>
+        <div style="color:var(--bone-dim);margin-bottom:0.6rem;">
+          Every total, balance and chart on this dashboard is derived from these tables.
+          Do not settle up or make decisions from these numbers until this is resolved.
+        </div>
+        <ul style="color:var(--bone-dim);margin:0 0 0 1.1rem;">${rows}</ul>`;
     }
 
     /** Per-project totals, safe for a project with no payments yet. */
@@ -3045,18 +3249,35 @@ function getProjectImageUrl(p) {
           supabaseClient.from('quotations').select('*').order('quote_date', { ascending: false })
         ]);
 
-        if (projectsRes.error) console.error("Error fetching projects:", projectsRes.error);
-        if (expensesRes.error) console.error("Error fetching expenses:", expensesRes.error);
-        if (teamRes.error) console.error("Error fetching team:", teamRes.error);
-        if (servicesRes.error) console.error("Error fetching services:", servicesRes.error);
-        if (showcaseRes.error) console.error("Error fetching showcase projects:", showcaseRes.error);
-        if (settingsRes.error) console.error("Error fetching system settings:", settingsRes.error);
-        if (withdrawalsRes.error) console.error("Error fetching withdrawals:", withdrawalsRes.error);
-        // These three arrive with migration 02. Report clearly rather than
-        // failing silently, since every financial figure depends on them.
-        if (paymentsRes.error) console.error("Error fetching project_payments (run supabase_migration_02_financials.sql):", paymentsRes.error);
-        if (addonsRes.error) console.error("Error fetching project_addons (run supabase_migration_02_financials.sql):", addonsRes.error);
-        if (quotationsRes.error) console.error("Error fetching quotations (run supabase_migration_02_financials.sql):", quotationsRes.error);
+        /* A failed fetch used to be console.error'd and then coerced to [] —
+           which is far worse than it sounds. Lose the `expenses` request and the
+           dashboard does not just under-report: the reconciliation panel keeps
+           saying "Balanced", because the invariant
+           balance(A)+balance(B) === collected − withdrawn holds *identically*
+           when expenses is 0. The one element designed to catch bad data ends up
+           vouching for it, and partners settle against numbers that are wrong.
+
+           So a failed load is now recorded, surfaced as a banner, and forces
+           `fin.reconciled` false. Anything missing means every derived figure is
+           suspect, and the page has to say so. */
+        loadErrors = [];
+        const noteError = (label, res, hint) => {
+          if (res && res.error) {
+            console.error(`Error fetching ${label}:`, res.error);
+            loadErrors.push({ table: label, message: res.error.message || String(res.error), hint: hint || '' });
+          }
+        };
+        const MIGRATION_HINT = 'run supabase_migration_02_financials.sql';
+        noteError('projects', projectsRes);
+        noteError('expenses', expensesRes);
+        noteError('team_members', teamRes);
+        noteError('services', servicesRes);
+        noteError('showcase_projects', showcaseRes);
+        noteError('system_settings', settingsRes);
+        noteError('partner_withdrawals', withdrawalsRes);
+        noteError('project_payments', paymentsRes, MIGRATION_HINT);
+        noteError('project_addons', addonsRes, MIGRATION_HINT);
+        noteError('quotations', quotationsRes, MIGRATION_HINT);
 
         projectsData = projectsRes.data || [];
         expensesData = expensesRes.data || [];
@@ -3076,6 +3297,7 @@ function getProjectImageUrl(p) {
 
         // Everything below reads `fin`, so this has to run before any render.
         computeFinancials();
+        renderLoadErrorBanner();
 
         // Populate dropdowns first
         populateDropdowns();
@@ -3125,14 +3347,14 @@ function getProjectImageUrl(p) {
       let color = 'var(--bone)';
       let accent = 'var(--accent)';
       if (type === 'error') {
-        color = '#f87171';
-        accent = '#f87171';
+        color = 'var(--neg)';
+        accent = 'var(--neg)';
       } else if (type === 'warning') {
-        color = '#fbbf24';
-        accent = '#fbbf24';
+        color = 'var(--warn)';
+        accent = 'var(--warn)';
       } else if (type === 'success') {
-        color = '#4ade80';
-        accent = '#4ade80';
+        color = 'var(--pos)';
+        accent = 'var(--pos)';
       }
       
       toast.style.color = color;
@@ -3331,7 +3553,7 @@ function getProjectImageUrl(p) {
 
       const cashEl = document.getElementById('kpiCashBalance');
       cashEl.textContent = formatMYR(cashBalance);
-      cashEl.style.color = cashBalance >= 0 ? '#4ade80' : '#f87171';
+      cashEl.style.color = cashBalance >= 0 ? 'var(--pos)' : 'var(--neg)';
       document.getElementById('kpiNextDeadline').textContent = `Next Deadline: ${nextDeadline ? formatDate(nextDeadline) : 'N/A'}`;
 
       document.getElementById('kpiCollected').textContent = formatMYR(totalCollected);
@@ -3339,7 +3561,7 @@ function getProjectImageUrl(p) {
 
       const netEl = document.getElementById('kpiNetProfitCollected');
       netEl.textContent = formatMYR(netProfitCollected);
-      netEl.style.color = netProfitCollected >= 0 ? '#4ade80' : '#f87171';
+      netEl.style.color = netProfitCollected >= 0 ? 'var(--pos)' : 'var(--neg)';
       document.getElementById('kpiTotalExpenses').textContent = `Expenses: ${formatMYR(totalExpenses)}`;
 
       // Update circular progress rings (Circumference = 138.23 for r=22)
@@ -3701,12 +3923,12 @@ function getProjectImageUrl(p) {
         // Overcollected is worth flagging: usually a payment entered twice, or an
         // add-on that was billed but never recorded against the project.
         const warningMarkup = col > t.contractTotal + 0.01
-          ? ' <span title="Collected more than the contract total \u2014 duplicated payment, or an unrecorded add-on?" style="color: #fbbf24; cursor: help; font-weight: bold;">&#9888;</span>'
+          ? ' <span title="Collected more than the contract total \u2014 duplicated payment, or an unrecorded add-on?" style="color: var(--warn); cursor: help; font-weight: bold;">&#9888;</span>'
           : '';
 
         const paidCount = t.payments.filter(x => x.received).length;
         const overdueMark = t.overdue > 0
-          ? ` <span title="${formatMYR(t.overdue)} overdue" style="color: #f87171;">&#9679;</span>` : '';
+          ? ` <span title="${formatMYR(t.overdue)} overdue" style="color: var(--neg);">&#9679;</span>` : '';
 
         const statusSelect = `
           <select class="inline-select status-select" data-id="${p.id}">
@@ -3732,8 +3954,8 @@ function getProjectImageUrl(p) {
             ${t.addonsTotal ? `<div style="font-size:0.68rem;opacity:0.6;font-weight:400;">incl. ${formatMYR(t.addonsTotal)} add-ons</div>` : ''}
           </td>
           <td class="col-payments" style="white-space: nowrap; font-family: var(--font-mono); font-size: 0.78rem;">${paidCount}/${t.payments.length}${overdueMark}</td>
-          <td style="color: #4ade80; font-weight: 500; white-space: nowrap;">${formatMYR(col)}${warningMarkup}</td>
-          <td style="color: ${out > 0.01 ? '#f87171' : 'var(--bone-dim)'}; font-weight: 500; white-space: nowrap;">${formatMYR(out)}</td>
+          <td style="color: var(--pos); font-weight: 500; white-space: nowrap;">${formatMYR(col)}${warningMarkup}</td>
+          <td style="color: ${out > 0.01 ? 'var(--neg)' : 'var(--bone-dim)'}; font-weight: 500; white-space: nowrap;">${formatMYR(out)}</td>
           <td>
             <div class="actions-cell">
               <button class="action-btn edit-btn" title="Edit" onclick="openProjectModal('${p.id}')"><svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>
@@ -3764,8 +3986,8 @@ function getProjectImageUrl(p) {
           <td></td>
           <td>${formatMYR(totalVal + totalAddons)}</td>
           <td class="col-payments"></td>
-          <td style="color: #4ade80;">${formatMYR(totalCol)}</td>
-          <td style="color: #f87171;">${formatMYR(totalOut)}</td>
+          <td style="color: var(--pos);">${formatMYR(totalCol)}</td>
+          <td style="color: var(--neg);">${formatMYR(totalOut)}</td>
           <td></td>
         </tr>
       `;
@@ -3835,7 +4057,7 @@ function getProjectImageUrl(p) {
           <td style="white-space: nowrap;">${formatDate(e.date)}</td>
           <td style="font-weight: 500;">${e.item}</td>
           <td style="white-space: nowrap;"><span class="status-badge" style="background: rgba(255,255,255,0.05); color: var(--bone); border-color: rgba(255,255,255,0.1);">${e.category}</span></td>
-          <td style="color: #fbbf24; font-weight: 500;">${formatMYR(amt)}</td>
+          <td style="color: var(--warn); font-weight: 500;">${formatMYR(amt)}</td>
           <td>${e.paid_by}</td>
           <td>${e.recurring ? 'Yes' : 'No'}</td>
           <td>${e.recurring_type || 'None'}</td>
@@ -3855,7 +4077,7 @@ function getProjectImageUrl(p) {
       tfoot.innerHTML = `
         <tr style="font-weight: bold; background: var(--table-header-bg);">
           <td colspan="3">Total</td>
-          <td style="color: #fbbf24;">${formatMYR(totalSpent)}</td>
+          <td style="color: var(--warn);">${formatMYR(totalSpent)}</td>
           <td colspan="6"></td>
         </tr>
       `;
@@ -3879,9 +4101,38 @@ function getProjectImageUrl(p) {
         .toLocaleString('en-US', { month: 'short', year: '2-digit' });
     }
 
+    /**
+     * Chart colours resolved from the CSS custom properties, so canvas paint
+     * follows the theme like everything else.
+     *
+     * Chart.js draws to a canvas, where `var(--pos)` is just an unparseable
+     * string — so the value has to be read out of the computed style here
+     * rather than referenced. That is why these charts were hardcoded, and why
+     * they stayed dark-theme-only: on the light card the Cash Flow lines
+     * measured 1.44:1 and 2.48:1, i.e. invisible.
+     */
+    function chartPalette() {
+      const cs = getComputedStyle(document.documentElement);
+      const v = (name, fallback) => (cs.getPropertyValue(name) || '').trim() || fallback;
+      const isLight = document.documentElement.getAttribute('data-theme') === 'light';
+      const alpha = (hex, a) => {
+        const m = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex.trim());
+        return m ? `rgba(${parseInt(m[1],16)},${parseInt(m[2],16)},${parseInt(m[3],16)},${a})` : hex;
+      };
+      const pos = v('--pos', '#4ade80'), warn = v('--warn', '#fbbf24'),
+            neg = v('--neg', '#f87171'), accent = v('--accent', '#38e0ff');
+      return {
+        isLight, pos, warn, neg, accent, alpha,
+        grid:   isLight ? 'rgba(0,0,0,0.08)' : 'rgba(255,255,255,0.06)',
+        tick:   isLight ? 'rgba(0,0,0,0.60)' : 'rgba(255,255,255,0.45)',
+        legend: isLight ? 'rgba(0,0,0,0.75)' : 'rgba(255,255,255,0.60)'
+      };
+    }
+
     function renderCashflowCharts(monthlyData, sortedMonths) {
-      const gridColour = 'rgba(255,255,255,0.06)';
-      const tick = { color: 'rgba(255,255,255,0.45)', font: { size: 10 } };
+      const pal = chartPalette();
+      const gridColour = pal.grid;
+      const tick = { color: pal.tick, font: { size: 10 } };
       const money = v => formatMYR(v);
 
       // Shared axis/legend styling; the money formatter on the tooltip is the
@@ -3891,7 +4142,7 @@ function getProjectImageUrl(p) {
         maintainAspectRatio: false,
         interaction: { intersect: false, mode: 'index' },
         plugins: {
-          legend: { labels: { color: 'rgba(255,255,255,0.6)', boxWidth: 12, font: { size: 11 } } },
+          legend: { labels: { color: pal.legend, boxWidth: 12, font: { size: 11 } } },
           tooltip: { callbacks: { label: c => `${c.dataset.label}: ${money(c.parsed.y ?? c.parsed.x)}` } }
         },
         scales: {
@@ -3916,13 +4167,17 @@ function getProjectImageUrl(p) {
             labels: sortedMonths.map(monthLabel),
             datasets: [
               { type: 'line', label: 'Closing balance', data: closing,
-                borderColor: '#38e0ff', backgroundColor: 'rgba(56,224,255,0.12)',
+                borderColor: pal.accent, backgroundColor: pal.alpha(pal.accent, 0.12),
                 fill: true, tension: 0.35, borderWidth: 2,
-                pointBackgroundColor: '#38e0ff', pointRadius: 3, order: 0 },
-              { type: 'bar', label: 'Money in', data: sortedMonths.map(k => monthlyData[k].moneyIn),
-                backgroundColor: 'rgba(74,222,128,0.55)', borderRadius: 4, order: 1 },
-              { type: 'bar', label: 'Money out', data: sortedMonths.map(k => monthlyData[k].moneyOut),
-                backgroundColor: 'rgba(248,113,113,0.55)', borderRadius: 4, order: 2 }
+                pointBackgroundColor: pal.accent, pointRadius: 3, order: 0 },
+              { type: 'bar', label: 'Collected', data: sortedMonths.map(k => monthlyData[k].moneyIn),
+                backgroundColor: pal.alpha(pal.pos, 0.55), borderRadius: 4, order: 1 },
+              { type: 'bar', label: 'Withdrawn', data: sortedMonths.map(k => monthlyData[k].moneyOut),
+                backgroundColor: pal.alpha(pal.warn, 0.55), borderRadius: 4, order: 2 },
+              // Shown for context, not part of the balance line: fronted
+              // personally, so it never leaves this account.
+              { type: 'bar', label: 'Expenses (fronted)', data: sortedMonths.map(k => monthlyData[k].expenses || 0),
+                backgroundColor: pal.alpha(pal.neg, 0.45), borderRadius: 4, order: 3 }
             ]
           },
           options: baseOpts()
@@ -4010,21 +4265,27 @@ function getProjectImageUrl(p) {
 
       const monthlyData = {};
 
-      // Money in = every received payment, by the month it arrived.
-      revenueByMonth().forEach(([monthKey, amt]) => {
-        if (!monthlyData[monthKey]) monthlyData[monthKey] = { moneyIn: 0, moneyOut: 0 };
-        monthlyData[monthKey].moneyIn += amt;
+      const bucket = k => (monthlyData[k] = monthlyData[k] || { moneyIn: 0, moneyOut: 0, expenses: 0 });
+
+      // IN: every received payment, by the month it arrived.
+      revenueByMonth().forEach(([monthKey, amt]) => { bucket(monthKey).moneyIn += amt; });
+
+      // OUT: partner withdrawals. This is the correction — expenses are fronted
+      // personally and never leave the shared account, so using them here gave a
+      // closing balance that contradicted the Overview's cash figure.
+      withdrawalsData.forEach(w => {
+        if (!w.date) return;
+        const monthKey = String(w.date).substring(0, 7);
+        if (monthKey.length === 7) bucket(monthKey).moneyOut += parseFloat(w.amount) || 0;
       });
 
-      // Gather Expenses Money Out
+      // Tracked but NOT deducted here: real money the partners are owed back,
+      // just not out of this account. It moves the partner balances, not the
+      // cash position.
       expensesData.forEach(e => {
-        if (e.date) {
-          const monthKey = String(e.date).substring(0, 7); // YYYY-MM
-          if (monthKey.length === 7) {
-            if (!monthlyData[monthKey]) monthlyData[monthKey] = { moneyIn: 0, moneyOut: 0 };
-            monthlyData[monthKey].moneyOut += parseFloat(e.amount) || 0;
-          }
-        }
+        if (!e.date) return;
+        const monthKey = String(e.date).substring(0, 7);
+        if (monthKey.length === 7) bucket(monthKey).expenses += parseFloat(e.amount) || 0;
       });
 
       const sortedMonths = Object.keys(monthlyData).sort();
@@ -4034,7 +4295,7 @@ function getProjectImageUrl(p) {
       renderCashflowCharts(monthlyData, sortedMonths);
 
       if (sortedMonths.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; color: var(--bone-dim);">No transactions to show cash flow.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; color: var(--bone-dim);">No transactions to show cash flow.</td></tr>`;
         return;
       }
 
@@ -4050,17 +4311,18 @@ function getProjectImageUrl(p) {
         runningBalance += net;
         const closingBalance = runningBalance;
 
-        const netColor = net >= 0 ? '#4ade80' : '#f87171';
+        const netColor = net >= 0 ? 'var(--pos)' : 'var(--neg)';
         const netPrefix = net >= 0 ? '+' : '';
 
         const tr = document.createElement('tr');
         tr.innerHTML = `
           <td style="font-weight: 500;">${monthName}</td>
           <td>${formatMYR(openingBalance)}</td>
-          <td style="color: #4ade80;">${formatMYR(row.moneyIn)}</td>
-          <td style="color: #f87171;">${formatMYR(row.moneyOut)}</td>
+          <td style="color: var(--pos);">${formatMYR(row.moneyIn)}</td>
+          <td style="color: var(--warn);">${formatMYR(row.moneyOut)}</td>
+          <td style="color: var(--neg);">${formatMYR(row.expenses)}</td>
           <td style="color: ${netColor}; font-weight: 500;">${netPrefix}${formatMYR(net)}</td>
-          <td style="font-weight: 500; color: ${closingBalance >= 0 ? 'var(--bone)' : '#f87171'}">${formatMYR(closingBalance)}</td>
+          <td style="font-weight: 500; color: ${closingBalance >= 0 ? 'var(--bone)' : 'var(--neg)'}">${formatMYR(closingBalance)}</td>
         `;
         tbody.appendChild(tr);
       });
@@ -4106,10 +4368,10 @@ function getProjectImageUrl(p) {
       let gapNote = '';
       if (Math.abs(scheduleGap) > 0.01) {
         gapNote = scheduleGap > 0
-          ? `<span style="color:#fbbf24;">${formatMYR(scheduleGap)} of the contract is not scheduled yet</span>`
-          : `<span style="color:#f87171;">scheduled ${formatMYR(-scheduleGap)} more than the contract total</span>`;
+          ? `<span style="color:var(--warn);">${formatMYR(scheduleGap)} of the contract is not scheduled yet</span>`
+          : `<span style="color:var(--neg);">scheduled ${formatMYR(-scheduleGap)} more than the contract total</span>`;
       } else {
-        gapNote = `<span style="color:#4ade80;">schedule matches the contract total</span>`;
+        gapNote = `<span style="color:var(--pos);">schedule matches the contract total</span>`;
       }
 
       const paymentRows = t.payments.length ? t.payments.map(pay => {
@@ -4121,14 +4383,14 @@ function getProjectImageUrl(p) {
                      style="background:transparent;border:1px solid transparent;color:inherit;font:inherit;padding:0.2rem 0.3rem;border-radius:4px;width:9rem;" />
             </td>
             <td style="white-space:nowrap;font-weight:500;">${formatMYR(pay.amount)}</td>
-            <td style="white-space:nowrap;color:${overdue ? '#f87171' : 'inherit'};">
+            <td style="white-space:nowrap;color:${overdue ? 'var(--neg)' : 'inherit'};">
               ${pay.due_date ? formatDate(pay.due_date) : '<span style="opacity:0.4;">&mdash;</span>'}
               ${overdue ? ' <strong>overdue</strong>' : ''}
             </td>
             <td>
               <label style="display:inline-flex;align-items:center;gap:0.4rem;cursor:pointer;">
                 <input type="checkbox" class="pay-received" data-id="${pay.id}" ${pay.received ? 'checked' : ''} />
-                <span style="color:${pay.received ? '#4ade80' : 'var(--bone-dim)'};font-size:0.8rem;">
+                <span style="color:${pay.received ? 'var(--pos)' : 'var(--bone-dim)'};font-size:0.8rem;">
                   ${pay.received ? 'Received ' + formatDate(pay.received_date) : 'Not yet'}
                 </span>
               </label>
@@ -4170,9 +4432,9 @@ function getProjectImageUrl(p) {
           ${[['Project value', formatMYR(t.value), 'inherit'],
              ['Add-ons', formatMYR(t.addonsTotal), 'inherit'],
              ['Contract total', formatMYR(t.contractTotal), 'var(--accent)'],
-             ['Collected', formatMYR(t.collected), '#4ade80'],
-             ['Outstanding', formatMYR(t.outstanding), t.outstanding > 0.01 ? '#f87171' : 'var(--bone-dim)'],
-             ['Overdue', formatMYR(t.overdue), t.overdue > 0.01 ? '#f87171' : 'var(--bone-dim)']]
+             ['Collected', formatMYR(t.collected), 'var(--pos)'],
+             ['Outstanding', formatMYR(t.outstanding), t.outstanding > 0.01 ? 'var(--neg)' : 'var(--bone-dim)'],
+             ['Overdue', formatMYR(t.overdue), t.overdue > 0.01 ? 'var(--neg)' : 'var(--bone-dim)']]
             .map(([lbl, val, col]) => `
               <div>
                 <div style="font-size:0.68rem;text-transform:uppercase;letter-spacing:0.12em;color:var(--bone-dim);">${lbl}</div>
@@ -4423,13 +4685,13 @@ function getProjectImageUrl(p) {
           <td style="white-space:nowrap;">${proj ? (proj.client || '-') : '-'}</td>
           <td>${pay.label || 'Installment'}</td>
           <td style="white-space:nowrap;font-weight:500;">${formatMYR(pay.amount)}</td>
-          <td style="white-space:nowrap;color:${od ? '#f87171' : 'inherit'};">
+          <td style="white-space:nowrap;color:${od ? 'var(--neg)' : 'inherit'};">
             ${pay.due_date ? formatDate(pay.due_date) : '<span style="opacity:0.4;">&mdash;</span>'}
             ${od ? ' <strong>overdue</strong>' : ''}
           </td>
           <td style="white-space:nowrap;">
             ${pay.received
-              ? `<span style="color:#4ade80;">Received ${formatDate(pay.received_date)}</span>`
+              ? `<span style="color:var(--pos);">Received ${formatDate(pay.received_date)}</span>`
               : `<button class="btn-outline" style="padding:0.2rem 0.7rem;font-size:0.74rem;margin:0;width:auto;"
                     onclick="setPaymentReceived('${pay.id}', true)">Mark received</button>`}
           </td>
@@ -4452,7 +4714,7 @@ function getProjectImageUrl(p) {
         `<tr><td colspan="7" style="text-align:center;color:var(--bone-dim);padding:2rem;">
           No quotations yet.</td></tr>`;
 
-      const statusColour = { Draft: 'var(--bone-dim)', Sent: '#fbbf24', Accepted: '#4ade80', Declined: '#f87171' };
+      const statusColour = { Draft: 'var(--bone-dim)', Sent: 'var(--warn)', Accepted: 'var(--pos)', Declined: 'var(--neg)' };
 
       quotationsData.forEach(q => {
         const proj = projectsData.find(p => p.id === q.project_id);
@@ -4621,7 +4883,7 @@ function getProjectImageUrl(p) {
         set(ids.drawn, formatMYR(withdrawn[p]));
         const balEl = document.getElementById(ids.bal);
         // Negative means they have drawn more than they are owed.
-        if (balEl) balEl.style.color = balance[p] < 0 ? '#f87171' : 'var(--accent)';
+        if (balEl) balEl.style.color = balance[p] < 0 ? 'var(--neg)' : 'var(--accent)';
       });
 
       // ---- per-partner table ----
@@ -4633,9 +4895,9 @@ function getProjectImageUrl(p) {
           <td>${pct(p)}%</td>
           <td>${formatMYR(paid[p])}</td>
           <td>${formatMYR(expenses * (pct(p) / 100))}</td>
-          <td style="color: ${s >= 0 ? '#4ade80' : '#f87171'}">${s >= 0 ? '+' : ''}${formatMYR(s)}</td>
+          <td style="color: ${s >= 0 ? 'var(--pos)' : 'var(--neg)'}">${s >= 0 ? '+' : ''}${formatMYR(s)}</td>
           <td>${formatMYR(share[p])}</td>
-          <td style="font-weight: bold; color: ${balance[p] < 0 ? '#f87171' : 'var(--accent)'};">${formatMYR(balance[p])}</td>
+          <td style="font-weight: bold; color: ${balance[p] < 0 ? 'var(--neg)' : 'var(--accent)'};">${formatMYR(balance[p])}</td>
         `;
         tbody.appendChild(tr);
       });
@@ -4671,8 +4933,8 @@ function getProjectImageUrl(p) {
           const ower = gap > 0 ? b : a;
           const owed = gap > 0 ? a : b;
           settleEl.innerHTML =
-            `<strong style="color: #fbbf24;">${ower}</strong> owes ` +
-            `<strong style="color: #4ade80;">${owed}</strong> ` +
+            `<strong style="color: var(--warn);">${ower}</strong> owes ` +
+            `<strong style="color: var(--pos);">${owed}</strong> ` +
             `<strong style="color: var(--accent);">${formatMYR(Math.abs(gap))}</strong> ` +
             `<span style="color: var(--bone-dim);">for expenses fronted out of pocket.</span>`;
         }
@@ -4686,7 +4948,7 @@ function getProjectImageUrl(p) {
       if (recEl) {
         if (reconciled) {
           recEl.innerHTML =
-            `<span style="color: #4ade80;">&#10003; Balanced</span> ` +
+            `<span style="color: var(--pos);">&#10003; Balanced</span> ` +
             `<span style="color: var(--bone-dim);">&mdash; partner balances (${formatMYR(sumBal)}) ` +
             `match cash in the account (collected ${formatMYR(collected)} ` +
             `&minus; withdrawn ${formatMYR(withdrawnTotal)} = ${formatMYR(cashInAccount)}).</span>`;
@@ -4700,7 +4962,7 @@ function getProjectImageUrl(p) {
             reasons.push(`balances total ${formatMYR(sumBal)} but the account holds ${formatMYR(cashInAccount)} (out by ${formatMYR(sumBal - cashInAccount)})`);
           }
           recEl.innerHTML =
-            `<span style="color: #f87171; font-weight: 600;">&#9888; Does not balance</span> ` +
+            `<span style="color: var(--neg); font-weight: 600;">&#9888; Does not balance</span> ` +
             `<span style="color: var(--bone-dim);">&mdash; ${reasons.join('; ')}.</span>`;
           recEl.style.borderColor = 'rgba(248, 113, 113, 0.4)';
         }
@@ -4717,12 +4979,12 @@ function getProjectImageUrl(p) {
           tr.innerHTML = `
             <td>${w.date}</td>
             <td style="font-weight: 500;">${w.partner}</td>
-            <td style="color: #fbbf24; font-weight: 500;">${formatMYR(w.amount)}</td>
+            <td style="color: var(--warn); font-weight: 500;">${formatMYR(w.amount)}</td>
             <td style="max-width: 250px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${w.notes || ''}">${w.notes || '-'}</td>
             <td>
               <div style="display: flex; gap: 0.5rem;">
                 <button class="btn-outline" style="padding: 0.25rem 0.5rem; font-size: 0.75rem; margin: 0; width: auto;" onclick="editWithdrawal('${w.id}')">Edit</button>
-                <button class="btn-outline" style="padding: 0.25rem 0.5rem; font-size: 0.75rem; color: #f87171; border-color: rgba(248,113,113,0.3); margin: 0; width: auto;" onclick="deleteWithdrawal('${w.id}')">Delete</button>
+                <button class="btn-outline" style="padding: 0.25rem 0.5rem; font-size: 0.75rem; color: var(--neg); border-color: rgba(248,113,113,0.3); margin: 0; width: auto;" onclick="deleteWithdrawal('${w.id}')">Delete</button>
               </div>
             </td>
           `;
@@ -4794,7 +5056,7 @@ function getProjectImageUrl(p) {
           tr.innerHTML = `
             <td style="font-weight: 500;">${p.name}</td>
             <td>${p.client}</td>
-            <td style="color: #f87171; font-weight: 500;">${formatMYR(out)}</td>
+            <td style="color: var(--neg); font-weight: 500;">${formatMYR(out)}</td>
           `;
           oBody.appendChild(tr);
         }

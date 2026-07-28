@@ -32,26 +32,36 @@ SELECT json_agg(e) AS expenses_backup FROM expenses e;
 
 
 -- ============================================================
--- 1. CLEAR THE FINANCIAL DATA  ***POINT OF NO RETURN***
+-- 1. CLEAR THE FINANCIAL DATA  ***ALREADY RUN — LEAVE COMMENTED OUT***
 -- ============================================================
--- Guarded through to_regclass so this file is safe to re-run and does not
--- error on tables that do not exist yet the first time through.
+-- !!! DO NOT UNCOMMENT WITHOUT MEANING IT !!!
 --
--- NOT cleared: services, showcase_projects and team_members — the public
--- website renders its Services, Work and Founders sections from those three
--- with the anon key, so clearing them would blank the live site.
--- Also kept: system_settings, which holds the company profile, the 50/50
--- split and the financial targets. That is configuration, not data.
-DO $$
-BEGIN
-  IF to_regclass('public.project_payments') IS NOT NULL THEN DELETE FROM project_payments; END IF;
-  IF to_regclass('public.project_addons')   IS NOT NULL THEN DELETE FROM project_addons;   END IF;
-  IF to_regclass('public.quotations')       IS NOT NULL THEN DELETE FROM quotations;       END IF;
-END $$;
-
-DELETE FROM expenses;
-DELETE FROM partner_withdrawals;
-DELETE FROM projects;
+-- This ran once, on 2026-07-26, to clear the old records for re-entry against
+-- the new model. It is commented out because the rest of this file IS safe to
+-- re-run and this section is NOT: the to_regclass guards only protect against a
+-- missing table, not against data loss. Left live, pasting this file a second
+-- time — the natural thing to do when adding a later section — would delete
+-- every project, payment, add-on, quotation, expense and withdrawal, with no
+-- backup other than a hand-copied JSON dump.
+--
+-- If you ever genuinely need to reset, uncomment deliberately, take the section
+-- 0 backup first, and comment it out again afterwards.
+--
+-- NOT cleared even then: services, showcase_projects and team_members — the
+-- public website renders its Services, Work and Founders sections from those
+-- three with the anon key, so clearing them would blank the live site.
+-- Also kept: system_settings, which is configuration, not data.
+--
+-- DO $$
+-- BEGIN
+--   IF to_regclass('public.project_payments') IS NOT NULL THEN DELETE FROM project_payments; END IF;
+--   IF to_regclass('public.project_addons')   IS NOT NULL THEN DELETE FROM project_addons;   END IF;
+--   IF to_regclass('public.quotations')       IS NOT NULL THEN DELETE FROM quotations;       END IF;
+-- END $$;
+--
+-- DELETE FROM expenses;
+-- DELETE FROM partner_withdrawals;
+-- DELETE FROM projects;
 
 
 -- ============================================================

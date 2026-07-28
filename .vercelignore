@@ -1,0 +1,28 @@
+# Files that must NOT be deployed as public static assets.
+#
+# There is no build step here, so Vercel publishes the repo as-is: every
+# tracked file becomes a URL. Before this file existed, all of the following
+# were live and downloadable by anyone:
+#
+#   /supabase_migration.sql   200  7,491 B   full schema + every RLS policy
+#   /PROJECT_STATUS.md        200 21,893 B   internal roadmap
+#   /docs/CHANGELOG.md        200 36,186 B   internal history
+#   /CLAUDE.md                200  2,807 B   internal working notes
+#
+# The SQL is the worst of it: it hands an attacker the exact table, column and
+# policy layout to aim the public anon key at. robots.txt is not a substitute —
+# it asks crawlers not to look, it does not stop anyone fetching the URL.
+
+# Database schema and policies
+*.sql
+
+# Internal documentation and working notes
+*.md
+docs/
+
+# Tooling output
+graphify-out/
+
+# Repo metadata
+.gitignore
+.repomixignore

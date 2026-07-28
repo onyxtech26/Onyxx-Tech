@@ -1430,7 +1430,11 @@ footer a:hover { color: var(--accent); }
     opacity: 0;
     transform: translateY(-10px) scale(0.98);
     pointer-events: none;
-    transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s ease, background 0.3s ease, border-color 0.3s ease;
+    /* Same as the modal overlay: without this the CLOSED drawer keeps its six
+       links in the tab order, so a mobile keyboard user traverses six
+       invisible stops before reaching the page content. */
+    visibility: hidden;
+    transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s ease, visibility 0.3s, background 0.3s ease, border-color 0.3s ease;
     z-index: 1000;
   }
 
@@ -1438,6 +1442,7 @@ footer a:hover { color: var(--accent); }
     opacity: 1;
     transform: translateY(0) scale(1);
     pointer-events: auto;
+    visibility: visible;
   }
 
   .nav-links a {
@@ -2266,9 +2271,27 @@ footer a:hover { color: var(--accent); }
   text-decoration: none;
 }
 
-/* The whole card is the link, so give keyboard focus a ring that follows the
+/* /work's cards open a modal instead of navigating, so they are <button>s —
+   the only element that is focusable and Enter/Space-activated for free. The UA
+   button styling has to go: it would otherwise override the card's background
+   and border, centre the text, and shrink the font to the system default.
+   `inherit` on font and `left` on text-align are the two that actually bite. */
+button.project-card {
+  appearance: none;
+  -webkit-appearance: none;
+  background: none;
+  border: 1px solid var(--glass-border);
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  width: 100%;
+  cursor: pointer;
+}
+
+/* The whole card is the control, so give keyboard focus a ring that follows the
    card's own 16px radius instead of the global 2px one. */
-.project-card--link:focus-visible {
+.project-card--link:focus-visible,
+button.project-card:focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 4px;
   border-radius: 16px;
@@ -2428,6 +2451,14 @@ footer a:hover { color: var(--accent); }
   padding: 2rem;
   opacity: 0;
   pointer-events: none;
+  /* pointer-events stops the MOUSE, but the closed dialog stayed in the tab
+     order: on /work, tab stop 13 landed on the invisible close button, then
+     "View on GitHub", then "Start a Similar Project" — three focus stops with
+     nothing on screen. visibility:hidden removes it from the tab order and
+     from the accessibility tree, so the permanently-present
+     role="dialog" aria-modal="true" stops being announced too.
+     It still animates: visibility is transitionable to/from hidden. */
+  visibility: hidden;
   transition: all 0.3s ease;
 }
 
@@ -2438,6 +2469,7 @@ footer a:hover { color: var(--accent); }
 .modal-overlay.open {
   opacity: 1;
   pointer-events: all;
+  visibility: visible;
 }
 
 .modal {
