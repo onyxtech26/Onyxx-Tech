@@ -629,9 +629,110 @@
 
       .glass-card { padding: 1rem; border-radius: 12px; }
 
+      /* A grid/flex item defaults to min-width:auto, i.e. "never shrink below
+         my content". So one wide descendant — the donut legend, with labels
+         like "Banking / Payment Fees" — set a min-content width for
+         .overview-bottom-row, which propagated up through .overview-layout and
+         stretched .overview-top-row and every KPI card with it. Overview
+         measured 438px on a 390px phone with nothing visibly at fault.
+         Letting these shrink is what actually contains the page. */
+      /* Legend and donut sit side by side in a flex row that never wraps. The
+         legend needs ~230px for its labels and the canvas is a fixed 140px, so
+         on a 390px card the canvas was pushed to x=273 and hung 23px past the
+         viewport. Stack them: the ring above, the legend beneath it. */
+      .donut-chart-container {
+        flex-direction: column-reverse;
+        gap: 1rem;
+      }
+      .donut-legend { width: 100%; }
+
+      .overview-layout,
+      .overview-layout > *,
+      .overview-top-row > *,
+      .overview-bottom-row > *,
+      .kpi-columns-container > *,
+      .kpi-column-card > *,
+      .metrics-grid > *,
+      .dashboard-grid > *,
+      .kpi-grid > * {
+        min-width: 0;
+      }
+
       /* Each filter control carries an inline max-width, which beats a plain
          width:100% — so they stacked at 200/150/150/70px, each centred. */
       .search-filter-bar > * { max-width: none !important; width: 100% !important; }
+
+      /* ---- tables become cards ----
+         This app is table-heavy and a table is the one thing that cannot be
+         made to work on a 390px screen. Measured before this: every table
+         overflowed to ~1275px inside a 316px container with a 0px scrollbar, so
+         Amount — the reason you opened the tab — was simply off-screen with no
+         indication it existed. Horizontal scrolling would technically reach it,
+         but nothing said so and you would be dragging a table sideways to read
+         your own figures.
+
+         One row becomes one card, each cell a label/value line. The label comes
+         from data-label, stamped from the table's own <thead> by
+         applyResponsiveTableLabels(), so this needs no per-table markup. */
+      .table-container { overflow-x: visible; }
+      .table-container table,
+      .table-container tbody,
+      .table-container tr,
+      .table-container td { display: block; width: 100%; }
+
+      /* Headers are redundant once every cell carries its own label — and
+         clip-path rather than display:none keeps them for screen readers. */
+      .table-container thead {
+        position: absolute;
+        width: 1px; height: 1px;
+        overflow: hidden;
+        clip-path: inset(50%);
+        white-space: nowrap;
+      }
+
+      .table-container tr {
+        background: var(--table-header-bg);
+        border: 1px solid var(--glass-border);
+        border-radius: 10px;
+        padding: 0.35rem 0.75rem;
+        margin-bottom: 0.75rem;
+      }
+      .table-container tr:last-child { margin-bottom: 0; }
+
+      .table-container td {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: 1rem;
+        text-align: right;
+        padding: 0.4rem 0;
+        border: none;
+        border-bottom: 1px solid var(--glass-border);
+      }
+      .table-container td:last-child { border-bottom: none; }
+
+      .table-container td::before {
+        content: attr(data-label);
+        flex: 0 0 auto;
+        text-align: left;
+        font-family: var(--font-mono);
+        font-size: 0.65rem;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--bone-dim);
+      }
+      /* Empty-state and total rows span every column and have no single label. */
+      .table-container td[colspan]::before { content: none; }
+      .table-container td[colspan] { display: block; text-align: center; }
+
+      /* The row's own actions sit together on the last line. */
+      .table-container td .actions-cell { justify-content: flex-end; }
+
+      /* Nothing to fade when the table no longer scrolls sideways. */
+      .table-container.is-scrollable {
+        -webkit-mask-image: none;
+        mask-image: none;
+      }
 
       /* Invisible, but still occupying ~108px of the 390px nav bar. */
       .user-profile { display: none !important; }
@@ -939,7 +1040,13 @@
       display: flex;
       align-items: center;
       gap: 0.5rem;
+      /* A flex item's default min-width is auto, which refuses to shrink below
+         its content — so the label would overflow rather than ellipsise. These
+         two are what let it take the room it has and no more. */
+      min-width: 0;
+      flex: 1;
     }
+    .legend-dot { flex: 0 0 auto; }
     
     .legend-dot {
       width: 8px;
@@ -1813,8 +1920,19 @@
           links are signed and short-lived.
         </p>
 
-        <div class="glass-card" style="padding: 1.5rem; margin-bottom: 1.5rem;" id="quotationFormCard">
-          <h3 id="quotationFormTitle" style="font-family: var(--font-display); font-size: 1.05rem; margin: 0 0 1rem;">New quotation</h3>
+        <div class="section-header" style="margin-bottom: 1.5rem;">
+          <button class="btn-primary" style="width: auto; padding: 0.6rem 1.4rem;"
+                  onclick="openQuotationForm()">+ New Quotation</button>
+        </div>
+
+        <!-- Behind a button, like every other create flow. Left open, this form
+             was ~500px tall and pushed the quotation list below the fold. -->
+        <div class="modal-backdrop" id="quotationModal">
+          <div class="custom-modal" style="max-width: 720px;">
+            <div class="modal-header">
+              <h3 class="modal-title" id="quotationFormTitle">New quotation</h3>
+              <button class="modal-close-btn" onclick="closeModal('quotationModal')" aria-label="Close">&times;</button>
+            </div>
           <form id="quotationForm" onsubmit="saveQuotation(event)">
             <input type="hidden" id="quoteId" />
             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1rem;">
@@ -1839,16 +1957,11 @@
                 <input id="quoteValidUntil" type="date" class="form-control" />
               </div>
               <div>
-                <label class="form-label" for="quoteSubtotal">Subtotal</label>
-                <input id="quoteSubtotal" type="number" step="0.01" class="form-control" value="0" />
-              </div>
-              <div>
-                <label class="form-label" for="quoteSst">SST</label>
-                <input id="quoteSst" type="number" step="0.01" class="form-control" value="0" />
-              </div>
-              <div>
-                <label class="form-label" for="quoteTotal">Total (MYR)</label>
-                <input id="quoteTotal" type="number" step="0.01" class="form-control" value="0" required />
+                <label class="form-label" for="quoteTotal">Amount (MYR)</label>
+                <input id="quoteTotal" type="number" step="0.01" min="0" class="form-control" value="0" required />
+                <p style="font-size: 0.72rem; color: var(--bone-dim); margin-top: 0.3rem; line-height: 1.45;">
+                  What you are charging the client, in full. No tax is added.
+                </p>
               </div>
               <div>
                 <label class="form-label" for="quoteStatus">Status</label>
@@ -1866,13 +1979,13 @@
               <label class="form-label" for="quoteNotes">Notes</label>
               <input id="quoteNotes" class="form-control" />
             </div>
-            <div style="display: flex; gap: 0.75rem; align-items: center; margin-top: 1rem;">
-              <button type="submit" class="btn-primary" style="width: auto; padding: 0.6rem 1.5rem; margin: 0;">Save quotation</button>
-              <button type="button" id="quoteCancelEdit" class="btn-outline"
-                      style="width: auto; padding: 0.6rem 1.2rem; margin: 0; display: none;"
-                      onclick="openQuotationForm()">Cancel edit</button>
+            <div class="modal-footer">
+              <button type="button" class="btn-outline" style="margin-top: 0;"
+                      onclick="closeModal('quotationModal')">Cancel</button>
+              <button type="submit" class="btn-primary">Save quotation</button>
             </div>
           </form>
+          </div>
         </div>
 
         <div class="glass-card table-container">
@@ -1880,8 +1993,8 @@
             <thead>
               <tr>
                 <th>Quote No.</th><th>Client</th><th>Project</th>
-                <th>Date</th><th>Valid Until</th><th>Subtotal</th><th>SST</th>
-                <th>Total</th><th>Status</th><th>Actions</th>
+                <th>Date</th><th>Valid Until</th>
+                <th>Amount</th><th>Status</th><th>Actions</th>
               </tr>
             </thead>
             <tbody id="quotationsTableBody"></tbody>
@@ -2069,7 +2182,7 @@
               <tr>
                 <th>Partner</th>
                 <th>Share %</th>
-                <th title="Their percentage of the pool: collected, less SST, less company expenses">Share of Profit</th>
+                <th title="Their percentage of the pool: collected, less company expenses">Share of Profit</th>
                 <th title="Bought for themselves on the company card. Comes off their share alone — the other partner is unaffected.">Spent on Self</th>
                 <th title="Cash taken out of the account">Withdrawn</th>
                 <th style="color: var(--accent);" title="Share − spent on self − withdrawn. What is still theirs to take.">Balance</th>
@@ -2192,13 +2305,9 @@
                 <div>
                   <label class="form-label" for="setTaxRate">Default SST rate (%)</label>
                   <input type="number" id="setTaxRate" class="form-control" min="0" max="100" step="0.1" required />
-                  <!-- Honest about its reach: no figure anywhere derives from
-                       this. SST is taken from each quotation's own sst_amount,
-                       so a project with no accepted quote reserves nothing
-                       regardless of what is set here. -->
                   <p style="font-size: 0.72rem; color: var(--bone-dim); margin-top: 0.35rem; line-height: 1.5;">
-                    Reference only. The SST actually reserved comes from each
-                    quotation's own SST amount, not from this figure.
+                    Not used anywhere. The studio charges no SST, so quotations
+                    and partner balances ignore this entirely.
                   </p>
                 </div>
                 <div>
@@ -2708,8 +2817,8 @@
       personalSpend: {}, // partner -> own purchases on the company card, off their share
       distributablePool: 0,
       cashInAccount: 0,
-      sstReserved: 0,   // SST collected and owed onward — in the account, not income
-      distributable: 0, // cashInAccount minus sstReserved
+      sstReserved: 0,   // permanently 0 — the studio does not charge SST
+      distributable: 0, // equals cashInAccount
       reconciled: true
     };
     let categoryChartInstance = null;
@@ -3354,7 +3463,7 @@ function getProjectImageUrl(p) {
        Company spending shrinks the pot before it is divided. Personal spending
        does not touch the pot — it is deducted from the buyer's slice of it:
 
-           pool       = collected - SST - companyExpenses
+           pool       = collected - companyExpenses
            share(P)   = pct(P) x pool
            balance(P) = share(P) - personalSpend(P) - withdrawn(P)
 
@@ -3381,7 +3490,7 @@ function getProjectImageUrl(p) {
        everything goes on company money, so nothing is ever owed back. The term
        inflated the buyer's balance by the full amount they had spent.
 
-       `netProfit` below is `collected - SST - expenses` INCLUDING personal ones,
+       `netProfit` below is `collected - expenses` INCLUDING personal ones,
        and is a REPORTING figure only — never what shares derive from. Do not
        wire it into share().
 
@@ -3391,7 +3500,7 @@ function getProjectImageUrl(p) {
        anything owed to the tax authority:
 
            balance(A) + balance(B)
-             === collected - SST - all expenses - total withdrawn
+             === collected - all expenses - total withdrawn
 
        (companyExpenses reaches it through the pool; personalSpend through the
        per-partner deduction. Both are already netted off.)
@@ -3518,53 +3627,21 @@ function getProjectImageUrl(p) {
         if (who) withdrawn[who] += amt;
       });
 
-      // SST collected on behalf of the tax authority is NOT income. It sits in
-      // the account and is owed onward, so splitting it 50/50 would let both
-      // partners withdraw money they have to hand over later.
+      // NO SST. The studio does not charge it — money collected on a project
+      // belongs to the partners in full. An earlier model held a portion back
+      // for a tax authority that never bills them, which simply understated
+      // both balances. `sstReserved` is kept as a permanent 0 so the identity
+      // below still reads as a subtraction and nothing downstream breaks.
       //
-      // Quotations are the only place the tax is recorded, so the reserve is
-      // built from ACCEPTED ones and capped at the tax those quotes actually
-      // charge. Collected money is matched against the accepted total, so a
-      // half-paid project reserves half its SST rather than all of it.
-      //
-      // Three bugs this replaced, all of which took money off both partners:
-      //   * the old code did `find()` over ALL quotations ignoring status, so a
-      //     DECLINED or Draft quote could set the reserve — RM740 withheld on a
-      //     project whose accepted quote charged no tax at all
-      //   * it turned one quote's sst/total into a RATE and applied it to every
-      //     ringgit collected, including billed add-ons that quote never
-      //     covered, over-reserving on each one
-      //   * with two accepted quotes it used whichever sorted first and applied
-      //     that single rate to the combined collection — exactly double when
-      //     only one of them carried SST
-      //
-      // No accepted quote means no evidence any tax is owed, so the reserve is
-      // 0 rather than a guess from a rejected document.
-      let sstReserved = 0;
-      Object.keys(byProject).forEach(pid => {
-        const t = byProject[pid];
-        const accepted = (t.quotations || []).filter(x => String(x.status) === 'Accepted');
-        if (!accepted.length) return;
-
-        const sstDue = accepted.reduce((s, q) => s + (parseFloat(q.sst_amount) || 0), 0);
-        if (sstDue <= 0) return;
-
-        const quotedTotal = accepted.reduce((s, q) => s + (parseFloat(q.total) || 0), 0);
-        // Cap at 1: collecting more than was quoted (an add-on billed on top)
-        // does not create extra tax liability on the quoted work.
-        const collectedFraction = quotedTotal > 0
-          ? Math.min(1, (t.collected || 0) / quotedTotal)
-          : 0;
-        sstReserved += sstDue * collectedFraction;
-      });
+      const sstReserved = 0;
 
       // Company profitability, for REPORTING only — includes personal spending,
       // which is why it is NOT what the shares derive from. See the header.
-      const netProfit = collected - sstReserved - expenses;
+      const netProfit = collected - expenses;
 
       // The pot being divided. Company expenses come off it, because both
       // partners carry those. Personal spending does not appear at all.
-      const distributablePool = collected - sstReserved - companyExpenses;
+      const distributablePool = collected - companyExpenses;
 
       const share = {};
       const balance = {};
@@ -3584,9 +3661,8 @@ function getProjectImageUrl(p) {
       // by the full amount ever spent.
       const cashInAccount = collected - expenses - withdrawnTotal;
       const balanceSum = PARTNERS.reduce((s, p) => s + balance[p], 0);
-      // Cash physically present, minus what is earmarked for SST. This is what
-      // is actually available to withdraw.
-      const distributable = cashInAccount - sstReserved;
+      // Nothing is earmarked, so every ringgit in the account is distributable.
+      const distributable = cashInAccount;
 
       fin = {
         byProject, collected, scheduled, outstanding, outstandingOwed, overpaidTotal,
@@ -3602,11 +3678,11 @@ function getProjectImageUrl(p) {
         //
         // Compare in cents; floats will not land on exact equality.
         //
-        // Against `distributable`, not `cashInAccount`, because SST sits in the
-        // account without belonging to either partner:
+        // Against `distributable`, which now equals cashInAccount — nothing is
+        // held back:
         //   Σbalance = pool − Σpersonal − Σwithdrawn
-        //            = (collected − sst − companyExpenses) − personal − withdrawn
-        //            = collected − sst − allExpenses − withdrawn
+        //            = (collected − companyExpenses) − personal − withdrawn
+        //            = collected − allExpenses − withdrawn
         //            = distributable
         // Company spending reaches it through the pool, personal through the
         // per-partner deduction — so every ringgit that left the account is
@@ -3771,7 +3847,8 @@ function getProjectImageUrl(p) {
         renderServices();
         renderProjectShowcase();
 
-        // Column widths are only knowable once the rows exist.
+        // Both need the rows to exist first.
+        applyResponsiveTableLabels();
         markScrollableTables();
 
         // Every render above rebuilds the projects tbody from scratch, which
@@ -3993,7 +4070,71 @@ function getProjectImageUrl(p) {
 
     // RENDER OVERVIEW
     // Redesigned Dashboard Overview Redraw
+    /**
+     * Swap the whole Overview for a "get started" card when there is nothing
+     * to show.
+     *
+     * An empty database used to render five RM 0.00s, three 0% rings, a flat
+     * line chart and a radar chart drawing a solid pentagon labelled
+     * N/A N/A N/A N/A N/A. The problem is not that it looks unfinished — it is
+     * that it is INDISTINGUISHABLE from an RLS denial, which produces exactly
+     * the same screen (200 with zero rows, see the note in loadAllData). One of
+     * those states means "add a project", the other means "your access is
+     * broken", and the user could not tell them apart.
+     *
+     * Deliberately NOT shown when loadErrors is non-empty — that is the failure
+     * case, and its banner must not be replaced by a cheerful onboarding card.
+     */
+    function renderOverviewEmptyState() {
+      const layout = document.querySelector('.overview-layout');
+      if (!layout) return false;
+
+      const hasNothing = projectsData.length === 0
+        && expensesData.length === 0
+        && paymentsData.length === 0
+        && !loadErrors.length;
+
+      let card = document.getElementById('overviewEmptyState');
+      if (!hasNothing) {
+        if (card) card.remove();
+        layout.style.display = '';
+        return false;
+      }
+
+      layout.style.display = 'none';
+      if (card) return true;
+
+      card = document.createElement('div');
+      card.id = 'overviewEmptyState';
+      card.className = 'glass-card';
+      card.style.cssText = 'padding: 3rem 2rem; text-align: center; max-width: 560px; margin: 2rem auto;';
+      card.innerHTML = `
+        <div style="font-size: 2rem; margin-bottom: 0.75rem;" aria-hidden="true">&#128203;</div>
+        <h2 style="font-family: var(--font-display); font-size: 1.35rem; font-weight: 500; margin-bottom: 0.6rem;">
+          Nothing tracked yet
+        </h2>
+        <p style="color: var(--bone-dim); font-size: 0.9rem; line-height: 1.6; margin-bottom: 1.5rem;">
+          Add your first project and this page fills in on its own &mdash; value,
+          what has been collected, what is still owed, and how it splits between
+          the two of you.
+        </p>
+        <button class="btn-primary" style="width: auto; padding: 0.7rem 1.6rem;"
+                onclick="switchTab('projects'); openProjectModal();">
+          Add your first project
+        </button>
+        <p style="color: var(--bone-dim); font-size: 0.75rem; margin-top: 1.25rem; line-height: 1.5;">
+          Seeing this when you know there is data? That points at a permissions
+          problem rather than an empty database &mdash; check you are signed in as
+          an admin.
+        </p>`;
+      layout.parentNode.insertBefore(card, layout);
+      return true;
+    }
+
     function renderOverview() {
+      // Bail before drawing empty axes and an N/A pentagon.
+      if (renderOverviewEmptyState()) return;
+
       let totalProjectValue = 0;
       let totalCollected = 0;
       let totalExpenses = 0;
@@ -4116,10 +4257,25 @@ function getProjectImageUrl(p) {
         categories[cat] = (categories[cat] || 0) + (parseFloat(e.amount) || 0);
       });
 
-      const labels = Object.keys(categories);
-      const data = Object.values(categories);
+      /* Top 6 by value, everything else rolled into "Other".
+         There are only 7 colours, and the categories list runs to 19 — so with
+         11 in play the palette wrapped and four legend rows shared a colour
+         with a ring segment they had nothing to do with. Colour is the ONLY
+         thing tying a legend row to its slice, so that made the chart
+         misleading rather than merely crowded.
+         Capping at 6 also happens to be better information design: a donut of
+         19 near-identical slivers answers no question anyone actually has. */
+      const CAT_LIMIT = 6;
+      const ranked = Object.entries(categories).sort((a, b) => b[1] - a[1]);
+      const head = ranked.slice(0, CAT_LIMIT);
+      const tail = ranked.slice(CAT_LIMIT);
+      const tailTotal = tail.reduce((s, [, v]) => s + v, 0);
 
-      // Distinct premium colors matching the dark/neon theme
+      const labels = head.map(([k]) => k).concat(
+        tail.length ? [`Other (${tail.length} categor${tail.length === 1 ? 'y' : 'ies'})`] : []);
+      const data = head.map(([, v]) => v).concat(tail.length ? [tailTotal] : []);
+
+      // 7 entries for at most 7 slices — the palette can no longer wrap.
       const chartColors = [
         'rgba(56, 224, 255, 0.8)',   // Cyan
         'rgba(244, 63, 94, 0.8)',    // Rose
@@ -4127,7 +4283,7 @@ function getProjectImageUrl(p) {
         'rgba(251, 191, 36, 0.8)',   // Amber
         'rgba(74, 222, 128, 0.8)',   // Emerald Green
         'rgba(56, 130, 224, 0.8)',   // Blue
-        'rgba(20, 184, 166, 0.8)'    // Teal
+        'rgba(148, 163, 184, 0.8)'   // Slate — reads as "the rest", for Other
       ];
 
       const legendEl = document.getElementById('donutLegend');
@@ -4141,7 +4297,11 @@ function getProjectImageUrl(p) {
             <div class="legend-item">
               <div class="legend-dot-wrapper">
                 <span class="legend-dot" style="background-color: ${color};"></span>
-                <span style="max-width: 110px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${esc(label)}</span>
+                <!-- No max-width: 110px truncated 6 of 11 labels even on a
+                     ~760px card. Let flexbox decide, and only ellipsise when
+                     the row genuinely runs out of room. -->
+                <span style="min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;"
+                      title="${esc(label)}">${esc(label)}</span>
               </div>
               <span>${percent}%</span>
             </div>
@@ -4263,12 +4423,7 @@ function getProjectImageUrl(p) {
               hidden: currentLineChartFilter === 'revenue'
             },
             {
-              // NOT "Net Profit": this is revenue minus expenses per month, with
-              // no SST deducted, so it does not match the Net Profit KPI (which
-              // is collected − SST − expenses). SST is recorded per project, not
-              // per month, so it cannot honestly be apportioned into these
-              // buckets — the label says what the number actually is instead.
-              label: 'Margin (before SST)',
+              label: 'Net Profit',
               data: displayNet,
               borderColor: 'rgba(167, 139, 250, 1)',
               backgroundColor: 'rgba(167, 139, 250, 0.05)',
@@ -5464,7 +5619,7 @@ function getProjectImageUrl(p) {
       if (!tbody) return;
 
       tbody.innerHTML = quotationsData.length ? '' :
-        `<tr><td colspan="10" style="text-align:center;color:var(--bone-dim);padding:2rem;">
+        `<tr><td colspan="8" style="text-align:center;color:var(--bone-dim);padding:2rem;">
           No quotations yet.</td></tr>`;
 
       const statusColour = { Draft: 'var(--bone-dim)', Sent: 'var(--warn)', Accepted: 'var(--pos)', Declined: 'var(--neg)' };
@@ -5487,8 +5642,6 @@ function getProjectImageUrl(p) {
             ${q.valid_until ? formatDate(q.valid_until) : '<span style="opacity:0.4;">&mdash;</span>'}
             ${expired ? ' <strong>expired</strong>' : ''}
           </td>
-          <td style="white-space:nowrap;">${q.subtotal ? formatMYR(q.subtotal) : '<span style="opacity:0.4;">&mdash;</span>'}</td>
-          <td style="white-space:nowrap;">${q.sst_amount ? formatMYR(q.sst_amount) : '<span style="opacity:0.4;">&mdash;</span>'}</td>
           <td style="white-space:nowrap;font-weight:500;">${formatMYR(q.total)}</td>
           <td>
             <select class="inline-select quote-status" data-id="${q.id}" style="color:${statusColour[q.status] || 'inherit'};">
@@ -5533,6 +5686,11 @@ function getProjectImageUrl(p) {
      * number could only be fixed by deleting and re-entering — which also
      * orphaned the uploaded document in the bucket.
      */
+    /* Subtotal and SST were removed from this form: the studio charges no tax,
+       so the amount quoted IS the amount collected. The columns still exist and
+       migration 04 constrains subtotal + sst_amount = total, so saveQuotation
+       writes subtotal = total and sst_amount = 0. */
+
     function openQuotationForm(id = null) {
       const form = document.getElementById('quotationForm');
       if (!form) return;
@@ -5541,7 +5699,6 @@ function getProjectImageUrl(p) {
       set('quoteId', '');
 
       const title = document.getElementById('quotationFormTitle');
-      const cancel = document.getElementById('quoteCancelEdit');
 
       if (id) {
         const q = quotationsData.find(x => x.id === id);
@@ -5552,22 +5709,17 @@ function getProjectImageUrl(p) {
         set('quoteProject', q.project_id || '');
         set('quoteDate', q.quote_date || '');
         set('quoteValidUntil', q.valid_until || '');
-        set('quoteSubtotal', q.subtotal ?? 0);
-        set('quoteSst', q.sst_amount ?? 0);
         set('quoteTotal', q.total ?? 0);
         set('quoteStatus', q.status || 'Draft');
         set('quoteNotes', q.notes || '');
         if (title) {
           title.textContent = `Editing ${q.quote_number || 'quotation'}`;
-          // The form sits above the table, so an edit triggered from a row far
-          // down the page would otherwise change nothing visible.
-          title.scrollIntoView({ behavior: prefersReducedMotion() ? 'auto' : 'smooth', block: 'center' });
         }
-        if (cancel) cancel.style.display = '';
-      } else {
-        if (title) title.textContent = 'New quotation';
-        if (cancel) cancel.style.display = 'none';
+      } else if (title) {
+        title.textContent = 'New quotation';
       }
+
+      openModal('quotationModal');
     }
 
     // Kept as an alias: the table's edit button reads better as "open the modal"
@@ -5591,8 +5743,11 @@ function getProjectImageUrl(p) {
         quote_number: document.getElementById('quoteNumber').value.trim() || null,
         quote_date: document.getElementById('quoteDate').value || null,
         valid_until: document.getElementById('quoteValidUntil').value || null,
-        subtotal: parseFloat(document.getElementById('quoteSubtotal').value) || 0,
-        sst_amount: parseFloat(document.getElementById('quoteSst').value) || 0,
+        // No tax is charged, so the whole amount is the subtotal. Written
+        // rather than left at 0 because migration 04 constrains
+        // subtotal + sst_amount = total.
+        subtotal: total,
+        sst_amount: 0,
         total,
         status: document.getElementById('quoteStatus').value,
         notes: document.getElementById('quoteNotes').value.trim() || null
@@ -5622,7 +5777,11 @@ function getProjectImageUrl(p) {
         if (error) throw error;
 
         showToast(id ? 'Quotation updated' : 'Quotation saved', 'success');
-        openQuotationForm();          // reset back to "new", clears the edit state
+        // Close rather than re-open: openQuotationForm() would reset the fields
+        // AND immediately show the modal again, which reads as a failed save.
+        f.reset();
+        document.getElementById('quoteId').value = '';
+        closeModal('quotationModal');
         await loadAllData();
       } catch (err) {
         showToast('Failed: ' + err.message, 'error');
@@ -5792,18 +5951,14 @@ function getProjectImageUrl(p) {
       // reporting numbers that don't add up.
       const recEl = document.getElementById('partnerReconcile');
       if (recEl) {
-        // SST is in the account but is not the partners' money, so the balances
-        // are compared against what is actually distributable.
-        const sstNote = sstReserved > 0.01
-          ? ` &minus; SST held for the tax authority ${formatMYR(sstReserved)}`
-          : '';
+
         if (reconciled) {
           recEl.innerHTML =
             `<span style="color: var(--pos);">&#10003; Balanced</span> ` +
             `<span style="color: var(--bone-dim);">&mdash; partner balances (${formatMYR(sumBal)}) ` +
             `match the cash in the account (collected ${formatMYR(collected)} ` +
             `&minus; expenses ${formatMYR(expenses)} ` +
-            `&minus; withdrawn ${formatMYR(withdrawnTotal)}${sstNote} = ${formatMYR(distributable)}).</span>`;
+            `&minus; withdrawn ${formatMYR(withdrawnTotal)} = ${formatMYR(distributable)}).</span>`;
           recEl.style.borderColor = 'rgba(74, 222, 128, 0.3)';
         } else {
           const reasons = [];
@@ -6006,12 +6161,7 @@ function getProjectImageUrl(p) {
               borderWidth: 1
             },
             {
-              // NOT "Net Profit": this is revenue minus expenses per month, with
-              // no SST deducted, so it does not match the Net Profit KPI (which
-              // is collected − SST − expenses). SST is recorded per project, not
-              // per month, so it cannot honestly be apportioned into these
-              // buckets — the label says what the number actually is instead.
-              label: 'Margin (before SST)',
+              label: 'Net Profit',
               data: netData.length > 0 ? netData : [0],
               type: 'line',
               borderColor: 'rgba(56, 224, 255, 0.85)',
@@ -6781,6 +6931,33 @@ function getProjectImageUrl(p) {
      * A class rather than an unconditional style, so tables that fit are not
      * given a pointlessly faded edge.
      */
+    /**
+     * Stamp each <td> with the text of its column header.
+     *
+     * Below 860px the CSS turns every row into a stacked card and prints these
+     * as the label beside each value. Doing it here, from the table's own
+     * <thead>, rather than hand-writing data-label into ~15 render functions:
+     * there is one implementation to get right, and a column added or reordered
+     * later cannot silently mislabel a row.
+     *
+     * Cells that span (empty states, the "Total" row) are skipped — they have
+     * no single column to name.
+     */
+    function applyResponsiveTableLabels(root = document) {
+      root.querySelectorAll('table').forEach(table => {
+        const heads = [...table.querySelectorAll('thead th')].map(th =>
+          (th.textContent || '').replace(/\s+/g, ' ').trim());
+        if (!heads.length) return;
+        table.querySelectorAll('tbody tr').forEach(tr => {
+          [...tr.children].forEach((cell, i) => {
+            if (cell.colSpan > 1) return;
+            const label = heads[i];
+            if (label) cell.setAttribute('data-label', label);
+          });
+        });
+      });
+    }
+
     function markScrollableTables() {
       document.querySelectorAll('.table-container').forEach(el => {
         // 2px tolerance: sub-pixel rounding otherwise flags tables that fit.
