@@ -292,6 +292,11 @@ path and signing on click, plus converting existing rows — a dashboard change,
 not a migration. The new `quotations` bucket is private from the start, having
 no legacy URLs.
 
+> **⚠️ SUPERSEDED.** This was done shortly after. `receipts` is now **private**:
+> migration 01 sets `public = false`, uploads store the object path, and
+> `openReceiptFile()` signs it for 60s. Verified against the live project. The
+> paragraph above is kept for the record — do not act on it.
+
 ### Restored the hero rotator, and fixed the homepage teaser cards rendering as raw links
 
 **Hero rotator is back.** The tail of the headline cycles through "modern
