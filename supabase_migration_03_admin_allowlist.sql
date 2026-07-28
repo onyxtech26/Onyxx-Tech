@@ -249,17 +249,36 @@ END $$;
 -- avatars + showcase are site assets and stay publicly readable.
 -- receipts + quotations are financial paperwork: admin-only, read through
 -- short-lived signed URLs from the dashboard.
-DROP POLICY IF EXISTS "Allow public read access to storage objects" ON storage.objects;
-DROP POLICY IF EXISTS "Public read of site asset buckets" ON storage.objects;
+-- Enumerate rather than name them, for the same reason the table loop above
+-- does. The first version of this file listed only the policies created by
+-- migrations 01 and 02 — and a policy named "Allow authenticated read access to
+-- receipts", created at some point through the dashboard UI, survived. Postgres
+-- OR-s permissive policies, so it silently granted every signed-in user SELECT
+-- on the receipts bucket, straight past is_admin(). Found only by reading the
+-- verify output after a real run.
+--
+-- Scoped to policies that mention one of OUR four buckets. storage.objects is
+-- shared, so dropping everything on it could take out something unrelated.
+DO $$
+DECLARE drops TEXT;
+BEGIN
+  SELECT string_agg(format('DROP POLICY IF EXISTS %I ON storage.objects;', policyname), ' ')
+    INTO drops
+    FROM pg_policies
+   WHERE schemaname = 'storage'
+     AND tablename = 'objects'
+     AND (coalesce(qual, '') || ' ' || coalesce(with_check, '')) ~
+         '(showcase|avatars|receipts|quotations)';
+  IF drops IS NOT NULL THEN
+    RAISE NOTICE 'dropping existing storage policies: %', drops;
+    EXECUTE drops;
+  END IF;
+END $$;
+
 CREATE POLICY "Public read of site asset buckets"
 ON storage.objects FOR SELECT
 USING ( bucket_id IN ('showcase', 'avatars') );
 
-DROP POLICY IF EXISTS "Allow auth upload access to storage objects" ON storage.objects;
-DROP POLICY IF EXISTS "Allow auth update access to storage objects" ON storage.objects;
-DROP POLICY IF EXISTS "Allow auth delete access to storage objects" ON storage.objects;
-DROP POLICY IF EXISTS "Allow authenticated access to quotation files" ON storage.objects;
-DROP POLICY IF EXISTS "Admin access to onyxx buckets" ON storage.objects;
 CREATE POLICY "Admin access to onyxx buckets"
 ON storage.objects FOR ALL
 TO authenticated
