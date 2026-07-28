@@ -55,13 +55,14 @@
 --     SELECT id, lower(email) FROM auth.users WHERE lower(email) = lower('you@example.com')
 --     ON CONFLICT (user_id) DO NOTHING;
 --
--- BEFORE YOU DISABLE SIGNUP, READ THIS
+-- ADDING AN ACCOUNT LATER
 --
--- Turning signup off means the only way to create the second partner's account
--- is Dashboard > Authentication > Users > Add user. Choose "Create new user"
--- and set a password directly — do NOT choose "Send invitation", because the
--- invite email's link resolves against the project's Site URL, which is still
--- http://localhost:3000 and therefore dead. Fix the Site URL first (see below).
+-- Both partners share one login today, so this is not needed yet. When it is:
+-- turning signup off means the only way to create an account is Dashboard >
+-- Authentication > Users > Add user. Choose "Create new user" and set a
+-- password directly — do NOT choose "Send invitation", because the invite
+-- email's link resolves against the project's Site URL. Then add the address to
+-- section 2, raise `expected`, and re-run this file.
 -- ============================================================
 
 
@@ -120,17 +121,23 @@ GRANT EXECUTE ON FUNCTION is_admin() TO authenticated;
 -- ============================================================
 -- 2. SEED THE ALLOWLIST  <<< EDIT THE EMAIL LIST BEFORE RUNNING >>>
 -- ============================================================
--- Put both partners' login emails here. Anything not listed loses access the
+-- Every login email that should keep access. Anything not listed loses it the
 -- moment section 3 runs, INCLUDING YOU — so get this right first.
+--
+-- CURRENT SETUP (2026-07-28): ONE shared account, used by both partners. That
+-- is why only one address is listed and why `expected` below is 1.
+--
+-- When Rooben gets his own login, uncomment his line, raise `expected` to 2,
+-- and re-run this whole file — it is safe to re-run and repairs drift.
 --
 -- lower() on both sides because the comparison is otherwise case-sensitive: a
 -- stored 'Kunacosta0702@gmail.com' would match nothing, the INSERT would add
--- zero rows, and section 3 would then lock out both partners.
+-- zero rows, and section 3 would then lock everyone out.
 INSERT INTO admin_users (user_id, email)
 SELECT id, lower(email) FROM auth.users
 WHERE lower(email) IN (
     lower('kunacosta0702@gmail.com')
-    -- , lower('rooben@example.com')   -- <-- replace with Rooben's real login email
+    -- , lower('rooben@example.com')   -- <-- his real login email, when he has one
 )
 ON CONFLICT (user_id) DO NOTHING;
 
@@ -143,16 +150,18 @@ ON CONFLICT (user_id) DO NOTHING;
 -- a submitted script in a single transaction, the exception rolls back
 -- everything — section 3 never runs.
 --
--- Lower EXPECTED to 1 only if you are deliberately running with one partner.
+-- Set to 1 because both partners currently share a single account. Raise it to
+-- match the number of addresses listed above whenever that changes — the point
+-- of this guard is that it fails when the seed did not do what you expected.
 DO $$
 DECLARE
-  expected CONSTANT INT := 2;
+  expected CONSTANT INT := 1;
   n INT;
 BEGIN
   SELECT count(*) INTO n FROM admin_users;
   IF n < expected THEN
     RAISE EXCEPTION
-      'admin_users holds % row(s), expected %. Aborting: running section 3 now would lock out a partner. Check the email list above against: SELECT id, email FROM auth.users;',
+      'admin_users holds % row(s), expected %. Aborting: running section 3 now would lock you out. Check the email list above against: SELECT id, email FROM auth.users;',
       n, expected;
   END IF;
   RAISE NOTICE 'admin_users seeded with % row(s) — proceeding.', n;
