@@ -2,11 +2,26 @@
 
 > **Living board.** Read at the start of every session; updated when significant tasks finish. Newest state on top.
 
-**Last updated:** 2026-07-26
+**Last updated:** 2026-07-27
 
 ---
 
 ## 📍 Where I left off
+
+**Everything below through 2026-07-26 is now committed and pushed** (`da983fe`, `0d3d681`, `6607fbd` on `main`). A four-agent audit of the whole system followed, and its findings are fixed and deployed.
+
+**Closed a live exposure:** production was serving `/supabase_migration.sql` (full schema + every RLS policy), `/PROJECT_STATUS.md`, `/CLAUDE.md` and `/docs/CHANGELOG.md` as public static assets — no build step means every tracked file becomes a URL. Added `.vercelignore`; all four now return 404, verified against the live domain.
+
+**Three things worth remembering:**
+- `escArg()` was written backwards and provided *no* protection — HTML-escaping before JS-escaping means `'` becomes `&#39;`, which the browser decodes back to a live quote before the JS parser sees the attribute. Confirmed by execution, not by reading.
+- Writing U+2028/U+2029 *literally* into a regex is a SyntaxError — they are line terminators to the JS parser. Must be `\u` escapes.
+- The reconciliation invariant cannot detect several classes of corruption, because both sides move together. A cascade-deleted project, a duplicated expense, and a totally failed load all still read "Balanced". Anything relying on it for safety needs a separate check.
+
+**The blocking items in "Next / To do" need the account owner** — they are Supabase dashboard settings I cannot change.
+
+---
+
+## 📍 Previously
 **The site is multi-page again (7 pages), gridlines are gone, and the text animations work. Done and verified locally, NOT committed.**
 
 Working tree: `index.html`, `styles.css`, `common.js`, `sitemap.xml` modified; `services.html`, `why.html`, `work.html`, `process.html`, `founders.html`, `contact.html` added; this board, `CLAUDE.md` and `docs/CHANGELOG.md` updated. Yesterday's splash rebuild is also still uncommitted and rides along.
@@ -62,12 +77,20 @@ Verified in Chrome via Playwright: 7 pages × dark/light with zero errors, 28 pa
 - [x] **`supabase_migration_02_financials.sql` applied to production** — financial data cleared for re-entry, three new tables created, `partner_withdrawals` + `system_settings` closed to anon, old payment columns dropped (2026-07-26)
 
 ### ⏭️ Next / To do
+
+**🔴 BLOCKING, and only the account owner can do these (2026-07-27):**
+1. **Turn OFF public signup** — Authentication → Sign In / Providers → Email → "Allow new users to sign up". It is currently ON (`"disable_signup": false`), and every RLS policy trusts any `authenticated` user, so anyone can self-register into full read/write on all financial data.
+2. **Set Site URL** to `https://onyxx-tech.vercel.app` (currently `http://localhost:3000`, so every recovery/invite link is dead) and add `https://onyxx-tech.vercel.app/**` to Additional Redirect URLs. Do this BEFORE step 1, or you cannot onboard Rooben.
+3. **Run `supabase_migration_03_admin_allowlist.sql`** — but first put Rooben's real login email in section 2. It aborts rather than locking anyone out, but it can only protect you if the list is right. **03 must always be the last migration run**: re-running 01 or 02 afterwards silently re-grants access, because Postgres OR-s permissive policies.
+4. **Create Rooben's account** via Authentication → Users → Add user → **"Create new user"** with a password. Do NOT use "Send invitation" until step 2 is done.
+
+**Other:**
 - **Re-enter the financial data** in the admin tool — 3 projects and 10 expenses were intentionally cleared so they could be re-keyed against the new model. Backups were exported to a local text file before the wipe.
 - **Verify the accounting against real numbers** once a project with installments and an expense or two are in: the Partners tab reconciliation row should read "Balanced".
-- **Receipts bucket is still public.** To close it: store the object path in `expenses.invoice_link` instead of the public URL, read via `createSignedUrl` (copy `openQuotationFile()`), convert existing rows, then flip the bucket. Not urgent, but it is financial paperwork on a guessable URL.
+- **No password-reset flow exists** in the app at all. Needs `resetPasswordForEmail` on the login page plus an `admin-reset.html` handling the `PASSWORD_RECOVERY` event. Note supabase-js defaults `detectSessionInUrl: true`, so a recovery link landing on any page silently establishes a session — the reset page must be the only redirect target.
+- **Rebuild `LOCAL_IMAGE_MAP` whenever a showcase image is re-uploaded.** It is keyed on the upload filename, so it breaks silently — the page just gets slower. Verify with `GET /rest/v1/showcase_projects?select=title,image_url`.
 - **Optional: reconnect the Supabase connector** to the account owning `whjstsgtximknicppllt`, or transfer that project into the "Onyx Tech" org — the connector is authorised for that org but the project lives elsewhere, so migrations currently have to be pasted by hand.
-- **User review in a real browser**, then commit and push. Untracked files need adding: `services.html`, `why.html`, `work.html`, `process.html`, `founders.html`, `contact.html`
-- **Re-check the Supabase `services` count**: `/services` renders 5 cards but the copy on both the homepage teaser and the services page still says "Four disciplines." Either the table has an extra row or the heading needs updating.
+- Remaining lower-severity audit items not yet done: quotations are insert-only with four write-only columns; `financial_targets` is entirely dead UI; `project_addons.billed` is ignored so unbilled add-ons inflate what the client owes; "Outstanding" is clamped three different ways so Reports and Overview can disagree; no `onAuthStateChange` listener (signing out in one tab leaves another tab live); missing indexes on every ordering column; no `updated_at`/audit trail on the financial tables; the `depositPromptModal` and `openDepositPrompt` are dead code.
 
 ### 💤 Backlog / ideas
 - Dead CSS from the multi-page era (`.work-item`, `.work-list`, and the `.hero-rotator` remnants that were just removed) could be swept out of `styles.css`
