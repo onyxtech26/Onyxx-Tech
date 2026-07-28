@@ -1777,8 +1777,11 @@
       <section id="tab-expenses" class="tab-section">
         <div class="section-header">
           <h1 class="section-title">Expenses</h1>
-          <button class="btn-primary" onclick="openExpenseModal()">+ Add Expense</button>
         </div>
+        <p style="color: var(--bone-dim); font-size: 0.88rem; margin-top: -0.5rem; margin-bottom: 1.5rem;">
+          Company purchases are split 50/50 and the payer is reimbursed. Personal ones
+          stay with whoever bought them. Add from the section it belongs to.
+        </p>
 
         <!-- Search & Filter Controls -->
         <div class="search-filter-bar" style="display: flex; gap: 1rem; margin-bottom: 1.5rem; flex-wrap: wrap; align-items: center;">
@@ -1816,30 +1819,10 @@
           <button class="btn-outline" style="margin-top: 0; padding: 0.4rem 0.8rem; width: auto;" onclick="clearExpenseFilters()">Clear</button>
         </div>
 
-        <div class="glass-card table-container">
-          <table>
-            <thead>
-              <tr>
-                <th>Date</th>
-                <th>Item / Description</th>
-                <th>Category</th>
-                <th style="color: var(--warn);">Amount</th>
-                <th>Paid By</th>
-                <th>Recurring?</th>
-                <th>Recurring Type</th>
-                <th>Linked Project</th>
-                <th style="text-align: center;">Invoice/Receipt</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody id="expensesTableBody">
-              <!-- Dynamically populated -->
-            </tbody>
-            <tfoot id="expensesTableFooter" style="border-top: 2px solid var(--glass-border); font-family: var(--font-mono); font-size: 0.8rem;">
-              <!-- Dynamically populated totals -->
-            </tfoot>
-          </table>
-        </div>
+        <!-- One block for the company, then one per partner. Built by
+             renderExpenses() rather than hardcoded, so the partner blocks
+             follow the PARTNERS list instead of having to be duplicated. -->
+        <div id="expenseSections"></div>
       </section>
 
       <!-- CASH FLOW TAB -->
@@ -2271,14 +2254,11 @@
               </select>
             </div>
           </div>
-          <div class="form-group">
-            <label class="form-label" for="expenseScope">Who was this for?</label>
-            <select id="expenseScope" class="form-control" required>
-              <option value="company">The company — split 50/50</option>
-              <option value="personal">Just me — I carry it alone</option>
-            </select>
-            <p id="expenseScopeHint" style="font-size: 0.75rem; color: var(--bone-dim); margin-top: 0.4rem; line-height: 1.5;"></p>
-          </div>
+          <!-- No scope picker: the section you clicked Add in already answered
+               it, and this is set from there. Kept as a hidden field so
+               saveExpense reads it the same way regardless. -->
+          <input type="hidden" id="expenseScope" value="company" />
+          <p id="expenseScopeHint" style="font-size: 0.78rem; margin: 0 0 1rem; padding: 0.6rem 0.8rem; border-radius: 8px; line-height: 1.5;"></p>
           <div class="form-group" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; border-top: 1px dashed var(--glass-border); padding-top: 1rem;">
             <div>
               <label class="form-label" for="expenseRecurring">Recurring?</label>
@@ -4386,66 +4366,40 @@ function getProjectImageUrl(p) {
     }
 
     // RENDER EXPENSES
-    function renderExpenses() {
-      const tbody = document.getElementById('expensesTableBody');
-      const tfoot = document.getElementById('expensesTableFooter');
-      tbody.innerHTML = '';
-      tfoot.innerHTML = '';
+    /* ==================================================================
+       EXPENSES — one block for the company, one per partner
+       ==================================================================
+       The split is not cosmetic: a company purchase is shared 50/50 and the
+       payer is reimbursed, a personal one is carried by the buyer alone. Those
+       used to sit in one table separated only by a badge, which made it easy to
+       mis-set and hard to answer "what have I spent on myself this month".
 
-      const filterCat = document.getElementById('expenseFilterCategory')?.value || '';
-      const filterPaid = document.getElementById('expenseFilterPaidBy')?.value || '';
-      const filterRec = document.getElementById('expenseFilterRecurring')?.value || '';
+       Each block owns its Add button and pre-fills the type, so the section a
+       row lives in is the answer rather than a dropdown to remember. */
 
-      const filtered = expensesData.filter(e => {
-        if (filterCat && e.category !== filterCat) return false;
-        if (filterPaid) {
-          if (String(e.paid_by).trim().toLowerCase() !== filterPaid.trim().toLowerCase()) return false;
-        }
-        if (filterRec) {
-          const isRec = e.recurring === true;
-          if (filterRec === 'Yes' && !isRec) return false;
-          if (filterRec === 'No' && isRec) return false;
-        }
-        return true;
-      });
+    function expenseRowHTML(e) {
+      const amt = parseFloat(e.amount) || 0;
+      const proj = projectsData.find(p => p.id === e.linked_project_id);
+      const projName = proj ? proj.name : 'None';
+      // Routed through openReceiptFile rather than a bare href: the stored
+      // value is an object path now, which only resolves via a signed URL.
+      const invoiceLink = e.invoice_link
+        ? `<button type="button" onclick="openReceiptFile('${escArg(e.invoice_link)}')"
+                   style="background:none;border:none;padding:0;cursor:pointer;color: var(--accent); text-decoration: underline; font-weight: 500; font-size: 0.85rem;">View</button>`
+        : '<span style="color: var(--bone-faint); font-size: 0.85rem;">None</span>';
 
-      if (filtered.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="10" style="text-align: center; color: var(--bone-dim);">No expenses match the filters.</td></tr>`;
-        return;
-      }
-
-      let totalSpent = 0;
-
-      filtered.forEach(e => {
-        const amt = parseFloat(e.amount) || 0;
-        totalSpent += amt;
-
-        const proj = projectsData.find(p => p.id === e.linked_project_id);
-        const projName = proj ? proj.name : 'None';
-        // Routed through openReceiptFile rather than a bare href: the stored
-        // value is an object path now, which only resolves via a signed URL.
-        // The single quotes in the attribute are escaped because a filename can
-        // legally contain one and would otherwise break out of the handler.
-        const invoiceLink = e.invoice_link
-          ? `<button type="button" onclick="openReceiptFile('${escArg(e.invoice_link)}')"
-                     style="background:none;border:none;padding:0;cursor:pointer;color: var(--accent); text-decoration: underline; font-weight: 500; font-size: 0.85rem;">View</button>`
-          : '<span style="color: var(--bone-faint); font-size: 0.85rem;">None</span>';
-
-        const tr = document.createElement('tr');
-        tr.innerHTML = `
+      return `
+        <tr>
           <td style="white-space: nowrap;">${formatDate(e.date)}</td>
-          <td style="font-weight: 500;">${esc(e.item)}</td>
+          <td style="font-weight: 500;">
+            ${esc(e.item)}
+            ${e.notes ? `<div style="font-size:0.75rem;color:var(--bone-dim);margin-top:0.15rem;">${esc(e.notes)}</div>` : ''}
+          </td>
           <td style="white-space: nowrap;"><span class="status-badge" style="background: rgba(255,255,255,0.05); color: var(--bone); border-color: rgba(255,255,255,0.1);">${esc(e.category)}</span></td>
           <td style="color: var(--warn); font-weight: 500;">${formatMYR(amt)}</td>
-          <td style="white-space: nowrap;">
-            ${esc(e.paid_by)}
-            ${String(e.scope || 'company').toLowerCase() === 'personal'
-              ? `<span class="status-badge" title="Carried by ${esc(e.paid_by)} alone — not reimbursed, and the other partner is unaffected."
-                       style="margin-left:0.35rem;background:rgba(251,191,36,0.12);color:var(--warn);border-color:rgba(251,191,36,0.3);">personal</span>`
-              : ''}
-          </td>
+          <td style="white-space: nowrap;">${esc(e.paid_by)}</td>
           <td>${e.recurring ? 'Yes' : 'No'}</td>
-          <td>${e.recurring_type || 'None'}</td>
+          <td>${esc(e.recurring_type || 'None')}</td>
           <td>${esc(projName)}</td>
           <td style="text-align: center;">${invoiceLink}</td>
           <td>
@@ -4454,18 +4408,120 @@ function getProjectImageUrl(p) {
               <button class="action-btn delete-btn" title="Delete" onclick="deleteExpense('${escArg(e.id)}')"><svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg></button>
             </div>
           </td>
-        `;
-        tbody.appendChild(tr);
+        </tr>`;
+    }
+
+    /**
+     * @param {object} o
+     *   title     heading shown on the block
+     *   subtitle  one line explaining how this block's money behaves
+     *   rows      already-filtered expenses
+     *   addLabel  text for the block's Add button
+     *   onAdd     inline handler string, pre-filling scope and payer
+     *   accent    CSS colour for the subtotal
+     *   empty     message when the block has no rows
+     */
+    function expenseSectionHTML(o) {
+      const total = o.rows.reduce((s, e) => s + (parseFloat(e.amount) || 0), 0);
+      return `
+        <div class="glass-card" style="padding: 1.25rem 1.5rem; margin-bottom: 1.5rem;">
+          <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:1rem;flex-wrap:wrap;margin-bottom:0.9rem;">
+            <div>
+              <h3 style="font-family: var(--font-display); font-size: 1.05rem; margin: 0 0 0.2rem;">${esc(o.title)}</h3>
+              <p style="font-size: 0.78rem; color: var(--bone-dim); margin: 0; line-height: 1.5;">${o.subtitle}</p>
+            </div>
+            <div style="display:flex;align-items:center;gap:1rem;">
+              <div style="text-align:right;">
+                <div style="font-family: var(--font-mono); font-size: 0.68rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--bone-dim);">Subtotal</div>
+                <div style="font-size: 1.15rem; font-weight: 600; color: ${o.accent};">${formatMYR(total)}</div>
+              </div>
+              <button class="btn-primary" style="margin:0;width:auto;padding:0.5rem 1rem;white-space:nowrap;"
+                      onclick="${o.onAdd}">+ ${esc(o.addLabel)}</button>
+            </div>
+          </div>
+
+          <div class="table-container">
+            <table>
+              <thead>
+                <tr>
+                  <th>Date</th><th>Item / Description</th><th>Category</th>
+                  <th style="color: var(--warn);">Amount</th><th>Paid By</th>
+                  <th>Recurring?</th><th>Recurring Type</th><th>Linked Project</th>
+                  <th style="text-align: center;">Invoice/Receipt</th><th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${o.rows.length
+                  ? o.rows.map(expenseRowHTML).join('')
+                  : `<tr><td colspan="10" style="text-align:center;color:var(--bone-dim);padding:1.5rem 0;">${o.empty}</td></tr>`}
+              </tbody>
+            </table>
+          </div>
+        </div>`;
+    }
+
+    function renderExpenses() {
+      const host = document.getElementById('expenseSections');
+      if (!host) return;
+
+      const filterCat = document.getElementById('expenseFilterCategory')?.value || '';
+      const filterPaid = document.getElementById('expenseFilterPaidBy')?.value || '';
+      const filterRec = document.getElementById('expenseFilterRecurring')?.value || '';
+
+      const filtered = expensesData.filter(e => {
+        if (filterCat && e.category !== filterCat) return false;
+        if (filterPaid && String(e.paid_by).trim().toLowerCase() !== filterPaid.trim().toLowerCase()) return false;
+        if (filterRec) {
+          const isRec = e.recurring === true;
+          if (filterRec === 'Yes' && !isRec) return false;
+          if (filterRec === 'No' && isRec) return false;
+        }
+        return true;
       });
 
-      // Render totals footer
-      tfoot.innerHTML = `
-        <tr style="font-weight: bold; background: var(--table-header-bg);">
-          <td colspan="3">Total</td>
-          <td style="color: var(--warn);">${formatMYR(totalSpent)}</td>
-          <td colspan="6"></td>
-        </tr>
-      `;
+      const isPersonal = e => String(e.scope || 'company').trim().toLowerCase() === 'personal';
+      const byPartner = p => e => String(e.paid_by || '').trim().toLowerCase() === p.toLowerCase();
+
+      const blocks = [];
+
+      blocks.push(expenseSectionHTML({
+        title: 'Company Expenses',
+        subtitle: 'Bought for the studio. Split 50/50, and whoever paid is reimbursed from the account.',
+        rows: filtered.filter(e => !isPersonal(e)),
+        addLabel: 'Add company expense',
+        onAdd: "openExpenseModal(null, 'company')",
+        accent: 'var(--accent)',
+        empty: 'No company expenses yet.'
+      }));
+
+      PARTNERS.forEach(p => {
+        blocks.push(expenseSectionHTML({
+          title: `${p} — Personal`,
+          subtitle: `Bought by ${esc(p)} for themselves. Not reimbursed, and it does not touch the other partner.`,
+          rows: filtered.filter(e => isPersonal(e) && byPartner(p)(e)),
+          addLabel: `Add for ${p}`,
+          onAdd: `openExpenseModal(null, 'personal', '${escArg(p)}')`,
+          accent: 'var(--warn)',
+          empty: `Nothing recorded for ${esc(p)}.`
+        }));
+      });
+
+      // Personal rows whose paid_by matches no partner would otherwise vanish
+      // from every block — surfaced rather than silently dropped.
+      const orphans = filtered.filter(e => isPersonal(e) && !PARTNERS.some(p => byPartner(p)(e)));
+      if (orphans.length) {
+        blocks.push(expenseSectionHTML({
+          title: 'Unassigned personal expenses',
+          subtitle: 'Marked personal but the Paid By value matches neither partner, so these are charged to nobody. Edit each one to fix it.',
+          rows: orphans,
+          addLabel: 'Add company expense',
+          onAdd: "openExpenseModal(null, 'company')",
+          accent: 'var(--neg)',
+          empty: ''
+        }));
+      }
+
+      host.innerHTML = blocks.join('');
     }
 
     // RENDER CASH FLOW
@@ -6024,11 +6080,21 @@ function getProjectImageUrl(p) {
     }
 
     // EXPENSE CRUD ACTIONS
-    function openExpenseModal(id = null) {
+    /**
+     * @param {string|null} id            existing expense to edit
+     * @param {string} presetScope        'company' | 'personal' — from the block
+     *                                    whose Add button was pressed
+     * @param {string|null} presetPayer   for a personal block, who it belongs to
+     *
+     * On edit both presets are ignored and the row's own values win.
+     */
+    function openExpenseModal(id = null, presetScope = 'company', presetPayer = null) {
       const form = document.getElementById('expenseForm');
       form.reset();
 
       populateDropdowns();
+      document.getElementById('expenseScope').value = presetScope;
+      if (presetPayer) document.getElementById('expensePaidBy').value = presetPayer;
 
       if (id) {
         document.getElementById('expenseModalTitle').textContent = 'Edit Expense';
@@ -6059,43 +6125,66 @@ function getProjectImageUrl(p) {
           }
         }
       } else {
-        document.getElementById('expenseModalTitle').textContent = 'Add Expense';
+        const forWhom = presetScope === 'personal'
+          ? `Personal Expense${presetPayer ? ' — ' + presetPayer : ''}`
+          : 'Company Expense';
+        document.getElementById('expenseModalTitle').textContent = `Add ${forWhom}`;
         document.getElementById('expenseId').value = '';
         document.getElementById('expenseRecurring').value = 'No';
         document.getElementById('expenseRecurringType').value = 'None';
         document.getElementById('expenseLinkedProject').value = '';
-        const scopeEl = document.getElementById('expenseScope');
-        if (scopeEl) scopeEl.value = 'company';
+        document.getElementById('expenseDate').value = todayLocal();
       }
+
+      // A personal expense belongs to exactly one partner — the block it was
+      // added from. Locking the field stops it being changed here and silently
+      // moving the row to the other partner's section.
+      const paidBy = document.getElementById('expensePaidBy');
+      const scope = document.getElementById('expenseScope').value;
+      if (paidBy) {
+        paidBy.disabled = (scope === 'personal');
+        paidBy.title = scope === 'personal'
+          ? 'Fixed by the section this was added from. To move it, delete and re-add under the other partner.'
+          : '';
+      }
+
       updateExpenseScopeHint();
       openModal('expenseModal');
     }
 
     /**
-     * Spell out the consequence of the Company/Personal choice in the form.
+     * State in the form what this expense will actually do to the books.
      *
-     * The two options move money in opposite directions and the difference is
-     * not guessable from the labels alone, so the hint states it in ringgit
-     * using whatever amount has been typed.
+     * The scope is no longer a control the user sets here — it comes from the
+     * section they pressed Add in — so this is confirmation rather than a
+     * prompt. Quoting real ringgit as the amount is typed is the point: which
+     * partner ends up carrying the money is not obvious from a heading alone.
      */
     function updateExpenseScopeHint() {
       const hint = document.getElementById('expenseScopeHint');
       const scopeEl = document.getElementById('expenseScope');
       if (!hint || !scopeEl) return;
       const amt = parseFloat(document.getElementById('expenseAmount')?.value) || 0;
-      const who = document.getElementById('expensePaidBy')?.value || 'whoever paid';
-      const other = PARTNERS.find(p => p !== who) || 'the other partner';
+      const who = document.getElementById('expensePaidBy')?.value;
+      const other = PARTNERS.find(p => p !== who);
 
       if (scopeEl.value === 'personal') {
+        hint.style.background = 'rgba(251, 191, 36, 0.08)';
+        hint.style.border = '1px solid rgba(251, 191, 36, 0.3)';
+        hint.style.color = 'var(--bone)';
         hint.innerHTML = amt
-          ? `<strong>${esc(who)}</strong> carries the whole ${formatMYR(amt)}. `
-            + `${esc(other)}'s figures do not move, and it is not paid back.`
-          : 'Carried entirely by whoever bought it. Not reimbursed, and the other partner is unaffected.';
+          ? `<strong>Personal.</strong> ${esc(who || 'The buyer')} carries the whole ${formatMYR(amt)} — `
+            + `not reimbursed${other ? `, and ${esc(other)}'s figures do not move` : ''}.`
+          : `<strong>Personal.</strong> Carried by ${esc(who || 'the buyer')} alone. `
+            + `Not reimbursed, and the other partner is unaffected.`;
       } else {
+        hint.style.background = 'rgba(56, 224, 255, 0.07)';
+        hint.style.border = '1px solid var(--accent-faint)';
+        hint.style.color = 'var(--bone)';
         hint.innerHTML = amt
-          ? `Split ${formatMYR(amt / 2)} each. <strong>${esc(who)}</strong> is paid back the full `
-            + `${formatMYR(amt)} from the account, so the cost lands on both of you equally.`
-          : 'Cost shared 50/50, and whoever fronted it is reimbursed from the account.';
+          ? `<strong>Company.</strong> ${formatMYR(amt / 2)} each`
+            + `${who ? `, and ${esc(who)} is paid back the full ${formatMYR(amt)} from the account` : ''}.`
+          : `<strong>Company.</strong> Split 50/50, and whoever paid is reimbursed from the account.`;
       }
     }
 

@@ -5,6 +5,42 @@ Format each entry: what was done, why it mattered, and any key decisions.
 
 ---
 
+## 2026-07-28 (expenses tab restructured)
+
+### One block per spender, instead of a dropdown
+
+At the user's direction, replacing the single flat expenses table. The scope
+picker added earlier that day was the wrong shape: it made a decision with real
+money consequences into a field you had to remember to set, and it gave no way
+to answer "what have I spent on myself this month" without scanning badges.
+
+The tab is now three blocks — **Company Expenses**, then one per partner — each
+with its own table, its own subtotal, and its own Add button. **The section a
+row lives in IS the answer to who the purchase was for**, so the "Who was this
+for?" dropdown is gone; scope is now a hidden field set by whichever Add button
+was pressed.
+
+Adding from a partner block pre-fills that partner and **locks the Paid By
+field**, since a personal expense belongs to exactly one person and changing it
+in the form would silently move the row to the other partner's section. Adding
+from the company block leaves Paid By editable, because a company purchase still
+needs to record who fronted it.
+
+The confirmation line under the form now states the consequence in ringgit as
+the amount is typed — "RM 500.00 each, and Kunacosta is paid back the full
+RM 1,000.00" versus "Kunacosta carries the whole RM 300.00". It reads as
+confirmation rather than a prompt now that the choice is made elsewhere.
+
+Blocks are generated from the `PARTNERS` list rather than hardcoded, so a third
+partner needs no markup. Rows with a `scope` of personal whose `paid_by` matches
+no partner would otherwise disappear from every block, so they get their own
+red-accented "Unassigned" section rather than being silently dropped.
+
+Verified: legacy rows with no `scope` sort into Company; each Add button
+pre-fills and locks correctly; subtotals 1,080 / 300 / 120 against the test set.
+
+---
+
 ## 2026-07-28 (applied to production)
 
 ### Migrations 03, 04 and 05 run; the admin data is closed to the public
