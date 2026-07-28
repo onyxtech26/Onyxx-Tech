@@ -7,6 +7,7 @@ Allow: /
 Disallow: /admin
 Disallow: /admin-login
 Disallow: /admin-dashboard
+Disallow: /admin-reset
 
 # Must be absolute. A relative Sitemap: value is ignored by the protocol.
 Sitemap: https://onyxx-tech.vercel.app/sitemap.xml

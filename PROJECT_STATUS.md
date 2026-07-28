@@ -90,6 +90,9 @@ Verified in Chrome via Playwright: 7 pages × dark/light with zero errors, 28 pa
 - [x] **Nine money/reliability fixes** — cascade disclosure on project delete, submit guards on eight handlers, local-time dates with an editable `received_date`, SST held as `sstReserved` instead of split as profit, expense notes no longer wiped, load failures surfaced, detail panels no longer collapse, dashboard gated on `is_admin` (2026-07-27)
 - [x] **Expense rule changed at the user's direction** — expenses are now borne entirely by whoever paid, not reimbursed and split 50/50. See "Where I left off" for the before/after figures (2026-07-27)
 - [x] **Outstanding unified, add-on billing honoured, quotations editable, targets wired, session listener added** (2026-07-27)
+- [x] **Password reset flow built** — `admin-reset.html` + a forgot-password control on the login page; recovery session signed out immediately after the change and the token stripped from history (2026-07-27)
+- [x] **`supabase_migration_04_integrity.sql` written** — constraints, `updated_at` triggers, indexes. Not yet run (2026-07-27)
+- [x] **Modal focus trap, scroll lock, single-open and focus restore**; dead deposit-prompt code removed; unused payment/add-on columns wired up; `.inline-select` contrast and touch targets fixed (2026-07-27)
 
 ### 🔄 In progress
 - (nothing active)
@@ -108,20 +111,14 @@ Verified in Chrome via Playwright: 7 pages × dark/light with zero errors, 28 pa
 **Other:**
 - **Re-enter the financial data** in the admin tool — 3 projects and 10 expenses were intentionally cleared so they could be re-keyed against the new model. Backups were exported to a local text file before the wipe.
 - **Verify the accounting against real numbers** once a project with installments and an expense or two are in: the Partners tab reconciliation row should read "Balanced".
-- **No password-reset flow exists** in the app at all. Needs `resetPasswordForEmail` on the login page plus an `admin-reset.html` handling the `PASSWORD_RECOVERY` event. Note supabase-js defaults `detectSessionInUrl: true`, so a recovery link landing on any page silently establishes a session — the reset page must be the only redirect target.
+- **Add `admin-reset` to Supabase's Redirect URLs.** The reset flow is now built (`admin-reset.html`), but Supabase silently falls back to the Site URL unless `https://onyxx-tech.vercel.app/admin-reset` (or `/**`) is listed under Authentication → URL Configuration → Redirect URLs. It must be the **only** redirect target: supabase-js defaults `detectSessionInUrl: true`, so a recovery link landing anywhere else signs the user in with their old password still set.
+- **Run `supabase_migration_04_integrity.sql`** — constraints, `updated_at` triggers and indexes. Housekeeping only: no DROP, no DELETE, nothing that changes a reported figure. Run after 01 and 02; it touches no policies, so it is safe either side of 03.
 - **Rebuild `LOCAL_IMAGE_MAP` whenever a showcase image is re-uploaded.** It is keyed on the upload filename, so it breaks silently — the page just gets slower. Verify with `GET /rest/v1/showcase_projects?select=title,image_url`.
 - **Optional: reconnect the Supabase connector** to the account owning `whjstsgtximknicppllt`, or transfer that project into the "Onyx Tech" org — the connector is authorised for that org but the project lives elsewhere, so migrations currently have to be pasted by hand.
 - **Re-key the financial data under the new expense rule.** Anything entered before 2026-07-27 was recorded when expenses were reimbursed and split 50/50; the balances shown for it are now computed the other way. Worth re-checking rather than assuming the old figures carry over.
-- Remaining lower-severity audit items, none urgent:
-  - No indexes on the columns used for ordering (`projects.created_at`, `expenses.date`, …), and `expenses.linked_project_id` is an unindexed foreign key scanned on every project delete. Invisible at 3–10 rows.
-  - No `updated_at` / audit trail on `projects`, `expenses`, `partner_withdrawals`, `project_payments` — no way to answer "who changed this payment, and when".
-  - `depositPromptModal` + `openDepositPrompt` are dead code (zero callers; built for the `deposit_*`/`final_*` columns migration 02 dropped). The Escape and backdrop handlers still special-case it.
-  - `project_payments.method`/`.notes` and `project_addons.notes` are created but never used.
-  - `quotations` has no `UNIQUE` on `quote_number` and no `CHECK` that `subtotal + sst_amount = total`.
-  - `partner_withdrawals.partner` has no `CHECK` constraint, unlike `expenses.paid_by` — a typo'd name is read successfully and attributed to nobody.
-  - `.inline-select` arrow is a hardcoded grey data-URI, ~2.4:1 in light theme.
-  - No focus trap or scroll lock on the admin modals; two can be open at once.
-  - Touch targets under 44px at 390px (`.modal-close-btn` is 14×28).
+- The audit backlog is **cleared** — everything from the four-agent audit is now either done or in migration 04 awaiting a run. What is left below is genuinely optional.
+- `updated_at` now exists on the financial tables (migration 04) but nothing **displays** it. A "last changed" column on the Payments and Expenses tables would make it useful rather than merely present. There is still no record of *who* made a change — that needs an `updated_by` defaulting to `auth.uid()`.
+- Dead CSS from the multi-page era could be swept out of `styles.css`.
 
 ### 💤 Backlog / ideas
 - Dead CSS from the multi-page era (`.work-item`, `.work-list`, and the `.hero-rotator` remnants that were just removed) could be swept out of `styles.css`

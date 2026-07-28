@@ -266,6 +266,20 @@
       visibility: visible;
     }
 
+    /* Reveal-on-hover leaves this permanently invisible on a touch device,
+       where there is no hover — so the theme toggle simply could not be reached
+       on a phone. Keyboard focus needs the same escape hatch. */
+    @media (pointer: coarse) {
+      #themeToggleBtn {
+        opacity: 1;
+        visibility: visible;
+      }
+    }
+    #themeToggleBtn:focus-visible {
+      opacity: 1;
+      visibility: visible;
+    }
+
     .nav-item {
       display: flex;
       align-items: center;
@@ -1166,6 +1180,42 @@
       color: var(--bone-dim);
       font-size: 1.5rem;
       cursor: pointer;
+      /* The glyph alone measured 14x28 — well under a fingertip, and it is the
+         control you reach for in a hurry. The box grows, not the character. */
+      min-width: 44px;
+      min-height: 44px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 8px;
+      margin: -0.5rem -0.5rem -0.5rem 0;   /* keep the header's visual spacing */
+      transition: background 0.2s ease, color 0.2s ease;
+    }
+    .modal-close-btn:hover {
+      background: var(--nav-item-hover-bg);
+      color: var(--bone);
+    }
+    .modal-close-btn:focus-visible {
+      outline: 2px solid var(--accent);
+      outline-offset: 2px;
+    }
+
+    /* Row action buttons live in dense tables, so they stay compact on a mouse
+       but get a real target on touch, where there is no hover to aim with. */
+    @media (pointer: coarse) {
+      .action-btn {
+        min-width: 40px;
+        min-height: 40px;
+      }
+      .btn-primary,
+      .btn-outline,
+      #signOutBtn {
+        min-height: 44px;
+      }
+      #themeToggleBtn {
+        min-width: 44px;
+        min-height: 44px;
+      }
     }
     .modal-close-btn:hover {
       color: var(--accent);
@@ -1249,12 +1299,24 @@
       outline: none;
       cursor: pointer;
       transition: all 0.25s ease;
-      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%2399999a' stroke-width='1.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+      /* `appearance: none` removes the browser's own arrow, which means
+         `color-scheme` cannot help here the way it does for the date picker —
+         this chevron is ours to theme. It was hardcoded #99999a, about 2.4:1
+         on the light card, under the 3:1 floor for a UI glyph. Two data-URIs
+         rather than one, because an SVG in `background-image` cannot read a
+         CSS custom property. */
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%23d8d8d2' stroke-width='1.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
       background-repeat: no-repeat;
       background-position: right 0.5rem center;
       background-size: 10px 6px;
       white-space: nowrap;
       min-width: 70px;
+      /* 44px is the comfortable touch target; these sit in dense table rows, so
+         the height comes from padding on a min-height rather than a fixed one. */
+      min-height: 32px;
+    }
+    :root[data-theme="light"] .inline-select {
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%23515154' stroke-width='1.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
     }
     .inline-select:hover {
       border-color: var(--accent);
@@ -2154,33 +2216,6 @@
       </div>
     </div>
 
-    <!-- Deposit Amount Prompt Modal -->
-    <div class="modal-backdrop" id="depositPromptModal">
-      <div class="custom-modal" style="max-width: 400px;">
-        <div class="modal-header">
-          <h3 class="modal-title">Deposit Amount</h3>
-          <button class="modal-close-btn" onclick="closeDepositPrompt(false)">&times;</button>
-        </div>
-        <p style="font-size: 0.85rem; color: var(--bone-dim); margin-bottom: 1rem;">Enter the deposit amount received for this project.</p>
-        <div class="form-group">
-          <label class="form-label">Project Value</label>
-          <input type="text" class="form-control" id="depositPromptProjectValue" disabled style="opacity: 0.6;" />
-        </div>
-        <div class="form-group">
-          <label class="form-label">Deposit Amount (RM)</label>
-          <input type="number" step="0.01" min="0" class="form-control" id="depositPromptAmount" placeholder="e.g. 500.00" />
-        </div>
-        <div class="form-group">
-          <label class="form-label">Date Received</label>
-          <input type="date" class="form-control" id="depositPromptDate" />
-        </div>
-        <div class="modal-footer">
-          <button class="btn-outline" onclick="closeDepositPrompt(false)">Cancel</button>
-          <button class="btn-primary" onclick="closeDepositPrompt(true)">Confirm</button>
-        </div>
-      </div>
-    </div>
-
     <!-- Expense Modal -->
     <div class="modal-backdrop" id="expenseModal">
       <div class="custom-modal" style="max-width: 600px;">
@@ -3052,36 +3087,100 @@ function getProjectImageUrl(p) {
       }
     }
 
-    // Modal Control
+    /* ==================================================================
+       MODAL CONTROL
+       ==================================================================
+       Previously `openModal` only added `.active`. That left three problems:
+
+         * Tab walked straight out of the dialog into the page behind it, so a
+           keyboard user could be typing into a form they could no longer see.
+         * The background scrolled under the open modal (body overflow is auto
+           at <=860px), which on a phone loses the modal entirely.
+         * Nothing closed the others, so two modals could be open at once,
+           stacked at the same z-index with their blurs compounding, and one
+           Escape closed both.
+
+       Focus is also returned to whatever opened the modal — without that,
+       closing drops focus to <body> and the next Tab restarts from the top of
+       the page. */
+
+    let _lastFocusBeforeModal = null;
+
+    function focusableIn(el) {
+      return [...el.querySelectorAll(
+        'a[href], button:not([disabled]), input:not([disabled]):not([type="hidden"]),' +
+        'select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+      )].filter(n => n.offsetParent !== null);
+    }
+
     function openModal(modalId) {
-      document.getElementById(modalId).classList.add('active');
+      const modal = document.getElementById(modalId);
+      if (!modal) { console.warn(`openModal: #${modalId} does not exist`); return; }
+
+      // Only one at a time.
+      document.querySelectorAll('.modal-backdrop.active').forEach(m => {
+        if (m !== modal) m.classList.remove('active');
+      });
+
+      _lastFocusBeforeModal = document.activeElement;
+      modal.classList.add('active');
+      document.body.style.overflow = 'hidden';
+
+      // Let the open transition start before moving focus, or the browser
+      // scrolls the not-yet-positioned dialog into view.
+      setTimeout(() => {
+        const f = focusableIn(modal);
+        if (f.length) f[0].focus();
+      }, 50);
     }
 
     function closeModal(modalId) {
-      document.getElementById(modalId).classList.remove('active');
+      const modal = document.getElementById(modalId);
+      if (!modal) return;
+      modal.classList.remove('active');
+
+      if (!document.querySelector('.modal-backdrop.active')) {
+        document.body.style.overflow = '';
+      }
+      if (_lastFocusBeforeModal && document.contains(_lastFocusBeforeModal)) {
+        _lastFocusBeforeModal.focus();
+      }
+      _lastFocusBeforeModal = null;
     }
 
-    // Close any modal when clicking backdrop / outside
+    // Close on backdrop click. The check is `e.target === backdrop`, so a click
+    // inside the dialog does not bubble up and close it.
     document.addEventListener('click', function(e) {
       if (e.target && e.target.classList && e.target.classList.contains('modal-backdrop')) {
-        if (e.target.id === 'depositPromptModal') {
-          closeDepositPrompt(false);
-        } else {
-          closeModal(e.target.id);
-        }
+        closeModal(e.target.id);
       }
     });
 
-    // Close any modal when pressing Escape key
     document.addEventListener('keydown', function(e) {
+      const open = document.querySelector('.modal-backdrop.active');
+      if (!open) return;
+
       if (e.key === 'Escape') {
-        document.querySelectorAll('.modal-backdrop.active').forEach(modal => {
-          if (modal.id === 'depositPromptModal') {
-            closeDepositPrompt(false);
-          } else {
-            closeModal(modal.id);
-          }
-        });
+        closeModal(open.id);
+        return;
+      }
+
+      // Focus trap: wrap Tab around the dialog's own controls.
+      if (e.key === 'Tab') {
+        const f = focusableIn(open);
+        if (!f.length) return;
+        const first = f[0], last = f[f.length - 1];
+        if (e.shiftKey && document.activeElement === first) {
+          e.preventDefault();
+          last.focus();
+        } else if (!e.shiftKey && document.activeElement === last) {
+          e.preventDefault();
+          first.focus();
+        } else if (!open.contains(document.activeElement)) {
+          // Focus escaped some other way — pull it back.
+          e.preventDefault();
+          first.focus();
+        }
       }
     });
 
@@ -3647,35 +3746,25 @@ function getProjectImageUrl(p) {
       }
     }
 
-    // Deposit prompt state
-    let _depositPromptResolve = null;
-    let _depositPromptProjectId = null;
+    /* openDepositPrompt / closeDepositPrompt and the #depositPromptModal markup
+       were removed here. They had zero callers and existed for the fixed
+       deposit_amount / deposit_received_date columns that migration 02 dropped
+       when payments became an arbitrary schedule in project_payments. The
+       Escape and backdrop handlers used to special-case that modal id; those
+       branches went with it. */
 
-    function openDepositPrompt(projectId, projectValue, currentDeposit, currentDate) {
-      _depositPromptProjectId = projectId;
-      document.getElementById('depositPromptProjectValue').value = formatMYR(projectValue);
-      document.getElementById('depositPromptAmount').value = currentDeposit || '';
-      document.getElementById('depositPromptDate').value = currentDate || todayLocal();
-      document.getElementById('depositPromptModal').classList.add('active');
-      setTimeout(() => document.getElementById('depositPromptAmount').focus(), 200);
-      return new Promise(resolve => { _depositPromptResolve = resolve; });
-    }
-
-    function closeDepositPrompt(confirmed) {
-      document.getElementById('depositPromptModal').classList.remove('active');
-      if (_depositPromptResolve) {
-        if (confirmed) {
-          const amt = parseFloat(document.getElementById('depositPromptAmount').value) || 0;
-          const dt = document.getElementById('depositPromptDate').value || todayLocal();
-          _depositPromptResolve({ confirmed: true, amount: amt, date: dt });
-        } else {
-          _depositPromptResolve({ confirmed: false });
-        }
-        _depositPromptResolve = null;
-      }
-    }
-
+    /**
+     * @param {string} field  currently always 'status' — the only caller passes
+     *   that, and the body writes `status` unconditionally. Kept in the
+     *   signature rather than silently ignored, so a second caller passing
+     *   something else fails loudly instead of corrupting the status column.
+     */
     async function handleInlineProjectUpdate(projectId, field, value, selectEl) {
+      if (field !== 'status') {
+        console.error(`handleInlineProjectUpdate only handles 'status', got '${field}'`);
+        showToast('Internal error: unsupported field', 'error');
+        return;
+      }
       const p = projectsData.find(item => item.id === projectId);
       if (!p) { showToast('Project not found', 'error'); return; }
 
@@ -4613,8 +4702,12 @@ function getProjectImageUrl(p) {
             <td>
               <input class="inline-input pay-label" data-id="${pay.id}" value="${esc(pay.label)}"
                      style="background:transparent;border:1px solid transparent;color:inherit;font:inherit;padding:0.2rem 0.3rem;border-radius:4px;width:9rem;" />
+              ${pay.notes ? `<div style="font-size:0.75rem;color:var(--bone-dim);margin-top:0.15rem;">${esc(pay.notes)}</div>` : ''}
             </td>
-            <td style="white-space:nowrap;font-weight:500;">${formatMYR(pay.amount)}</td>
+            <td style="white-space:nowrap;font-weight:500;">
+              ${formatMYR(pay.amount)}
+              ${pay.method ? `<div style="font-size:0.72rem;color:var(--bone-dim);font-weight:400;">${esc(pay.method)}</div>` : ''}
+            </td>
             <td style="white-space:nowrap;color:${overdue ? 'var(--neg)' : 'inherit'};">
               ${pay.due_date ? formatDate(pay.due_date) : '<span style="opacity:0.4;">&mdash;</span>'}
               ${overdue ? ' <strong>overdue</strong>' : ''}
@@ -4647,7 +4740,10 @@ function getProjectImageUrl(p) {
 
       const addonRows = t.addons.length ? t.addons.map(a => `
           <tr>
-            <td>${esc(a.description)}</td>
+            <td>
+              ${esc(a.description)}
+              ${a.notes ? `<div style="font-size:0.75rem;color:var(--bone-dim);margin-top:0.15rem;">${esc(a.notes)}</div>` : ''}
+            </td>
             <td style="white-space:nowrap;font-weight:500;">${formatMYR(a.amount)}</td>
             <td style="white-space:nowrap;">${a.date ? formatDate(a.date) : '<span style="opacity:0.4;">&mdash;</span>'}</td>
             <td>
@@ -4701,6 +4797,15 @@ function getProjectImageUrl(p) {
           <input name="label" class="form-control" placeholder="Label (e.g. Installment 2)" style="width:12rem;" required />
           <input name="amount" class="form-control" type="number" step="0.01" min="0.01" placeholder="Amount" style="width:8rem;" required />
           <input name="due" class="form-control" type="date" style="width:10rem;" />
+          <select name="method" class="form-control" style="width:9rem;" title="How the client is paying">
+            <option value="">Method…</option>
+            <option>Bank transfer</option>
+            <option>Cash</option>
+            <option>Cheque</option>
+            <option>Card</option>
+            <option>Other</option>
+          </select>
+          <input name="notes" class="form-control" placeholder="Notes (optional)" style="width:12rem;" />
           <button type="submit" class="btn-primary" style="margin:0;width:auto;padding:0.5rem 1rem;">Add payment</button>
         </form>
 
@@ -4716,6 +4821,7 @@ function getProjectImageUrl(p) {
           <input name="description" class="form-control" placeholder="What was added" style="width:16rem;" required />
           <input name="amount" class="form-control" type="number" step="0.01" min="0" placeholder="Amount" style="width:8rem;" required />
           <input name="date" class="form-control" type="date" style="width:10rem;" />
+          <input name="notes" class="form-control" placeholder="Notes (optional)" style="width:12rem;" />
           <label style="display:inline-flex;align-items:center;gap:0.4rem;font-size:0.8rem;cursor:pointer;">
             <input type="checkbox" name="billed" /> Already billed
           </label>
@@ -4766,12 +4872,19 @@ function getProjectImageUrl(p) {
       const label = form.label.value.trim() || 'Installment';
       const amount = parseFloat(form.amount.value);
       const due = form.due.value || null;
+      const method = (form.method && form.method.value) || null;
+      const notes = (form.notes && form.notes.value.trim()) || null;
       if (!(amount > 0)) { showToast('Amount must be greater than zero', 'error'); return; }
 
-      const existing = projectFin(projectId).payments.length;
+      // max+1, not length: deleting a middle row and adding another would
+      // otherwise reuse an existing sort_order and leave the ordering to the
+      // due_date tiebreak.
+      const rows = projectFin(projectId).payments;
+      const nextOrder = rows.reduce((m, p) => Math.max(m, (p.sort_order ?? 0) + 1), 0);
       try {
         const { error } = await supabaseClient.from('project_payments').insert([{
-          project_id: projectId, label, amount, due_date: due, sort_order: existing
+          project_id: projectId, label, amount, due_date: due,
+          method, notes, sort_order: nextOrder
         }]);
         if (error) throw error;
         showToast('Payment added', 'success');
@@ -4892,11 +5005,12 @@ function getProjectImageUrl(p) {
       // Defaults to false: recording an add-on means it was agreed, not that it
       // has been invoiced. Only billed add-ons count toward what the client owes.
       const billed = !!(form.billed && form.billed.checked);
+      const notes = (form.notes && form.notes.value.trim()) || null;
       if (!description) { showToast('Describe what was added', 'error'); return; }
       if (!(amount >= 0)) { showToast('Amount must be a number', 'error'); return; }
       try {
         const { error } = await supabaseClient.from('project_addons').insert([{
-          project_id: projectId, description, amount, date, billed
+          project_id: projectId, description, amount, date, billed, notes
         }]);
         if (error) throw error;
         showToast('Add-on recorded', 'success');

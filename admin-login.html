@@ -311,14 +311,49 @@
       </div>
       
       <div id="errorMsg" class="error-message">Invalid login credentials.</div>
-      
+
       <button type="submit" class="btn" id="loginBtn">Authenticate</button>
     </form>
-    
+
+    <div id="resetNotice" class="reset-notice"></div>
+
+    <button type="button" id="forgotBtn" class="text-link">Forgot your password?</button>
+
     <a href="index.html" class="back-link">← Return to site</a>
   </div>
 
   <style>
+    .text-link {
+      display: block;
+      width: 100%;
+      margin-top: 1rem;
+      background: none;
+      border: none;
+      color: var(--bone-dim);
+      font-family: var(--font-mono, monospace);
+      font-size: 0.78rem;
+      letter-spacing: 0.04em;
+      cursor: pointer;
+      padding: 0.5rem;
+      transition: color 0.25s ease;
+    }
+    .text-link:hover { color: var(--accent); }
+    .text-link:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 4px; }
+    .text-link[disabled] { opacity: 0.5; cursor: default; }
+
+    .reset-notice {
+      display: none;
+      margin-top: 1rem;
+      padding: 0.75rem 0.9rem;
+      border-radius: 8px;
+      font-size: 0.8rem;
+      line-height: 1.5;
+      border: 1px solid var(--accent-dim, rgba(56,224,255,0.35));
+      background: rgba(56, 224, 255, 0.06);
+      color: var(--bone);
+    }
+    .reset-notice.show { display: block; }
+
     @keyframes pulseCyan {
       0% { transform: scale(1); box-shadow: 0 0 20px var(--accent-dim); }
       50% { transform: scale(1.05); box-shadow: 0 0 35px var(--accent-dim); }
@@ -405,14 +440,62 @@
     const errorMsg = document.getElementById('errorMsg');
     const successOverlay = document.getElementById('successOverlay');
 
-    // Check if already logged in
+    // Check if already logged in.
+    //
+    // A recovery link lands with the token in the URL FRAGMENT, and supabase-js
+    // defaults `detectSessionInUrl: true` — so if such a link ever resolves
+    // here, this would consume it and bounce the user into the dashboard with
+    // their old password still set, never letting them change it. Send them to
+    // the reset page instead. (admin-reset.html is the configured redirect
+    // target, so this is a backstop, not the normal path.)
     async function checkSession() {
-      const { data, error } = await supabaseClient.auth.getSession();
+      const hash = window.location.hash || '';
+      if (hash.includes('type=recovery') || hash.includes('error_code=')) {
+        window.location.replace('admin-reset.html' + hash);
+        return;
+      }
+      const { data } = await supabaseClient.auth.getSession();
       if (data.session) {
         window.location.href = 'admin-dashboard.html';
       }
     }
     checkSession();
+
+    /* ---- Forgot password ----
+       Deliberately reports the same message whether or not the address exists,
+       so this cannot be used to test which emails have accounts. */
+    const forgotBtn = document.getElementById('forgotBtn');
+    const resetNotice = document.getElementById('resetNotice');
+
+    forgotBtn.addEventListener('click', async () => {
+      const email = emailInput.value.trim();
+      if (!email) {
+        emailInput.focus();
+        resetNotice.textContent = 'Enter your email address above first, then click this again.';
+        resetNotice.classList.add('show');
+        return;
+      }
+
+      forgotBtn.disabled = true;
+      forgotBtn.textContent = 'Sending…';
+      resetNotice.classList.remove('show');
+
+      // Absolute URL, and it must be listed under Authentication > URL
+      // Configuration > Redirect URLs or Supabase silently falls back to the
+      // project's Site URL.
+      const redirectTo = new URL('admin-reset.html', window.location.href).href;
+      const { error } = await supabaseClient.auth.resetPasswordForEmail(email, { redirectTo });
+
+      if (error) console.error('resetPasswordForEmail:', error);
+
+      resetNotice.textContent =
+        `If an account exists for ${email}, a reset link is on its way. ` +
+        `It expires in about an hour. Check spam if it does not arrive.`;
+      resetNotice.classList.add('show');
+      forgotBtn.textContent = 'Forgot your password?';
+      // Left disabled: the message is the same either way, so a second click
+      // achieves nothing except another email.
+    });
 
     /* Button loading state — the same dotLottie animation the rest of the
        site uses, shrunk to sit inline in the button. `.spinner-inline` is

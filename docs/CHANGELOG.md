@@ -5,6 +5,84 @@ Format each entry: what was done, why it mattered, and any key decisions.
 
 ---
 
+## 2026-07-27 (night)
+
+### Password reset, migration 04, and the last of the audit backlog
+
+**There was no password-reset flow at all.** Recovery required the Supabase
+dashboard, which only the project owner can reach. Added `admin-reset.html` plus
+a "Forgot your password?" control on the login page.
+
+Two things drove the design. First, supabase-js defaults
+`detectSessionInUrl: true`, so a recovery link landing on *any* page of the app
+silently exchanges its token for a session — the user would be signed in with
+their **old password still set** and never offered the chance to change it.
+`admin-reset.html` must therefore be the only configured redirect target, and
+`admin-login.html` now detects a `type=recovery` fragment and forwards it there
+rather than consuming it. Second, the recovery session is itself a credential:
+the page signs out immediately after `updateUser()` and strips the token from
+the URL with `history.replaceState`, so signing in again proves the new password
+works and nothing is left in `localStorage`. The forgot-password response is
+identical whether or not the address exists, so it cannot be used to enumerate
+accounts.
+
+**`supabase_migration_04_integrity.sql`** (written, NOT run) — housekeeping
+only, no DROP/DELETE and no figure changes:
+- `CHECK` on `partner_withdrawals.partner`, mirroring the one migration 02 added
+  to `expenses.paid_by`. A row saying 'Kuna' is currently read successfully,
+  counted in the account total, and attributed to nobody, breaking the
+  reconciliation with no indication of which row did it.
+- `UNIQUE` on `quotations.quote_number` (partial — several may have no number
+  yet), `CHECK` that `subtotal + sst_amount = total` within a cent, and `CHECK`
+  that `valid_until >= quote_date`.
+- `project_addons.date` backfilled and made `NOT NULL`: it is the `ORDER BY`
+  column and Postgres sorts `NULLS FIRST` on `DESC`, so a dateless add-on jumped
+  above every dated one.
+- `updated_at` + a trigger on the six financial tables. Maintained by the
+  database rather than the client so it cannot be forgotten at a call site or
+  back-dated by whatever wrote the row.
+- Indexes on every ordering column, plus `expenses.linked_project_id`, an
+  unindexed foreign key scanned on every project delete.
+
+**Modals** — `openModal` only added `.active`, which left Tab walking out of the
+dialog into the page behind, the background scrolling under it on a phone, and
+two modals able to be open at once with their blurs compounding. Now: focus
+trap with Shift+Tab wrap, body scroll lock, close-others, and focus returned to
+whatever opened it. Verified: 30 Tabs never escape, Escape restores focus to the
+trigger and unlocks scroll.
+
+**Dead code removed** — `openDepositPrompt`/`closeDepositPrompt` and the
+`#depositPromptModal` markup had zero callers and existed for the fixed
+`deposit_*` columns migration 02 dropped. The Escape and backdrop handlers
+special-cased that modal id; those branches went too. `handleInlineProjectUpdate`
+now rejects a `field` other than `'status'` loudly instead of silently writing
+status regardless.
+
+**Unused columns wired up** — `project_payments.method` (a picker on the add
+form, shown under the amount), `project_payments.notes` and
+`project_addons.notes` (shown under their row). Also fixed `addPayment` using
+`payments.length` for `sort_order`: deleting a middle row then adding another
+reused an existing value. Now `max+1`.
+
+**Contrast and touch targets** — the `.inline-select` chevron was a hardcoded
+`#99999a` data-URI at ~2.4:1 in light theme; `appearance: none` means
+`color-scheme` cannot help, and an SVG in `background-image` cannot read a custom
+property, so there are now two data-URIs. `.modal-close-btn` went from 14×28 to
+a 44×44 box (the box grows, not the glyph), and action buttons get larger
+targets under `@media (pointer: coarse)`. Also found in passing: `#themeToggleBtn`
+is revealed by `.sidebar:hover`, so on a touch device it was **unreachable** —
+now always visible on coarse pointers and on keyboard focus.
+
+**Caught in review:** I wrote the Supabase anon key into `admin-reset.html` from
+memory and it was a stale one with different `iat`/`exp` claims. Compared
+against `admin-login.html` and copied the real value programmatically.
+
+Verified: 8/8 pages clean, four money scenarios exact, invariant delta
+0.00e+00, escaping holds, modal trap holds, reset page never shows its form
+without a session.
+
+---
+
 ## 2026-07-27 (evening)
 
 ### Expenses are now borne by whoever paid them, plus four UI fixes
