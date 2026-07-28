@@ -1,2 +1,6 @@
 .claude/
 projects.txt
+
+# stray one-off maintenance scripts (belong in a scratch dir, not the deploy root)
+/fix_*.py
+/verify_*.py
