@@ -5,6 +5,25 @@
 -- Housekeeping only. Nothing here changes a figure the dashboard reports, and
 -- nothing here is destructive: no DROP, no DELETE, no column removal.
 --
+-- HOW URGENT IS THIS? Not very — run 03 first and this whenever convenient.
+-- An honest breakdown of what is in it:
+--
+--   updated_at + triggers   The one real argument for running it sooner rather
+--                           than later. Audit history cannot be backfilled: to
+--                           know when a payment amount changed, the trigger has
+--                           to exist BEFORE the change happens. Note nothing in
+--                           the dashboard displays it yet.
+--   quotations CHECKs       Mild. Those numbers are hand-typed, and the
+--                           subtotal/sst/total ratio now feeds the dashboard's
+--                           SST apportionment.
+--   quote_number UNIQUE     Mild. Free-text field, so duplicates are possible.
+--   addons.date NOT NULL    Cosmetic. The date field is optional and Postgres
+--                           sorts NULLS FIRST on DESC, so a dateless add-on
+--                           sits above every dated one.
+--   partner CHECK           Near-zero today — see the note on it below.
+--   indexes                 Irrelevant at current row counts. Free now,
+--                           awkward to add to large busy tables later.
+--
 -- ORDER: run this AFTER 01 and 02. It is independent of 03 — either order works
 -- between those two — but remember the standing rule that 03 must be the LAST
 -- policy-touching file run. This file touches no policies, so running 04 after
@@ -19,12 +38,25 @@
 -- ============================================================
 
 -- partner_withdrawals.partner had only a comment saying 'Kunacosta' or
--- 'Rooben'. Migration 02 added exactly this guard to expenses.paid_by, with the
--- reasoning that a wrong name "silently corrupts both partners' figures" — that
--- applies here identically. fin.withdrawn is keyed off the PARTNERS list, so a
--- row saying 'Kuna' is read successfully, counted in the account total, and
--- attributed to NOBODY. The reconciliation breaks with no indication of which
--- row did it.
+-- 'Rooben'. This mirrors the guard migration 02 put on expenses.paid_by.
+--
+-- BE CLEAR ABOUT WHAT THIS IS WORTH: not much today. Both the withdrawal form
+-- and the expense form drive their Partner field from a <select> built out of
+-- the same hardcoded PARTNERS list, so a bad name is NOT reachable through the
+-- app. (Migration 02's version of this constraint is defence-in-depth for the
+-- same reason — its comment overstates the live risk, and so did the first
+-- draft of this one.)
+--
+-- What it actually guards:
+--   * hand edits in the SQL Editor
+--   * any future import or backfill script
+--   * a change to that <select> — the realistic one. If a third person joins
+--     and the Paid By list is wired to team_members instead of PARTNERS, an
+--     expense could be attributed to a non-partner. fin.withdrawn/paid are
+--     keyed off PARTNERS, so the amount lands in the account total but against
+--     NOBODY, and reconciliation then fails with a bare numeric discrepancy
+--     rather than naming the row. The constraint turns that into a rejected
+--     write at the point of entry.
 --
 -- `IS NOT NULL` is not redundant: NULL IN (...) evaluates to NULL, not false,
 -- and a CHECK passes on NULL. Without it a blank partner would be accepted.

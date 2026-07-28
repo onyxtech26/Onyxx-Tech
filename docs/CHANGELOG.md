@@ -27,11 +27,17 @@ identical whether or not the address exists, so it cannot be used to enumerate
 accounts.
 
 **`supabase_migration_04_integrity.sql`** (written, NOT run) — housekeeping
-only, no DROP/DELETE and no figure changes:
+only, no DROP/DELETE and no figure changes. It is **not urgent**; migration 03
+is the one that closes a real hole:
 - `CHECK` on `partner_withdrawals.partner`, mirroring the one migration 02 added
-  to `expenses.paid_by`. A row saying 'Kuna' is currently read successfully,
-  counted in the account total, and attributed to nobody, breaking the
-  reconciliation with no indication of which row did it.
+  to `expenses.paid_by`. *Corrected after review: I first described this as the
+  item with real teeth, on the grounds that a row saying 'Kuna' is counted in
+  the account total but attributed to nobody. Mechanically true, but both the
+  withdrawal and expense forms drive that field from a `<select>` built out of
+  the hardcoded `PARTNERS` list, so it is **not reachable through the app**.
+  Migration 02's version is defence-in-depth for the same reason. What it really
+  guards is SQL Editor edits, import scripts, and the realistic case — a third
+  person joining and the Paid By list being wired to `team_members`.*
 - `UNIQUE` on `quotations.quote_number` (partial — several may have no number
   yet), `CHECK` that `subtotal + sst_amount = total` within a cent, and `CHECK`
   that `valid_until >= quote_date`.
