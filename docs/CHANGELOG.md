@@ -5,6 +5,72 @@ Format each entry: what was done, why it mattered, and any key decisions.
 
 ---
 
+## 2026-07-27 (later)
+
+### Admin portal: the nine audit findings that could corrupt the books
+
+**Deleting a project silently rewrote both partners' balances.** payments and
+add-ons are `ON DELETE CASCADE`, and the prompt said nothing about it. The
+insidious part: `collected` and `cashInAccount` fall by the same amount, so the
+reconciliation invariant still holds and the Partners tab prints "Balanced"
+over the loss — the one control designed to catch bad money data vouches for
+it. The dialog now names the payment/add-on counts and the collected total, and
+when real money is involved requires typing the project name.
+
+**Double-click booked duplicate rows.** Six financial handlers had no submit
+guard. A duplicated RM1,000 expense moves one partner RM500 up and the other
+RM500 down — and again, both sides of the invariant shift together, so it reads
+as balanced. Fixed by wrapping the globals in one place rather than editing
+eight function bodies, so a handler added later is covered by adding its name.
+Verified: three rapid submits produce exactly one execution.
+
+**Dates were stamped in UTC.** The studio is UTC+8, so a payment ticked off at
+07:30 MYT was recorded as the previous day and booked to the wrong month across
+Overview, Cash Flow and Reports. Replaced 8 `toISOString()` stamps with a local
+helper, and `received_date` is now editable — it was previously correctable only
+by raw SQL.
+
+**SST was split as profit.** `applyQuoteToProject` pushed the tax-inclusive
+total into `projects.value`, so tax money flowed into `netProfit` and both
+partners could withdraw money owed to the tax authority. Now apportioned from
+the linked quotation (`sst_amount/total` of every ringgit collected) and held as
+`sstReserved`. The reconciliation identity moves with it:
+`Σbalance = collected − sst − withdrawn = distributable`. Verified against
+hand-worked figures both with and without SST; with sst 0 every number is
+byte-identical to before, so this is a no-op until SST is actually recorded.
+
+**Expense notes were destroyed on every save.** `expenseNotes` did not exist in
+the markup, so `notes` was always null and written unconditionally — wiping the
+column whenever anyone opened an expense and saved for an unrelated reason.
+
+**Escaping applied.** `escArg` was fixed earlier this session but never used.
+~30 lines now escape, plus 17 inline-handler id arguments and the two receipt/
+quotation `file_url` sinks. Verified by rendering the tables with a live payload:
+zero execution, zero injected nodes, `O'Brien & Sons <Ltd>` displays correctly
+with no double-escaping, and the onclick argument round-trips exactly.
+
+**Two failure modes made silent things loud.** `loadAllData`'s outer catch
+swallowed a total load failure, leaving stale numbers on screen with only a
+console message; it now pushes a synthetic error so the banner speaks. And
+`refreshOpenDetails()` moved into `loadAllData`, since nine handlers had to
+remember to call it and most did not — editing a payment label collapsed the
+panel you were working in.
+
+**The auth gate checked a session, not an identity.** Post-migration-03 a
+non-admin would pass it and see a fully rendered dashboard reading RM 0.00
+everywhere, reporting "Balanced" — because RLS denial is 200-with-zero-rows, not
+an error. Now calls the `is_admin` RPC and signs out on failure, while degrading
+gracefully if the function does not exist yet.
+
+**Note on method:** one verification run reached the production database because
+the stub assigned `window.supabaseClient` while the page holds it as a
+script-scoped `const`. One insert was attempted and rejected by RLS; nothing was
+written. Subsequent runs block `*.supabase.co` at the network layer.
+
+Verified: 8/8 pages clean, money math exact (invariant delta 0.00e+00).
+
+---
+
 ## 2026-07-27
 
 ### Four-agent audit of the whole system; security and accessibility fixes
