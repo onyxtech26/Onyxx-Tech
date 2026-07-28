@@ -1429,7 +1429,14 @@
       <div class="sidebar-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 3rem;">
         <div class="logo-container" style="display: flex; align-items: center; justify-content: flex-start; height: 40px;">
           <img src="images/onyxx_logo_transparent.png" alt="Onyxx Tech Hub" class="sidebar-logo logo-icon" />
-          <img src="images/onyxx_logo_&_name_transparent.png" alt="Onyxx Tech Hub" class="sidebar-logo logo-full" />
+          <!-- .webp, not the .png: same image, 29KB against 831KB. The PNG was
+               96% of everything this page downloaded — and .logo-full is
+               display:none at most widths, so most of that was for an image
+               nobody saw. width/height are the intrinsic size purely so the
+               browser knows the aspect ratio; CSS (height:52px, width:auto)
+               still decides how big it actually renders. -->
+          <img src="images/onyxx_logo_&_name_transparent.webp" alt="Onyxx Tech Hub" class="sidebar-logo logo-full"
+               width="2032" height="774" decoding="async" />
         </div>
         <button id="themeToggleBtn" onclick="toggleTheme()" aria-label="Toggle Theme" style="background: transparent; border: none; color: var(--bone-dim); cursor: pointer; display: flex; align-items: center; justify-content: center; padding: 5px; transition: all 0.3s ease;">
           <svg class="sun-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 20px; height: 20px;">
@@ -5542,12 +5549,19 @@ function getProjectImageUrl(p) {
       const sumShare = PARTNERS.reduce((s, p) => s + share[p], 0);
       const sumBal = PARTNERS.reduce((s, p) => s + balance[p], 0);
       const sumDrawn = PARTNERS.reduce((s, p) => s + withdrawn[p], 0);
+      // Deductions carry the same minus sign and colour as the rows above them —
+      // showing "RM 300.00" in the total under a column of "−RM 300.00" reads as
+      // a different quantity.
       trTotal.innerHTML = `
         <td>Total</td>
         <td>100%</td>
         <td>${formatMYR(sumShare)}</td>
-        <td>${formatMYR(sumOop)}</td>
-        <td>${formatMYR(sumDrawn)}</td>
+        <td style="color: ${sumOop > 0.01 ? 'var(--warn)' : 'inherit'};">
+          ${sumOop > 0.01 ? '&minus;' : ''}${formatMYR(sumOop)}
+        </td>
+        <td style="color: ${sumDrawn > 0.01 ? 'var(--warn)' : 'inherit'};">
+          ${sumDrawn > 0.01 ? '&minus;' : ''}${formatMYR(sumDrawn)}
+        </td>
         <td style="color: var(--accent);">${formatMYR(sumBal)}</td>
       `;
       tbody.appendChild(trTotal);
