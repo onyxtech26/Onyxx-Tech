@@ -5,7 +5,7 @@ Format each entry: what was done, why it mattered, and any key decisions.
 
 ---
 
-## 2026-07-27 (night)
+## 2026-07-28 (night)
 
 ### Password reset, migration 04, and the last of the audit backlog
 
@@ -81,9 +81,15 @@ Verified: 8/8 pages clean, four money scenarios exact, invariant delta
 0.00e+00, escaping holds, modal trap holds, reset page never shows its form
 without a session.
 
+> **Note on dates.** All four of today's entries were originally written as
+> 2026-07-27 and have been corrected to 2026-07-28, which is what the clock
+> reads and what git stamps on every commit of this work (`0d3d681` onward).
+> Cross-referencing the log against git history would otherwise have found
+> nothing on the 27th. Only this session's dates were touched.
+
 ---
 
-## 2026-07-27 (evening)
+## 2026-07-28 (evening)
 
 ### Expenses are now borne by whoever paid them, plus four UI fixes
 
@@ -140,7 +146,7 @@ Verified: 8/8 pages clean, four money scenarios exact, invariant delta
 
 ---
 
-## 2026-07-27 (later)
+## 2026-07-28 (later)
 
 ### Admin portal: the nine audit findings that could corrupt the books
 
@@ -206,7 +212,7 @@ Verified: 8/8 pages clean, money math exact (invariant delta 0.00e+00).
 
 ---
 
-## 2026-07-27
+## 2026-07-28
 
 ### Four-agent audit of the whole system; security and accessibility fixes
 

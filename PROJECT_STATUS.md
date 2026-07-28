@@ -2,13 +2,15 @@
 
 > **Living board.** Read at the start of every session; updated when significant tasks finish. Newest state on top.
 
-**Last updated:** 2026-07-27
+**Last updated:** 2026-07-28
 
 ---
 
 ## 📍 Where I left off
 
-**All work is committed and pushed** — `main` is at `bb7199d`. Everything through 2026-07-26 went up in `da983fe`; a four-agent audit of the whole system followed, and its findings plus a change to the expense rule are in `0d3d681`, `6607fbd`, `acea598` and `bb7199d`.
+**All work is committed and pushed** — `main` is at `8431366`. Everything through 2026-07-26 went up in `da983fe`; a four-agent audit followed, and its findings, the expense-rule change and the audit backlog are in `0d3d681`, `6607fbd`, `acea598`, `bb7199d`, `908b9fc` and `8431366`.
+
+**Two migrations are written but NOT run:** `03_admin_allowlist` (needs Rooben's email filled in first) and `04_integrity`. Both are in "Next / To do" with the order they need.
 
 **⚠️ THE ACCOUNTING RULE CHANGED — read this before looking at any figure.**
 Expenses used to be reimbursed and therefore split 50/50. They are now borne **entirely by whoever paid**. On collected RM10,000 with a RM1,000 expense paid by Kunacosta:
@@ -23,19 +25,23 @@ So `balance(P) = pct(P) × (collected − SST) − withdrawn(P)`, with **no reim
 
 **Closed a live exposure:** production was serving `/supabase_migration.sql` (full schema + every RLS policy), `/PROJECT_STATUS.md`, `/CLAUDE.md` and `/docs/CHANGELOG.md` as public static assets — no build step means every tracked file becomes a URL. Added `.vercelignore`; all four now return 404, verified against the live domain.
 
-**Five things worth remembering:**
+**A password-reset flow now exists** (`admin-reset.html`) — there was none at all before. It needs one Supabase setting to work: `admin-reset` listed under Redirect URLs, and it must be the **only** target, because supabase-js exchanges a recovery token for a session on whatever page it lands on.
+
+**Seven things worth remembering:**
 - `escArg()` was written backwards and provided *no* protection — HTML-escaping before JS-escaping means `'` becomes `&#39;`, which the browser decodes back to a live quote before the JS parser sees the attribute. Confirmed by execution, not by reading.
 - Writing U+2028/U+2029 *literally* into a regex is a SyntaxError — they are line terminators to the JS parser. Must be `\u` escapes.
 - The reconciliation invariant cannot detect several classes of corruption, because both sides move together. A cascade-deleted project, a duplicated expense, and a totally failed load all still read "Balanced". Anything relying on it for safety needs a separate check.
 - **RLS denial is HTTP 200 with zero rows, not an error.** Judge exposure by row count. This is also why a non-admin session used to render a confident all-zeroes dashboard.
 - **`revenueByMonth()` returns sorted `[month, amount]` pairs, not an object.** Indexing it by month name silently yields `undefined`.
+- **Check a class or element exists before writing code against it.** Two separate slips this session: CSS rules for `.filter-bar` / `.modal` / `.badge` that matched nothing, and `openQuotationForm` written against a `quotationModal` that does not exist. Both were invisible until something rendered.
+- **Playwright tests must abort `*.supabase.co` at the network layer.** Stubbing `window.supabaseClient` does NOT work — the page holds it as a script-scoped `const`, so the assignment creates a separate binding and the real client is still used. One run reached production this way.
 
 **The blocking items in "Next / To do" need the account owner** — they are Supabase dashboard settings I cannot change.
 
 ---
 
 ## 📍 Previously
-**The site is multi-page again (7 pages), gridlines are gone, and the text animations work.** *(All of this shipped in `da983fe` on 2026-07-27 — the "NOT committed" note that used to be here is out of date.)*
+**The site is multi-page again (7 pages), gridlines are gone, and the text animations work.** *(All of this shipped in `da983fe` on 2026-07-28 — the "NOT committed" note that used to be here is out of date.)*
 
 Three things landed together:
 1. **`.grid-bg` removed** sitewide. Interior pages get the galaxy instead, dialled down.
@@ -81,18 +87,18 @@ Verified in Chrome via Playwright: 7 pages × dark/light with zero errors, 28 pa
 - [x] **Unified the two galaxy implementations** into `window.onyxGalaxy()`; `common.js` now owns all site chrome and loads without `defer` (2026-07-26)
 - [x] **Splash scoped to home** — initially once per session, then changed at the user's request to play on **every** homepage load (2026-07-26)
 
-- [x] **Four-agent audit of the whole system** — admin CSS/visual, admin JS/business logic, public site, and data layer/auth, run in parallel and reported rather than applied so fixes stayed under one hand (2026-07-27)
-- [x] **Closed the live file exposure** — added `.vercelignore`; `/supabase_migration.sql`, `/PROJECT_STATUS.md`, `/CLAUDE.md` and `/docs/CHANGELOG.md` were all returning 200 in production and now 404 (2026-07-27)
-- [x] **Fixed the reported invisible icons** — no `color-scheme` was declared, so Chrome painted native control chrome (date glyph, spinners, select arrows, scrollbars) for a light UI on a dark background (2026-07-27)
-- [x] **`escArg()` rewritten** — it was backwards and provided no protection at all; then applied to ~30 lines, 17 inline-handler arguments and both `file_url` sinks (2026-07-27)
-- [x] **`/work` cut from 28.2MB to ~520KB** — `LOCAL_IMAGE_MAP` had drifted; rebuilt against the live rows, 9 of 10 now local `.webp` (2026-07-27)
-- [x] **Accessibility** — `/work` cards were mouse-only `<div>`s and are now `<button>`s; the closed project modal and mobile nav drawer both kept their controls in the tab order and got `visibility: hidden` (2026-07-27)
-- [x] **Nine money/reliability fixes** — cascade disclosure on project delete, submit guards on eight handlers, local-time dates with an editable `received_date`, SST held as `sstReserved` instead of split as profit, expense notes no longer wiped, load failures surfaced, detail panels no longer collapse, dashboard gated on `is_admin` (2026-07-27)
-- [x] **Expense rule changed at the user's direction** — expenses are now borne entirely by whoever paid, not reimbursed and split 50/50. See "Where I left off" for the before/after figures (2026-07-27)
-- [x] **Outstanding unified, add-on billing honoured, quotations editable, targets wired, session listener added** (2026-07-27)
-- [x] **Password reset flow built** — `admin-reset.html` + a forgot-password control on the login page; recovery session signed out immediately after the change and the token stripped from history (2026-07-27)
-- [x] **`supabase_migration_04_integrity.sql` written** — constraints, `updated_at` triggers, indexes. Not yet run (2026-07-27)
-- [x] **Modal focus trap, scroll lock, single-open and focus restore**; dead deposit-prompt code removed; unused payment/add-on columns wired up; `.inline-select` contrast and touch targets fixed (2026-07-27)
+- [x] **Four-agent audit of the whole system** — admin CSS/visual, admin JS/business logic, public site, and data layer/auth, run in parallel and reported rather than applied so fixes stayed under one hand (2026-07-28)
+- [x] **Closed the live file exposure** — added `.vercelignore`; `/supabase_migration.sql`, `/PROJECT_STATUS.md`, `/CLAUDE.md` and `/docs/CHANGELOG.md` were all returning 200 in production and now 404 (2026-07-28)
+- [x] **Fixed the reported invisible icons** — no `color-scheme` was declared, so Chrome painted native control chrome (date glyph, spinners, select arrows, scrollbars) for a light UI on a dark background (2026-07-28)
+- [x] **`escArg()` rewritten** — it was backwards and provided no protection at all; then applied to ~30 lines, 17 inline-handler arguments and both `file_url` sinks (2026-07-28)
+- [x] **`/work` cut from 28.2MB to ~520KB** — `LOCAL_IMAGE_MAP` had drifted; rebuilt against the live rows, 9 of 10 now local `.webp` (2026-07-28)
+- [x] **Accessibility** — `/work` cards were mouse-only `<div>`s and are now `<button>`s; the closed project modal and mobile nav drawer both kept their controls in the tab order and got `visibility: hidden` (2026-07-28)
+- [x] **Nine money/reliability fixes** — cascade disclosure on project delete, submit guards on eight handlers, local-time dates with an editable `received_date`, SST held as `sstReserved` instead of split as profit, expense notes no longer wiped, load failures surfaced, detail panels no longer collapse, dashboard gated on `is_admin` (2026-07-28)
+- [x] **Expense rule changed at the user's direction** — expenses are now borne entirely by whoever paid, not reimbursed and split 50/50. See "Where I left off" for the before/after figures (2026-07-28)
+- [x] **Outstanding unified, add-on billing honoured, quotations editable, targets wired, session listener added** (2026-07-28)
+- [x] **Password reset flow built** — `admin-reset.html` + a forgot-password control on the login page; recovery session signed out immediately after the change and the token stripped from history (2026-07-28)
+- [x] **`supabase_migration_04_integrity.sql` written** — constraints, `updated_at` triggers, indexes. Not yet run (2026-07-28)
+- [x] **Modal focus trap, scroll lock, single-open and focus restore**; dead deposit-prompt code removed; unused payment/add-on columns wired up; `.inline-select` contrast and touch targets fixed (2026-07-28)
 
 ### 🔄 In progress
 - (nothing active)
@@ -102,22 +108,23 @@ Verified in Chrome via Playwright: 7 pages × dark/light with zero errors, 28 pa
 
 ### ⏭️ Next / To do
 
-**🔴 BLOCKING, and only the account owner can do these (2026-07-27):**
-1. **Turn OFF public signup** — Authentication → Sign In / Providers → Email → "Allow new users to sign up". It is currently ON (`"disable_signup": false`), and every RLS policy trusts any `authenticated` user, so anyone can self-register into full read/write on all financial data.
-2. **Set Site URL** to `https://onyxx-tech.vercel.app` (currently `http://localhost:3000`, so every recovery/invite link is dead) and add `https://onyxx-tech.vercel.app/**` to Additional Redirect URLs. Do this BEFORE step 1, or you cannot onboard Rooben.
-3. **Run `supabase_migration_03_admin_allowlist.sql`** — but first put Rooben's real login email in section 2. It aborts rather than locking anyone out, but it can only protect you if the list is right. **03 must always be the last migration run**: re-running 01 or 02 afterwards silently re-grants access, because Postgres OR-s permissive policies.
-4. **Create Rooben's account** via Authentication → Users → Add user → **"Create new user"** with a password. Do NOT use "Send invitation" until step 2 is done.
+**🔴 OWNER ONLY — do these in this order (2026-07-28).** Steps 1–5 are Supabase
+dashboard/SQL actions Claude cannot perform. The order matters: doing 2 before 1
+leaves you unable to onboard Rooben.
 
-**Other:**
-- **Re-enter the financial data** in the admin tool — 3 projects and 10 expenses were intentionally cleared so they could be re-keyed against the new model. Backups were exported to a local text file before the wipe.
-- **Verify the accounting against real numbers** once a project with installments and an expense or two are in: the Partners tab reconciliation row should read "Balanced".
-- **Add `admin-reset` to Supabase's Redirect URLs.** The reset flow is now built (`admin-reset.html`), but Supabase silently falls back to the Site URL unless `https://onyxx-tech.vercel.app/admin-reset` (or `/**`) is listed under Authentication → URL Configuration → Redirect URLs. It must be the **only** redirect target: supabase-js defaults `detectSessionInUrl: true`, so a recovery link landing anywhere else signs the user in with their old password still set.
-- **Run `supabase_migration_04_integrity.sql`** — constraints, `updated_at` triggers and indexes. Housekeeping only: no DROP, no DELETE, nothing that changes a reported figure. Run after 01 and 02; it touches no policies, so it is safe either side of 03.
-- **Rebuild `LOCAL_IMAGE_MAP` whenever a showcase image is re-uploaded.** It is keyed on the upload filename, so it breaks silently — the page just gets slower. Verify with `GET /rest/v1/showcase_projects?select=title,image_url`.
-- **Optional: reconnect the Supabase connector** to the account owning `whjstsgtximknicppllt`, or transfer that project into the "Onyx Tech" org — the connector is authorised for that org but the project lives elsewhere, so migrations currently have to be pasted by hand.
-- **Re-key the financial data under the new expense rule.** Anything entered before 2026-07-27 was recorded when expenses were reimbursed and split 50/50; the balances shown for it are now computed the other way. Worth re-checking rather than assuming the old figures carry over.
-- The audit backlog is **cleared** — everything from the four-agent audit is now either done or in migration 04 awaiting a run. What is left below is genuinely optional.
-- `updated_at` now exists on the financial tables (migration 04) but nothing **displays** it. A "last changed" column on the Payments and Expenses tables would make it useful rather than merely present. There is still no record of *who* made a change — that needs an `updated_by` defaulting to `auth.uid()`.
+1. **Set Site URL + Redirect URLs.** Authentication → URL Configuration. Site URL is still `http://localhost:3000`, so every recovery and invite link is dead. Set it to `https://onyxx-tech.vercel.app` and add `https://onyxx-tech.vercel.app/admin-reset` to Redirect URLs. **`admin-reset` must be the only redirect target** — supabase-js defaults `detectSessionInUrl: true`, so a recovery link landing anywhere else signs the user in with their old password still set and never offers to change it.
+2. **Turn OFF public signup.** Authentication → Sign In / Providers → Email → "Allow new users to sign up". Currently ON (`"disable_signup": false`), and every RLS policy trusts any `authenticated` user — so anyone can self-register into full read/write on all financial data.
+3. **Run `supabase_migration_03_admin_allowlist.sql`** — put Rooben's real login email in section 2 FIRST. It raises rather than locking anyone out, but it can only protect you if the list is right. **03 must always be the last policy-touching file run**: re-running 01 or 02 afterwards silently re-grants access, because Postgres OR-s permissive policies together.
+4. **Run `supabase_migration_04_integrity.sql`** — constraints, `updated_at` triggers, indexes. Housekeeping only: no DROP, no DELETE, nothing that changes a reported figure. Touches no policies, so it is safe either side of 03.
+5. **Create Rooben's account.** Authentication → Users → Add user → **"Create new user"** with a password. Do NOT use "Send invitation" before step 1.
+6. **Re-key the financial data.** 3 projects and 10 expenses were cleared on 2026-07-26 for re-entry (backups were exported to a local text file first), and the expense rule changed on 2026-07-28 — anything recorded under the old rule had its costs split 50/50 rather than charged to the payer, so those balances now compute differently. Re-enter rather than assuming the old figures carry over. Then check the Partners tab reconciliation row reads "Balanced".
+
+**Standing notes (not tasks):**
+- **`LOCAL_IMAGE_MAP` breaks silently** whenever a showcase image is re-uploaded — it is keyed on the upload filename, and the only symptom is `/work` getting slower. Verify with `GET /rest/v1/showcase_projects?select=title,image_url`.
+- **Optional: reconnect the Supabase connector** to the account owning `whjstsgtximknicppllt`, or move that project into the "Onyx Tech" org — the connector is authorised for that org but the project lives elsewhere, so migrations have to be pasted by hand.
+
+**Genuinely optional work — the audit backlog is otherwise cleared:**
+- `updated_at` exists on the financial tables after migration 04, but nothing **displays** it. A "last changed" column on Payments and Expenses would make it useful rather than merely present. There is still no record of *who* changed something — that needs an `updated_by` defaulting to `auth.uid()`.
 - Dead CSS from the multi-page era could be swept out of `styles.css`.
 
 ### 💤 Backlog / ideas
@@ -128,8 +135,8 @@ Verified in Chrome via Playwright: 7 pages × dark/light with zero errors, 28 pa
 ---
 
 ## 🧠 Key decisions & context
-- **Partner accounting (CHANGED 2026-07-27): `balance(P) = pct(P) × (collected − SST) − withdrawn(P)`.** Expenses are borne **entirely by whoever paid them** — there is no reimbursement term and no cross-settlement. Do not add `+ paid(P)` back: that reimburses the payer out of shared money, which silently splits every cost 50/50 and is exactly what this replaced. `netProfit` is retained as `collected − SST − expenses` for reporting only and is **not** what shares derive from. `computeFinancials()` in `admin-dashboard.html` is the only place money is derived; everything else reads `fin`.
-  - *Superseded:* the previous rule was `0.5 × (collected − expenses) + paid(P) − withdrawn(P)`. Figures entered before 2026-07-27 were recorded under it.
+- **Partner accounting (CHANGED 2026-07-28): `balance(P) = pct(P) × (collected − SST) − withdrawn(P)`.** Expenses are borne **entirely by whoever paid them** — there is no reimbursement term and no cross-settlement. Do not add `+ paid(P)` back: that reimburses the payer out of shared money, which silently splits every cost 50/50 and is exactly what this replaced. `netProfit` is retained as `collected − SST − expenses` for reporting only and is **not** what shares derive from. `computeFinancials()` in `admin-dashboard.html` is the only place money is derived; everything else reads `fin`.
+  - *Superseded:* the previous rule was `0.5 × (collected − expenses) + paid(P) − withdrawn(P)`. Figures entered before 2026-07-28 were recorded under it.
 - **SST is not income.** Apportioned from the linked quotation as `sst_amount/total` of every ringgit collected, held as `fin.sstReserved`, and excluded from the distributable pool — otherwise both partners can withdraw money owed to the tax authority. With no quotations, or `sst_amount` 0, every figure is unchanged.
 - **The reconciliation row is a real invariant, but it is not a safety net.** `balance(A) + balance(B)` must equal `collected − SST − withdrawn`. It only catches bad *input* (an expense with no `paid_by`). It **cannot** detect a cascade-deleted project, a duplicated expense, or a totally failed load, because both sides of the identity move together — all three still read "Balanced". Never treat a green tick as proof the data is right.
 - **`HTTP 200` from PostgREST does NOT mean a table is public.** RLS filtering returns 200 with a row count of 0; only a missing table errors. Judge exposure by the **row count**, never the status code — misreading this produced a false "your financials are public" alarm. It is also why the dashboard must gate on `is_admin()` and not merely on a session existing: a non-admin otherwise sees a confident all-zeroes dashboard reporting "Balanced".
@@ -173,7 +180,8 @@ Verified in Chrome via Playwright: 7 pages × dark/light with zero errors, 28 pa
 ---
 
 ## 📝 Session log
-- **2026-07-27 (audit + expense rule)** — Started from a report of invisible icons in the Add Project modal; the cause was that `color-scheme` was never declared, so Chrome painted native control chrome for a light UI on a dark background. Ran four parallel audits (admin CSS, admin JS, public site, data layer) and fixed the findings across four commits. The most serious was not in the audit brief: **production was publicly serving `/supabase_migration.sql`, `/PROJECT_STATUS.md`, `/CLAUDE.md` and `/docs/CHANGELOG.md`** — no build step means every tracked file becomes a URL. Closed with `.vercelignore`, verified 404 live. Then, at the user's direction, **changed the accounting rule so expenses are borne entirely by whoever paid them** rather than reimbursed and split 50/50 (see Key decisions). **Four errors of my own worth recording:** `escArg()` was written backwards and provided no protection at all (proved by executing the payload, not by reading it); writing U+2028 literally into its regex was a SyntaxError that would have killed the whole dashboard script; `openQuotationForm` was written against a `quotationModal` that does not exist; and the new targets indexed `revenueByMonth()` by month name when it returns sorted pairs. The last two were caught only because the tests asserted rendered output. Also: one verification run reached the live database, because stubbing `window.supabaseClient` does not work when the page holds it as a script-scoped `const` — RLS rejected the insert and nothing was written, and all later runs abort Supabase at the network layer. Full write-up in `docs/CHANGELOG.md`.
+- **2026-07-28 (backlog cleared)** — Built the password-reset flow that did not exist: `admin-reset.html` plus a forgot-password control on the login page. The design turns on one fact — supabase-js defaults `detectSessionInUrl: true`, so a recovery link landing on *any* page silently signs the user in with their old password still set; the reset page must be the only redirect target, and the login page now forwards a `type=recovery` fragment rather than consuming it. The recovery session is a credential, so it is signed out immediately after the change and the token stripped from history. Wrote `supabase_migration_04_integrity.sql` (constraints, `updated_at` triggers, indexes — no DROP, no DELETE, no figure changes). Gave the admin modals a focus trap, scroll lock, single-open and focus restore. Removed the dead deposit-prompt code. Wired up `project_payments.method`/`.notes` and `project_addons.notes`, and fixed `addPayment` reusing a `sort_order` after a middle row was deleted. Fixed the `.inline-select` contrast and the touch targets — and found in passing that `#themeToggleBtn` was revealed only by `.sidebar:hover`, i.e. **unreachable on a phone**. Caught in review: the anon key I wrote into the reset page from memory was a stale one with different `iat`/`exp` claims. Also corrected the dating of this whole session's entries — they were written as 2026-07-27 while every commit is stamped 2026-07-28.
+- **2026-07-28 (audit + expense rule)** — Started from a report of invisible icons in the Add Project modal; the cause was that `color-scheme` was never declared, so Chrome painted native control chrome for a light UI on a dark background. Ran four parallel audits (admin CSS, admin JS, public site, data layer) and fixed the findings across four commits. The most serious was not in the audit brief: **production was publicly serving `/supabase_migration.sql`, `/PROJECT_STATUS.md`, `/CLAUDE.md` and `/docs/CHANGELOG.md`** — no build step means every tracked file becomes a URL. Closed with `.vercelignore`, verified 404 live. Then, at the user's direction, **changed the accounting rule so expenses are borne entirely by whoever paid them** rather than reimbursed and split 50/50 (see Key decisions). **Four errors of my own worth recording:** `escArg()` was written backwards and provided no protection at all (proved by executing the payload, not by reading it); writing U+2028 literally into its regex was a SyntaxError that would have killed the whole dashboard script; `openQuotationForm` was written against a `quotationModal` that does not exist; and the new targets indexed `revenueByMonth()` by month name when it returns sorted pairs. The last two were caught only because the tests asserted rendered output. Also: one verification run reached the live database, because stubbing `window.supabaseClient` does not work when the page holds it as a script-scoped `const` — RLS rejected the insert and nothing was written, and all later runs abort Supabase at the network layer. Full write-up in `docs/CHANGELOG.md`.
 - **2026-07-26 (admin portal)** — Rebuilt the admin financials: fixed the partner-balance bug (the expense settlement was computed then discarded, so a partner who fronted costs was never credited), replaced the two fixed payment slots with arbitrary installments, added add-ons and quotations, and collapsed nine independent money sums into one `computeFinancials()`. Applied `supabase_migration_02_financials.sql` to production; financial data cleared for re-entry at the user's request. **Also corrected a wrong security finding of my own**: `projects`/`expenses` were never publicly readable — `HTTP 200 + 0 rows` from PostgREST means RLS filtered everything, not that the table is open. Only `partner_withdrawals` and `system_settings` were actually exposed, and both are now closed.
 - **2026-07-26 (later)** — Restored the hero rotator ("modern businesses." → "ambitious teams." → "bold founders." → "what comes next.") that `e9dc5d3` had replaced with a static line; rebuilt on `inline-grid` so it no longer needs a hardcoded `min-width`. Fixed the homepage project teasers showing default blue underlined link text — `.project-card--link` was applied by JS and never styled. Fixed the cursor glow being offset 283px from the pointer: a 400px circle positioned by `left`/`top` with no centring transform, so its top-left corner tracked the cursor. Bug had been present since `eb511ef`. Also moved it onto a transform (was forcing a layout every frame) and made the rAF loop idle when the pointer is still. Changed the splash from once-per-session to playing on every homepage load, at the user's request. Also rewrote the headline animation check to sample in-page on rAF: the CDP-round-trip version cost ~700ms per sample, skipped the window where the stagger is visible, and reported a false failure on a working animation.
 - **2026-07-26** — Removed the gridlines; found and fixed why the text animations had "disappeared" (deleted headline rule **and** an unused `.splash-done` hook that meant the whole hero entrance played behind the curtain); rebuilt the site as 7 pages with page headers and a hub homepage; unified the two galaxy implementations into `common.js` and moved all site chrome there; scoped the splash to home/once-per-session; structured footer, `aria-current` nav state, logo view-transition. Caught in review: Contact had no mobile nav entry point once it became its own page. Full write-up in `docs/CHANGELOG.md`.
