@@ -52,7 +52,7 @@
 -- and therefore exempt from RLS:
 --
 --     INSERT INTO admin_users (user_id, email)
---     SELECT id, lower(email) FROM auth.users WHERE lower(email) = lower('you@example.com')
+--     SELECT id, lower(email) FROM auth.users WHERE lower(email) = lower('onyxtech26@gmail.com')
 --     ON CONFLICT (user_id) DO NOTHING;
 --
 -- ADDING AN ACCOUNT LATER
@@ -136,7 +136,7 @@ GRANT EXECUTE ON FUNCTION is_admin() TO authenticated;
 INSERT INTO admin_users (user_id, email)
 SELECT id, lower(email) FROM auth.users
 WHERE lower(email) IN (
-    lower('kunacosta0702@gmail.com')
+    lower('onyxtech26@gmail.com')
     -- , lower('rooben@example.com')   -- <-- his real login email, when he has one
 )
 ON CONFLICT (user_id) DO NOTHING;
