@@ -5,6 +5,63 @@ Format each entry: what was done, why it mattered, and any key decisions.
 
 ---
 
+## 2026-07-27 (evening)
+
+### Expenses are now borne by whoever paid them, plus four UI fixes
+
+**The accounting rule changed, at the user's direction.** Expenses were being
+reimbursed and therefore shared 50/50: on collected RM10,000 with a RM1,000
+expense paid by Kunacosta, the old model gave Kunacosta 5,500 and Rooben 4,500,
+so Rooben silently absorbed RM500 of a purchase he had no part in. That is the
+conventional partnership treatment and it is wrong for this studio.
+
+New model — each partner carries their own costs:
+
+    share(P)   = pct(P) x (collected - SST)
+    balance(P) = share(P) - withdrawn(P)          <- no reimbursement term
+
+Same numbers now give 5,000 / 5,000 withdrawable, with Kunacosta out RM1,000
+personally, so Rooben is untouched. `netProfit` is retained as
+`collected - SST - expenses` but is now a REPORTING figure only and is
+deliberately not what shares derive from. The Partners table lost its
+Settlement/Reimbursement columns (there is no cross-settlement any more) and
+gained "Spent Personally" and "Net Position". The reconciliation identity is
+unchanged in form: `Sigma(balance) = collected - SST - withdrawn`.
+
+**Outstanding meant two things.** Overview clamped the TOTAL while Reports and
+the chart clamped EACH project, so an overpaid project made the tabs disagree
+with nothing indicating which was right. Now computed once as `outstandingOwed`
+(clamped per project) alongside the raw net, with overpayment surfaced on the
+KPI instead of silently reducing it.
+
+**`project_addons.billed` was never read.** Every add-on counted as owed the
+moment it was recorded, so logging RM2,000 of agreed scope immediately reported
+RM2,000 outstanding before an invoice existed. Only billed add-ons now count
+toward the contract total; unbilled ones are shown separately in the project
+panel. Added a per-row toggle and a checkbox on the add form.
+
+**Quotations were insert-only.** A wrong quote number could only be fixed by
+delete-and-re-enter, which also orphaned the uploaded file. Added an edit path,
+and surfaced `valid_until` (with an expiry flag on Draft/Sent quotes),
+`subtotal` and `sst_amount` — all three were saved and displayed nowhere.
+
+**Financial targets did nothing**, and there was no session listener. Targets
+now render on Overview against the current month. `onAuthStateChange` redirects
+when the session is lost, so signing out on one device no longer leaves another
+tab showing financial data indefinitely; `signOut()`'s error is checked before
+redirecting.
+
+**Two of my own errors, caught by tests rather than review:** `openQuotationForm`
+was written against a `quotationModal` that does not exist — the form is inline
+on the tab, so `openModal` would have thrown on a null element. And the targets
+read `revenueByMonth()[month]`, but that function returns sorted `[month, amount]`
+PAIRS, not an object, so it silently yielded `undefined` and displayed 0%.
+
+Verified: 8/8 pages clean, four money scenarios exact, invariant delta
+0.00e+00, escaping still holds against a live payload.
+
+---
+
 ## 2026-07-27 (later)
 
 ### Admin portal: the nine audit findings that could corrupt the books

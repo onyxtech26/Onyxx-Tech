@@ -1439,6 +1439,11 @@
                   <div class="kpi-lbl">Current Cash Balance</div>
                   <div class="kpi-sub-detail" id="kpiNextDeadline">Next Deadline: N/A</div>
                 </div>
+                <div class="kpi-inner-card" style="grid-column: 1 / -1;">
+                  <div class="kpi-lbl" style="margin-bottom: 0.4rem;">This month vs target</div>
+                  <div class="kpi-sub-detail" id="targetRevenueProgress" style="margin-bottom: 0.25rem;"></div>
+                  <div class="kpi-sub-detail" id="targetExpenseProgress"></div>
+                </div>
               </div>
               <!-- COLUMN 2 -->
               <div class="kpi-column-card">
@@ -1631,8 +1636,10 @@
           links are signed and short-lived.
         </p>
 
-        <div class="glass-card" style="padding: 1.5rem; margin-bottom: 1.5rem;">
+        <div class="glass-card" style="padding: 1.5rem; margin-bottom: 1.5rem;" id="quotationFormCard">
+          <h3 id="quotationFormTitle" style="font-family: var(--font-display); font-size: 1.05rem; margin: 0 0 1rem;">New quotation</h3>
           <form id="quotationForm" onsubmit="saveQuotation(event)">
+            <input type="hidden" id="quoteId" />
             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1rem;">
               <div>
                 <label class="form-label" for="quoteNumber">Quote No.</label>
@@ -1682,7 +1689,12 @@
               <label class="form-label" for="quoteNotes">Notes</label>
               <input id="quoteNotes" class="form-control" />
             </div>
-            <button type="submit" class="btn-primary" style="width: auto; padding: 0.6rem 1.5rem; margin-top: 1rem;">Save quotation</button>
+            <div style="display: flex; gap: 0.75rem; align-items: center; margin-top: 1rem;">
+              <button type="submit" class="btn-primary" style="width: auto; padding: 0.6rem 1.5rem; margin: 0;">Save quotation</button>
+              <button type="button" id="quoteCancelEdit" class="btn-outline"
+                      style="width: auto; padding: 0.6rem 1.2rem; margin: 0; display: none;"
+                      onclick="openQuotationForm()">Cancel edit</button>
+            </div>
           </form>
         </div>
 
@@ -1691,7 +1703,8 @@
             <thead>
               <tr>
                 <th>Quote No.</th><th>Client</th><th>Project</th>
-                <th>Date</th><th>Total</th><th>Status</th><th>Actions</th>
+                <th>Date</th><th>Valid Until</th><th>Subtotal</th><th>SST</th>
+                <th>Total</th><th>Status</th><th>Actions</th>
               </tr>
             </thead>
             <tbody id="quotationsTableBody"></tbody>
@@ -1895,11 +1908,11 @@
               <tr>
                 <th>Partner</th>
                 <th>Share %</th>
-                <th>Expenses Paid</th>
-                <th>Half of Expenses</th>
-                <th>Reimbursement Owed</th>
-                <th>Profit Share</th>
-                <th style="color: var(--accent);">Balance</th>
+                <th title="Their percentage of collected money, less SST">Share of Collected</th>
+                <th>Withdrawn</th>
+                <th style="color: var(--accent);" title="Still available for them to withdraw">Balance</th>
+                <th title="Spent personally. Borne entirely by this partner — not reimbursed, not split.">Spent Personally</th>
+                <th title="Balance minus personal spending — this partner's real result">Net Position</th>
               </tr>
             </thead>
             <tbody id="partnersTableBody">
@@ -2544,7 +2557,9 @@
       paid: {},        // partner -> expenses they personally fronted
       withdrawn: {},   // partner -> cash they have taken out
       balance: {},     // partner -> what they are actually owed
-      settlement: {},  // partner -> reimbursement owed for fronting costs
+      outOfPocket: {}, // partner -> what they spent personally, never reimbursed
+      netPosition: {}, // partner -> balance minus out-of-pocket
+      distributablePool: 0,
       cashInAccount: 0,
       sstReserved: 0,   // SST collected and owed onward — in the account, not income
       distributable: 0, // cashInAccount minus sstReserved
@@ -2612,9 +2627,27 @@
 
     initDashboard();
 
+    /* The session was previously checked exactly once, at load. So signing out
+       on one device left every other open tab fully rendered, with financial
+       data on screen, indefinitely. This reacts to the change instead.
+
+       Deliberately narrow: only SIGNED_OUT and a token refresh that came back
+       without a session are treated as "you are done". Reacting to every event
+       would bounce the user on ordinary token refreshes. */
+    supabaseClient.auth.onAuthStateChange((event, session) => {
+      const lost = event === 'SIGNED_OUT' || (event === 'TOKEN_REFRESHED' && !session);
+      if (lost) window.location.href = 'admin-login.html?v=' + Date.now();
+    });
+
     // Sign out
     document.getElementById('signOutBtn').addEventListener('click', async () => {
-      await supabaseClient.auth.signOut();
+      // Check the result: on failure the token stays in localStorage, and
+      // redirecting anyway made it look signed out while the session lived on.
+      const { error } = await supabaseClient.auth.signOut();
+      if (error) {
+        showToast('Could not sign out: ' + error.message, 'error');
+        return;
+      }
       window.location.href = 'index.html';
     });
     
@@ -3057,33 +3090,54 @@ function getProjectImageUrl(p) {
        computeFinancials — run once per load, before anything renders
        ==================================================================
        PARTNER ACCOUNTING
-       Client money lands in one shared business account, and every expense is
-       fronted by a partner personally. So a partner is owed their half of the
-       profit, PLUS whatever they paid out of pocket, MINUS what they have
-       already withdrawn:
+       Client money lands in one shared business account. Every expense is paid
+       by a partner personally, and — this is the studio's rule — is borne
+       ENTIRELY by whoever paid it. Buying something for the business does not
+       put the other partner on the hook for half of it.
 
-           balance(P) = 0.5 x (collected - expenses) + paid(P) - withdrawn(P)
+       So the account pays out the collected money, split by the agreed
+       percentages, and expenses simply never enter that calculation:
 
-       The old code computed `settlement = paid - 0.5 x expenses`, displayed it in
-       its own column, and then dropped it on the floor (`kunaFinal =
-       kunaProfitShare`). A partner who fronted RM1,000 was never credited the
-       RM500 the other owed them.
+           share(P)   = pct(P) x (collected - SST)
+           balance(P) = share(P) - withdrawn(P)
 
-       Note you cannot fix that by simply adding `settlement` to the profit
-       share: the profit share already carries -0.5E and settlement carries
-       another -0.5E, so the sum deducts expenses one and a half times. The
-       correct combination is `0.5 x netProfit + paid(P)`, which is what is
-       implemented below.
+       There is NO reimbursement term. That is the whole point: if Kunacosta
+       spends RM1,000, Rooben's figure must not move, and Kunacosta must not get
+       the RM1,000 back out of shared money.
+
+       Worked example. Collected RM10,000, Kunacosta pays a RM1,000 expense:
+
+           share      Kunacosta 5,000   Rooben 5,000
+           balance    Kunacosta 5,000   Rooben 5,000     <- what each can withdraw
+           outOfPocket Kunacosta 1,000  Rooben 0
+           net        Kunacosta 4,000   Rooben 5,000     <- true economic result
+
+       Rooben is untouched, and the RM1,000 comes off Kunacosta alone.
+
+       WHAT THIS REPLACED
+       The previous model reimbursed the payer — `share(P) + paid(P)` on a pool
+       of `collected - expenses`. That is the conventional partnership treatment
+       and it silently SPLIT every cost 50/50: on the numbers above it produced
+       Kunacosta 5,500 / Rooben 4,500, so Rooben absorbed RM500 of a purchase he
+       had no part in. Correct for a shared-cost business, wrong for this one.
+
+       `netProfit` below is kept as `collected - SST - expenses`, but it is now a
+       REPORTING figure only — real company profitability — and is deliberately
+       NOT what the shares are computed from. Do not wire it back into share().
 
        RECONCILIATION
-       Because all expenses are personally fronted, the partners' balances must
-       add up to the cash actually sitting in the account:
+       Expenses never move money in or out of the account, so the balances still
+       have to add up to the cash sitting in it, less anything owed to the tax
+       authority:
 
-           balance(A) + balance(B) === collected - total withdrawn
+           balance(A) + balance(B) === collected - SST - total withdrawn
 
        `fin.reconciled` reports that. It only goes false on bad data (an expense
        with no paid_by, a withdrawal by an unknown name), which is exactly when
-       you want to be told. */
+       you want to be told. Note it CANNOT detect several classes of corruption
+       where both sides move together — a cascade-deleted project, a duplicated
+       expense, or a failed load all still balance. Do not treat a green tick as
+       proof the data is right. */
     function computeFinancials() {
       const today = todayLocal();
 
@@ -3093,7 +3147,7 @@ function getProjectImageUrl(p) {
           id: p.id,
           name: p.name,
           value: parseFloat(p.value) || 0,
-          addons: [], addonsTotal: 0,
+          addons: [], addonsTotal: 0, addonsUnbilled: 0,
           payments: [],
           scheduled: 0, collected: 0, outstanding: 0, overdue: 0,
           contractTotal: 0,
@@ -3101,11 +3155,18 @@ function getProjectImageUrl(p) {
         };
       });
 
+      // `billed` separates work the client has agreed to from work you have
+      // actually invoiced. Only billed add-ons count toward what they owe —
+      // previously every add-on did, so logging RM2,000 of extra scope the
+      // moment it was agreed immediately reported RM2,000 as outstanding
+      // before an invoice existed.
       addonsData.forEach(a => {
         const t = byProject[a.project_id];
         if (!t) return;                       // orphan row; project was deleted
         t.addons.push(a);
-        t.addonsTotal += parseFloat(a.amount) || 0;
+        const amt = parseFloat(a.amount) || 0;
+        if (a.billed) t.addonsTotal += amt;
+        else t.addonsUnbilled += amt;
       });
 
       paymentsData.forEach(pay => {
@@ -3126,7 +3187,15 @@ function getProjectImageUrl(p) {
         if (t) t.quotations.push(q);
       });
 
+      // Two different questions, deliberately kept as two numbers:
+      //   outstanding      net position, overpayments allowed to offset debts
+      //   outstandingOwed  what clients actually still owe, summed per project
+      // They differ only when a project is overpaid. Previously three places
+      // clamped at different levels — Overview clamped the TOTAL while Reports
+      // and the chart clamped EACH project — so an overpaid project made the
+      // tabs disagree with no indication which was right.
       let collected = 0, scheduled = 0, outstanding = 0, overdue = 0, contractTotal = 0;
+      let outstandingOwed = 0, overpaidTotal = 0;
       Object.values(byProject).forEach(t => {
         // What the client owes in total is the agreed value plus anything added
         // afterwards — not the sum of the payment schedule, which may be
@@ -3139,6 +3208,8 @@ function getProjectImageUrl(p) {
         collected += t.collected;
         scheduled += t.scheduled;
         outstanding += t.outstanding;
+        outstandingOwed += Math.max(0, t.outstanding);
+        overpaidTotal += Math.max(0, -t.outstanding);
         overdue += t.overdue;
         contractTotal += t.contractTotal;
       });
@@ -3188,16 +3259,25 @@ function getProjectImageUrl(p) {
         sstReserved += (t.collected || 0) * ratio;
       });
 
+      // Company profitability, for REPORTING only. The shares below are
+      // deliberately not computed from this — see the header comment.
       const netProfit = collected - sstReserved - expenses;
+
+      // What the account can actually pay out. Expenses are excluded because
+      // they were paid personally and never left this account.
+      const distributablePool = collected - sstReserved;
+
       const share = {};
       const balance = {};
-      const settlement = {};
+      const outOfPocket = {};   // what P spent personally and does NOT get back
+      const netPosition = {};   // balance minus out-of-pocket: P's real result
       PARTNERS.forEach(p => {
         // Always 50/50, but read the setting so Settings still means something.
         const pct = (systemSettings.partner_split?.[p] ?? (100 / PARTNERS.length)) / 100;
-        share[p] = netProfit * pct;
-        settlement[p] = paid[p] - expenses * pct;      // reimbursement owed to P
-        balance[p] = share[p] + paid[p] - withdrawn[p];
+        share[p] = distributablePool * pct;
+        outOfPocket[p] = paid[p];
+        balance[p] = share[p] - withdrawn[p];
+        netPosition[p] = balance[p] - outOfPocket[p];
       });
 
       const cashInAccount = collected - withdrawnTotal;
@@ -3207,8 +3287,10 @@ function getProjectImageUrl(p) {
       const distributable = cashInAccount - sstReserved;
 
       fin = {
-        byProject, collected, scheduled, outstanding, overdue, contractTotal,
-        expenses, netProfit, share, paid, withdrawn, balance, settlement,
+        byProject, collected, scheduled, outstanding, outstandingOwed, overpaidTotal,
+        overdue, contractTotal,
+        expenses, netProfit, share, paid, withdrawn, balance,
+        outOfPocket, netPosition, distributablePool,
         withdrawnTotal, cashInAccount, sstReserved, distributable, unattributed,
         // `loadErrors.length` is part of this on purpose. The arithmetic
         // invariant cannot detect a table that failed to load — drop `expenses`
@@ -3278,7 +3360,7 @@ function getProjectImageUrl(p) {
     /** Per-project totals, safe for a project with no payments yet. */
     function projectFin(id) {
       return fin.byProject[id] || {
-        value: 0, addons: [], addonsTotal: 0, payments: [], quotations: [],
+        value: 0, addons: [], addonsTotal: 0, addonsUnbilled: 0, payments: [], quotations: [],
         scheduled: 0, collected: 0, outstanding: 0, overdue: 0, contractTotal: 0
       };
     }
@@ -3647,10 +3729,13 @@ function getProjectImageUrl(p) {
       totalCollected = fin.collected;
       totalExpenses = fin.expenses;
 
-      const totalOutstanding = Math.max(0, fin.outstanding);
+      // Read the shared figure rather than clamping the total here — clamping
+      // the SUM lets an overpaid project cancel out another client's debt, and
+      // Reports clamps per project, so the two tabs used to disagree.
+      const totalOutstanding = fin.outstandingOwed;
       // Cash in the shared account is what was collected less what the partners
-      // have withdrawn. Expenses were fronted personally, so they do not leave
-      // this account -- they become a reimbursement owed instead.
+      // have withdrawn. Expenses are paid personally and borne by whoever paid,
+      // so they never move money in or out of this account at all.
       const cashBalance = fin.cashInAccount;
       const netProfitCollected = fin.netProfit;
       const expectedProfit = totalProjectValue - totalExpenses;
@@ -3665,8 +3750,44 @@ function getProjectImageUrl(p) {
       cashEl.style.color = cashBalance >= 0 ? 'var(--pos)' : 'var(--neg)';
       document.getElementById('kpiNextDeadline').textContent = `Next Deadline: ${nextDeadline ? formatDate(nextDeadline) : 'N/A'}`;
 
+      // ---- monthly targets ----
+      // These were saved in Settings and read by nothing at all, so you could
+      // set a revenue target, watch it persist, and never see it again.
+      // Measured against THIS month, which is what a monthly target means.
+      const targets = systemSettings.financial_targets || {};
+      const revTarget = parseFloat(targets.revenue_target) || 0;
+      const expTarget = parseFloat(targets.expense_target) || 0;
+      const thisMonth = todayLocal().substring(0, 7);
+
+      // revenueByMonth() returns SORTED [month, amount] PAIRS, not an object —
+      // indexing it by month name silently yields undefined.
+      const revEntry = revenueByMonth().find(([m]) => m === thisMonth);
+      const revThisMonth = revEntry ? revEntry[1] : 0;
+      const expThisMonth = expensesData.reduce((s, e) =>
+        s + (String(e.date || '').substring(0, 7) === thisMonth ? (parseFloat(e.amount) || 0) : 0), 0);
+
+      const renderTarget = (elId, actual, target, label, goodWhenUnder) => {
+        const el = document.getElementById(elId);
+        if (!el) return;
+        if (!target) {
+          el.innerHTML = `<span style="color:var(--bone-dim);">No ${label} target set &mdash; add one in Settings.</span>`;
+          return;
+        }
+        const pctOf = Math.round((actual / target) * 100);
+        const good = goodWhenUnder ? actual <= target : actual >= target;
+        el.innerHTML =
+          `<span style="color:${good ? 'var(--pos)' : 'var(--warn)'};font-weight:600;">${pctOf}%</span> ` +
+          `<span style="color:var(--bone-dim);">of the ${formatMYR(target)} monthly ${label} target ` +
+          `(${formatMYR(actual)} this month).</span>`;
+      };
+      renderTarget('targetRevenueProgress', revThisMonth, revTarget, 'revenue', false);
+      renderTarget('targetExpenseProgress', expThisMonth, expTarget, 'expense', true);
+
       document.getElementById('kpiCollected').textContent = formatMYR(totalCollected);
-      document.getElementById('kpiOutstanding').textContent = `Outstanding: ${formatMYR(totalOutstanding)}`;
+      // Surface overpayment rather than letting it silently reduce the figure.
+      document.getElementById('kpiOutstanding').textContent =
+        `Outstanding: ${formatMYR(totalOutstanding)}` +
+        (fin.overpaidTotal > 0.01 ? ` (${formatMYR(fin.overpaidTotal)} overpaid elsewhere)` : '');
 
       const netEl = document.getElementById('kpiNetProfitCollected');
       netEl.textContent = formatMYR(netProfitCollected);
@@ -4027,7 +4148,9 @@ function getProjectImageUrl(p) {
         totalVal += val;
         totalAddons += t.addonsTotal;
         totalCol += col;
-        totalOut += out;
+        // Clamped per project, matching Overview and Reports. Summing the raw
+        // value would let an overpaid project offset another client's debt.
+        totalOut += Math.max(0, out);
 
         // Overcollected is worth flagging: usually a payment entered twice, or an
         // add-on that was billed but never recorded against the project.
@@ -4527,12 +4650,21 @@ function getProjectImageUrl(p) {
             <td>${esc(a.description)}</td>
             <td style="white-space:nowrap;font-weight:500;">${formatMYR(a.amount)}</td>
             <td style="white-space:nowrap;">${a.date ? formatDate(a.date) : '<span style="opacity:0.4;">&mdash;</span>'}</td>
+            <td>
+              <label style="display:inline-flex;align-items:center;gap:0.4rem;cursor:pointer;"
+                     title="Until this is ticked the add-on is agreed but not yet invoiced, so it does not count toward what the client owes.">
+                <input type="checkbox" class="addon-billed" data-id="${a.id}" ${a.billed ? 'checked' : ''} />
+                <span style="color:${a.billed ? 'var(--pos)' : 'var(--warn)'};font-size:0.78rem;">
+                  ${a.billed ? 'Billed' : 'Not billed'}
+                </span>
+              </label>
+            </td>
             <td style="text-align:right;">
               <button class="action-btn delete-btn" title="Delete add-on" onclick="deleteAddon('${escArg(a.id)}')">
                 <svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/></svg>
               </button>
             </td>
-          </tr>`).join('') : `<tr><td colspan="4" style="color:var(--bone-dim);padding:0.75rem 0;">
+          </tr>`).join('') : `<tr><td colspan="5" style="color:var(--bone-dim);padding:0.75rem 0;">
             No add-ons. Add one when the client agrees extra scope after the quote.</td></tr>`;
 
       const quotes = t.quotations.length ? t.quotations.map(q => `
@@ -4573,12 +4705,20 @@ function getProjectImageUrl(p) {
         </form>
 
         <h4 style="font-size:0.8rem;text-transform:uppercase;letter-spacing:0.14em;color:var(--bone-dim);margin:0 0 0.5rem;">Add-ons</h4>
-        <table style="width:100%;font-size:0.85rem;margin-bottom:0.75rem;"><tbody>${addonRows}</tbody></table>
+        <table style="width:100%;font-size:0.85rem;margin-bottom:0.5rem;"><tbody>${addonRows}</tbody></table>
+        ${t.addonsUnbilled > 0.01 ? `
+        <p style="font-size:0.78rem;color:var(--warn);margin:0 0 0.75rem;">
+          ${formatMYR(t.addonsUnbilled)} of add-ons agreed but not yet billed &mdash;
+          not counted in the contract total or in what the client owes.
+        </p>` : ''}
         <form class="add-addon-form" data-project="${projectId}"
               style="display:flex;gap:0.5rem;flex-wrap:wrap;align-items:flex-end;margin-bottom:1.75rem;">
           <input name="description" class="form-control" placeholder="What was added" style="width:16rem;" required />
           <input name="amount" class="form-control" type="number" step="0.01" min="0" placeholder="Amount" style="width:8rem;" required />
           <input name="date" class="form-control" type="date" style="width:10rem;" />
+          <label style="display:inline-flex;align-items:center;gap:0.4rem;font-size:0.8rem;cursor:pointer;">
+            <input type="checkbox" name="billed" /> Already billed
+          </label>
           <button type="submit" class="btn-primary" style="margin:0;width:auto;padding:0.5rem 1rem;">Add add-on</button>
         </form>
 
@@ -4595,6 +4735,9 @@ function getProjectImageUrl(p) {
       });
       host.querySelectorAll('.pay-received-date').forEach(inp => {
         inp.addEventListener('change', () => updateReceivedDate(inp.dataset.id, inp.value, inp));
+      });
+      host.querySelectorAll('.addon-billed').forEach(cb => {
+        cb.addEventListener('change', () => setAddonBilled(cb.dataset.id, cb.checked, cb));
       });
       host.querySelector('.add-payment-form')?.addEventListener('submit', e => {
         e.preventDefault();
@@ -4656,6 +4799,26 @@ function getProjectImageUrl(p) {
       } catch (err) {
         showToast('Failed: ' + err.message, 'error');
         if (cb) { cb.disabled = false; cb.checked = !received; }
+      }
+    }
+
+    /**
+     * Mark an add-on as invoiced (or not).
+     *
+     * Only billed add-ons count toward the contract total and therefore toward
+     * what the client owes, so this directly moves the Outstanding figure.
+     */
+    async function setAddonBilled(addonId, billed, cb) {
+      if (cb) cb.disabled = true;
+      try {
+        const { error } = await supabaseClient.from('project_addons')
+          .update({ billed }).eq('id', addonId);
+        if (error) throw error;
+        showToast(billed ? 'Add-on marked billed' : 'Add-on marked not billed', 'success');
+        await loadAllData();
+      } catch (err) {
+        showToast('Failed: ' + err.message, 'error');
+        if (cb) { cb.disabled = false; cb.checked = !billed; }
       }
     }
 
@@ -4726,11 +4889,14 @@ function getProjectImageUrl(p) {
       const description = form.description.value.trim();
       const amount = parseFloat(form.amount.value);
       const date = form.date.value || null;
+      // Defaults to false: recording an add-on means it was agreed, not that it
+      // has been invoiced. Only billed add-ons count toward what the client owes.
+      const billed = !!(form.billed && form.billed.checked);
       if (!description) { showToast('Describe what was added', 'error'); return; }
       if (!(amount >= 0)) { showToast('Amount must be a number', 'error'); return; }
       try {
         const { error } = await supabaseClient.from('project_addons').insert([{
-          project_id: projectId, description, amount, date
+          project_id: projectId, description, amount, date, billed
         }]);
         if (error) throw error;
         showToast('Add-on recorded', 'success');
@@ -4869,19 +5035,31 @@ function getProjectImageUrl(p) {
       if (!tbody) return;
 
       tbody.innerHTML = quotationsData.length ? '' :
-        `<tr><td colspan="7" style="text-align:center;color:var(--bone-dim);padding:2rem;">
+        `<tr><td colspan="10" style="text-align:center;color:var(--bone-dim);padding:2rem;">
           No quotations yet.</td></tr>`;
 
       const statusColour = { Draft: 'var(--bone-dim)', Sent: 'var(--warn)', Accepted: 'var(--pos)', Declined: 'var(--neg)' };
 
+      const today = todayLocal();
       quotationsData.forEach(q => {
         const proj = projectsData.find(p => p.id === q.project_id);
+        // Only meaningful while the quote is still live — an accepted or
+        // declined quote passing its validity date is not a problem.
+        const expired = q.valid_until && q.valid_until < today
+                        && (q.status === 'Draft' || q.status === 'Sent');
         const tr = document.createElement('tr');
         tr.innerHTML = `
           <td style="font-family:var(--font-mono);white-space:nowrap;">${esc(q.quote_number || '-')}</td>
           <td style="white-space:nowrap;">${esc(q.client || (proj ? proj.client : '') || '-')}</td>
           <td style="white-space:nowrap;">${proj ? esc(proj.name) : '<span style="opacity:0.5;">unlinked</span>'}</td>
           <td style="white-space:nowrap;">${q.quote_date ? formatDate(q.quote_date) : '-'}</td>
+          <td style="white-space:nowrap;color:${expired ? 'var(--neg)' : 'inherit'};"
+              title="${expired ? 'This quote has expired' : ''}">
+            ${q.valid_until ? formatDate(q.valid_until) : '<span style="opacity:0.4;">&mdash;</span>'}
+            ${expired ? ' <strong>expired</strong>' : ''}
+          </td>
+          <td style="white-space:nowrap;">${q.subtotal ? formatMYR(q.subtotal) : '<span style="opacity:0.4;">&mdash;</span>'}</td>
+          <td style="white-space:nowrap;">${q.sst_amount ? formatMYR(q.sst_amount) : '<span style="opacity:0.4;">&mdash;</span>'}</td>
           <td style="white-space:nowrap;font-weight:500;">${formatMYR(q.total)}</td>
           <td>
             <select class="inline-select quote-status" data-id="${q.id}" style="color:${statusColour[q.status] || 'inherit'};">
@@ -4895,6 +5073,8 @@ function getProjectImageUrl(p) {
                 <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></button>` : ''}
               ${(q.status === 'Accepted' && proj) ? `<button class="btn-outline" style="padding:0.2rem 0.6rem;font-size:0.72rem;margin:0;width:auto;"
                     onclick="applyQuoteToProject('${escArg(q.id)}')">Set project value</button>` : ''}
+              <button class="action-btn edit-btn" title="Edit" onclick="openQuotationModal('${escArg(q.id)}')">
+                <svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4z"/></svg></button>
               <button class="action-btn delete-btn" title="Delete" onclick="deleteQuotation('${escArg(q.id)}')">
                 <svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/></svg></button>
             </div>
@@ -4917,9 +5097,62 @@ function getProjectImageUrl(p) {
       }
     }
 
+    /**
+     * Open the quotation form, blank for a new one or populated for an edit.
+     *
+     * Quotations used to be insert-only with no edit button, so a wrong quote
+     * number could only be fixed by deleting and re-entering — which also
+     * orphaned the uploaded document in the bucket.
+     */
+    function openQuotationForm(id = null) {
+      const form = document.getElementById('quotationForm');
+      if (!form) return;
+      form.reset();
+      const set = (elId, v) => { const el = document.getElementById(elId); if (el) el.value = v; };
+      set('quoteId', '');
+
+      const title = document.getElementById('quotationFormTitle');
+      const cancel = document.getElementById('quoteCancelEdit');
+
+      if (id) {
+        const q = quotationsData.find(x => x.id === id);
+        if (!q) { showToast('Quotation not found', 'error'); return; }
+        set('quoteId', q.id);
+        set('quoteNumber', q.quote_number || '');
+        set('quoteClient', q.client || '');
+        set('quoteProject', q.project_id || '');
+        set('quoteDate', q.quote_date || '');
+        set('quoteValidUntil', q.valid_until || '');
+        set('quoteSubtotal', q.subtotal ?? 0);
+        set('quoteSst', q.sst_amount ?? 0);
+        set('quoteTotal', q.total ?? 0);
+        set('quoteStatus', q.status || 'Draft');
+        set('quoteNotes', q.notes || '');
+        if (title) {
+          title.textContent = `Editing ${q.quote_number || 'quotation'}`;
+          // The form sits above the table, so an edit triggered from a row far
+          // down the page would otherwise change nothing visible.
+          title.scrollIntoView({ behavior: prefersReducedMotion() ? 'auto' : 'smooth', block: 'center' });
+        }
+        if (cancel) cancel.style.display = '';
+      } else {
+        if (title) title.textContent = 'New quotation';
+        if (cancel) cancel.style.display = 'none';
+      }
+    }
+
+    // Kept as an alias: the table's edit button reads better as "open the modal"
+    // even though this form is inline on the tab.
+    const openQuotationModal = openQuotationForm;
+
+    function prefersReducedMotion() {
+      return window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    }
+
     async function saveQuotation(e) {
       e.preventDefault();
       const f = e.target;
+      const id = document.getElementById('quoteId').value;
       const file = document.getElementById('quoteFile').files[0];
       const total = parseFloat(document.getElementById('quoteTotal').value) || 0;
 
@@ -4948,10 +5181,19 @@ function getProjectImageUrl(p) {
           if (upErr) throw upErr;
           row.file_url = path;
         }
-        const { error } = await supabaseClient.from('quotations').insert([row]);
+
+        let error;
+        if (id) {
+          // No file chosen on an edit means keep the existing one — `file_url`
+          // is simply absent from `row`, so the column is left untouched.
+          ({ error } = await supabaseClient.from('quotations').update(row).eq('id', id));
+        } else {
+          ({ error } = await supabaseClient.from('quotations').insert([row]));
+        }
         if (error) throw error;
-        showToast('Quotation saved', 'success');
-        f.reset();
+
+        showToast(id ? 'Quotation updated' : 'Quotation saved', 'success');
+        openQuotationForm();          // reset back to "new", clears the edit state
         await loadAllData();
       } catch (err) {
         showToast('Failed: ' + err.message, 'error');
@@ -5013,13 +5255,12 @@ function getProjectImageUrl(p) {
       const tbody = document.getElementById('partnersTableBody');
       tbody.innerHTML = '';
 
-      // Every figure comes from computeFinancials(). See the comment on that
-      // function for why `share + paid` is the correct balance and why adding the
-      // settlement column to the profit share (what the old code looked like it
-      // was trying to do) double-deducts the expenses.
+      // Every figure comes from computeFinancials(). Expenses are borne wholly
+      // by whoever paid them, so there is no reimbursement term and no
+      // cross-settlement between partners — see the comment on that function.
       const { collected, expenses, netProfit, share, paid, withdrawn, balance,
-              settlement, withdrawnTotal, cashInAccount, sstReserved, distributable,
-      reconciled, unattributed } = fin;
+              outOfPocket, netPosition, withdrawnTotal, cashInAccount,
+              sstReserved, distributable, reconciled, unattributed } = fin;
 
       const pct = p => (systemSettings.partner_split?.[p] ?? 50);
 
@@ -5048,15 +5289,20 @@ function getProjectImageUrl(p) {
       // ---- per-partner table ----
       PARTNERS.forEach(p => {
         const tr = document.createElement('tr');
-        const s = settlement[p];
         tr.innerHTML = `
           <td style="font-weight: 500;">${p}</td>
           <td>${pct(p)}%</td>
-          <td>${formatMYR(paid[p])}</td>
-          <td>${formatMYR(expenses * (pct(p) / 100))}</td>
-          <td style="color: ${s >= 0 ? 'var(--pos)' : 'var(--neg)'}">${s >= 0 ? '+' : ''}${formatMYR(s)}</td>
           <td>${formatMYR(share[p])}</td>
+          <td>${formatMYR(withdrawn[p])}</td>
           <td style="font-weight: bold; color: ${balance[p] < 0 ? 'var(--neg)' : 'var(--accent)'};">${formatMYR(balance[p])}</td>
+          <td style="color: ${outOfPocket[p] > 0.01 ? 'var(--warn)' : 'var(--bone-dim)'};"
+              title="Spent personally. Borne entirely by this partner — not reimbursed and not shared.">
+            ${outOfPocket[p] > 0.01 ? '&minus;' : ''}${formatMYR(outOfPocket[p])}
+          </td>
+          <td style="color: ${netPosition[p] < 0 ? 'var(--neg)' : 'inherit'};"
+              title="Balance minus what they spent personally — this partner's real result.">
+            ${formatMYR(netPosition[p])}
+          </td>
         `;
         tbody.appendChild(tr);
       });
@@ -5064,38 +5310,38 @@ function getProjectImageUrl(p) {
       const trTotal = document.createElement('tr');
       trTotal.style.fontWeight = 'bold';
       trTotal.style.background = 'var(--table-header-bg)';
-      const sumPaid = PARTNERS.reduce((s, p) => s + paid[p], 0);
-      const sumSettle = PARTNERS.reduce((s, p) => s + settlement[p], 0);
+      const sumOop = PARTNERS.reduce((s, p) => s + outOfPocket[p], 0);
       const sumShare = PARTNERS.reduce((s, p) => s + share[p], 0);
       const sumBal = PARTNERS.reduce((s, p) => s + balance[p], 0);
+      const sumNet = PARTNERS.reduce((s, p) => s + netPosition[p], 0);
+      const sumDrawn = PARTNERS.reduce((s, p) => s + withdrawn[p], 0);
       trTotal.innerHTML = `
         <td>Total</td>
         <td>100%</td>
-        <td>${formatMYR(sumPaid)}</td>
-        <td>${formatMYR(expenses)}</td>
-        <td>${formatMYR(sumSettle)}</td>
         <td>${formatMYR(sumShare)}</td>
+        <td>${formatMYR(sumDrawn)}</td>
         <td style="color: var(--accent);">${formatMYR(sumBal)}</td>
+        <td>${formatMYR(sumOop)}</td>
+        <td>${formatMYR(sumNet)}</td>
       `;
       tbody.appendChild(trTotal);
 
       // ---- who owes whom ----
-      // With a fixed 50/50 split and all costs personally fronted, the imbalance
-      // is one number: whoever fronted more than half is owed the difference.
+      // Nobody, by design. Each partner bears their own costs, so there is no
+      // cross-settlement to compute — this panel now just states the position
+      // rather than implying a debt that does not exist.
       const settleEl = document.getElementById('partnerSettleUp');
       if (settleEl) {
-        const [a, b] = PARTNERS;
-        const gap = settlement[a];        // > 0 means a fronted more than their share
-        if (Math.abs(gap) < 0.01) {
-          settleEl.innerHTML = `<span style="color: var(--bone-dim);">Expenses are even &mdash; nothing to settle between you.</span>`;
+        if (sumOop < 0.01) {
+          settleEl.innerHTML = `<span style="color: var(--bone-dim);">No personal spending recorded.</span>`;
         } else {
-          const ower = gap > 0 ? b : a;
-          const owed = gap > 0 ? a : b;
+          const lines = PARTNERS
+            .filter(p => outOfPocket[p] > 0.01)
+            .map(p => `<strong>${esc(p)}</strong> ${formatMYR(outOfPocket[p])}`)
+            .join(' &middot; ');
           settleEl.innerHTML =
-            `<strong style="color: var(--warn);">${ower}</strong> owes ` +
-            `<strong style="color: var(--pos);">${owed}</strong> ` +
-            `<strong style="color: var(--accent);">${formatMYR(Math.abs(gap))}</strong> ` +
-            `<span style="color: var(--bone-dim);">for expenses fronted out of pocket.</span>`;
+            `<span style="color: var(--bone-dim);">Spent personally &mdash; ${lines}. ` +
+            `Each partner carries their own costs, so there is nothing to settle between you.</span>`;
         }
       }
 
