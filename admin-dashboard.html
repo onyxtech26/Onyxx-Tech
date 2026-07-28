@@ -1779,8 +1779,8 @@
           <h1 class="section-title">Expenses</h1>
         </div>
         <p style="color: var(--bone-dim); font-size: 0.88rem; margin-top: -0.5rem; margin-bottom: 1.5rem;">
-          Company purchases are split 50/50 and the payer is reimbursed. Personal ones
-          stay with whoever bought them. Add from the section it belongs to.
+          Everything is paid with company money. Company purchases are split 50/50;
+          personal ones come off that partner's share alone. Add from the section it belongs to.
         </p>
 
         <!-- Search & Filter Controls -->
@@ -1870,7 +1870,7 @@
                 <th>Opening Balance</th>
                 <th style="color: var(--pos);">Collected</th>
                 <th style="color: var(--warn);">Withdrawn</th>
-                <th style="color: var(--neg);">Expenses (fronted)</th>
+                <th style="color: var(--neg);" title="All purchases, company and personal — every one paid from this account">Expenses</th>
                 <th style="color: var(--accent);">Net Cash Flow</th>
                 <th>Closing Balance</th>
               </tr>
@@ -1932,11 +1932,12 @@
           </div>
         </div>
 
-        <!-- Who owes whom. With a fixed 50/50 split and all costs fronted
-             personally, the imbalance is a single number. -->
+        <!-- Everything is paid with company money, so nobody ever owes the
+             other — this just states each partner's personal spending, which is
+             already deducted from their Balance. -->
         <div class="glass-card" id="partnerSettleUpCard"
              style="padding: 1rem 1.25rem; margin-bottom: 1rem; font-size: 0.9rem;">
-          <div style="font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.14em; color: var(--bone-dim); margin-bottom: 0.4rem;">Settle up</div>
+          <div style="font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.14em; color: var(--bone-dim); margin-bottom: 0.4rem;">Personal spending</div>
           <div id="partnerSettleUp">&mdash;</div>
         </div>
 
@@ -1954,11 +1955,9 @@
                 <th>Partner</th>
                 <th>Share %</th>
                 <th title="Their percentage of the pool: collected, less SST, less company expenses">Share of Profit</th>
-                <th title="Company purchases they fronted — the account owes this back">Owed Back</th>
-                <th>Withdrawn</th>
-                <th style="color: var(--accent);" title="Share + owed back − withdrawn. What they can take from the account.">Balance</th>
-                <th title="Bought for themselves. Not reimbursed, not split — this is what makes it theirs alone.">Spent on Self</th>
-                <th title="Balance minus everything they paid out of their own pocket, company and personal — who is actually ahead">Net Position</th>
+                <th title="Bought for themselves on the company card. Comes off their share alone — the other partner is unaffected.">Spent on Self</th>
+                <th title="Cash taken out of the account">Withdrawn</th>
+                <th style="color: var(--accent);" title="Share − spent on self − withdrawn. What is still theirs to take.">Balance</th>
               </tr>
             </thead>
             <tbody id="partnersTableBody">
@@ -2578,14 +2577,10 @@
       contractTotal: 0,
       expenses: 0,
       netProfit: 0,
-      paid: {},        // partner -> expenses they personally fronted
       withdrawn: {},   // partner -> cash they have taken out
-      balance: {},     // partner -> what they are actually owed
+      balance: {},     // partner -> what is still theirs to take
       companyExpenses: 0,
-      reimbursable: {},  // partner -> company expenses they fronted, owed back
-      personalSpend: {}, // partner -> own purchases, never reimbursed
-      outOfPocket: {},   // alias of personalSpend, used by the Partners table
-      netPosition: {},   // partner -> balance minus personal spending
+      personalSpend: {}, // partner -> own purchases on the company card, off their share
       distributablePool: 0,
       cashInAccount: 0,
       sstReserved: 0,   // SST collected and owed onward — in the account, not income
@@ -3181,64 +3176,68 @@ function getProjectImageUrl(p) {
        computeFinancials — run once per load, before anything renders
        ==================================================================
        PARTNER ACCOUNTING
-       Client money lands in one shared business account, and expenses are paid
-       by a partner personally. THE RULE TURNS ON WHO THE PURCHASE WAS FOR:
+
+       EVERYTHING IS PAID WITH COMPANY MONEY. Client money lands in one shared
+       business account and every purchase — company or personal, either partner
+       — comes straight out of it. Nobody ever fronts anything from their own
+       pocket, so there is NO reimbursement anywhere in this model. If you find
+       yourself adding a `+ paid(P)` term, the assumption behind it is wrong.
+
+       THE RULE TURNS ON WHO THE PURCHASE WAS FOR:
 
          * FOR THE COMPANY  — cost shared 50/50, and the payer gets their money
                               back. A laptop for the studio is not one partner's
                               problem.
-         * FOR THE PARTNER  — borne entirely by whoever bought it, and NOT
-                              reimbursed. Headphones for yourself are yours.
+         * FOR THE PARTNER  — comes off that partner's share alone. Headphones
+                              for yourself are yours, even though the company
+                              card paid for them.
 
        That is `expenses.scope`, 'company' or 'personal'.
 
-       Only company expenses come out of the pool being divided; personal ones
-       never enter the company's arithmetic at all:
+       Company spending shrinks the pot before it is divided. Personal spending
+       does not touch the pot — it is deducted from the buyer's slice of it:
 
            pool       = collected - SST - companyExpenses
            share(P)   = pct(P) x pool
-           balance(P) = share(P) + reimbursable(P) - withdrawn(P)
+           balance(P) = share(P) - personalSpend(P) - withdrawn(P)
 
-       where reimbursable(P) is the COMPANY expenses P fronted. Personal
-       spending is deliberately absent from that line — that absence IS how the
-       cost lands on the buyer. They spent their own money and do not get it
-       back, so they end up behind the other partner by exactly that amount.
+       A personal expense is, in substance, that partner taking money out of the
+       business — the same thing a withdrawal is. It is recorded as an expense
+       rather than a withdrawal so it keeps its category, receipt and notes.
 
        Worked example. Collected RM10,000; Kunacosta buys a RM1,000 company
-       laptop and RM300 of headphones for himself, both from his own pocket:
+       laptop and RM300 of headphones for himself, BOTH ON THE COMPANY CARD:
 
-           pool         10,000 - 1,000 = 9,000
-           share        Kunacosta 4,500   Rooben 4,500
-           reimbursable Kunacosta 1,000   Rooben 0
-           balance      Kunacosta 5,500   Rooben 4,500   <- available to withdraw
-           personal     Kunacosta   300   Rooben 0
-           net          Kunacosta 4,200   Rooben 4,500   <- true economic result
+           pool       10,000 - 1,000 = 9,000
+           share      Kunacosta 4,500   Rooben 4,500
+           personal   Kunacosta   300   Rooben 0
+           balance    Kunacosta 4,200   Rooben 4,500
 
-       Read the net line: the gap is exactly RM300, the headphones. The laptop
-       cost them RM500 each. Both rules hold simultaneously.
+       The gap is exactly RM300, the headphones. The laptop cost them RM500
+       each. Cash left in the account is 10,000 - 1,000 - 300 = 8,700, and
+       4,200 + 4,500 = 8,700.
 
-       Kunacosta's BALANCE being higher than Rooben's is correct and not a bug —
-       the company owes him RM1,000 for the laptop. Net Position is the column
-       that answers "who is actually ahead".
-
-       IF A PERSONAL ITEM IS BOUGHT WITH COMPANY MONEY, do not record it here.
-       That is money leaving the account for one partner, which is exactly what
-       `partner_withdrawals` is for. Logging it as a personal expense would
-       understate what that partner has taken.
+       WHAT THIS REPLACED, AND WHY
+       An earlier version had a `reimbursable(P)` term and an "Owed Back" column,
+       built on the assumption that partners paid out of their own pockets and
+       the company settled up with them. That is not how this studio operates:
+       everything goes on company money, so nothing is ever owed back. The term
+       inflated the buyer's balance by the full amount they had spent.
 
        `netProfit` below is `collected - SST - expenses` INCLUDING personal ones,
        and is a REPORTING figure only — never what shares derive from. Do not
        wire it into share().
 
        RECONCILIATION
-       Company expenses are reimbursed out of the account and personal ones never
-       touch it, so the balances still have to add up to the cash sitting there,
-       less anything owed to the tax authority:
+       Every expense leaves the account, so cash on hand is collected minus ALL
+       expenses minus withdrawals, and the balances have to add up to that, less
+       anything owed to the tax authority:
 
-           balance(A) + balance(B) === collected - SST - total withdrawn
+           balance(A) + balance(B)
+             === collected - SST - all expenses - total withdrawn
 
-       (companyExpenses cancels: it comes off the pool and goes straight back on
-       as reimbursement.)
+       (companyExpenses reaches it through the pool; personalSpend through the
+       per-partner deduction. Both are already netted off.)
 
        `fin.reconciled` reports that. It only goes false on bad data (an expense
        with no paid_by, a withdrawal by an unknown name), which is exactly when
@@ -3324,37 +3323,33 @@ function getProjectImageUrl(p) {
 
       // ---- expenses, split by WHO THE PURCHASE WAS FOR ----
       //
-      // company  -> comes off the shared pool, and the payer is reimbursed
-      // personal -> never touches the pool, and is NOT reimbursed
+      // Both kinds are paid with company money and leave the account.
+      // company  -> shrinks the pool, so the cost is shared by the split
+      // personal -> comes off the buyer's slice of the pool alone
       //
       // Rows written before `scope` existed have no value; they are treated as
       // 'company', which is what every expense meant at the time.
-      let expenses = 0;             // everything, for reporting
-      let companyExpenses = 0;      // the only kind that reduces the pool
-      const reimbursable = {};      // company expenses P fronted -> owed back
-      const personalSpend = {};     // P's own purchases -> never owed back
+      let expenses = 0;             // everything, for reporting and for cash
+      let companyExpenses = 0;      // shrinks the pool before it is divided
+      const personalSpend = {};     // deducted from that partner's slice
       const unattributed = [];
-      PARTNERS.forEach(p => { reimbursable[p] = 0; personalSpend[p] = 0; });
+      PARTNERS.forEach(p => { personalSpend[p] = 0; });
 
       expensesData.forEach(e => {
         const amt = parseFloat(e.amount) || 0;
         expenses += amt;
         const isPersonal = String(e.scope || 'company').trim().toLowerCase() === 'personal';
+
+        if (!isPersonal) { companyExpenses += amt; return; }
+
+        // Only PERSONAL expenses need to be charged to someone. A company
+        // expense with a missing paid_by is untidy but harmless — the cost is
+        // shared either way. A personal one with no owner cannot be charged at
+        // all, so it is flagged rather than silently absorbed.
         const who = PARTNERS.find(p => p.toLowerCase() === String(e.paid_by || '').trim().toLowerCase());
-
-        if (!who) {
-          // Cannot be charged to anyone; drives the reconciliation warning.
-          unattributed.push(e);
-          if (!isPersonal) companyExpenses += amt;
-          return;
-        }
-        if (isPersonal) personalSpend[who] += amt;
-        else { companyExpenses += amt; reimbursable[who] += amt; }
+        if (who) personalSpend[who] += amt;
+        else unattributed.push(e);
       });
-
-      // Kept under the old name so nothing downstream had to change: `paid` has
-      // always meant "what the company owes this partner back".
-      const paid = reimbursable;
 
       const withdrawn = {};
       PARTNERS.forEach(p => { withdrawn[p] = 0; });
@@ -3397,27 +3392,21 @@ function getProjectImageUrl(p) {
 
       const share = {};
       const balance = {};
-      const netPosition = {};   // balance minus personal spending: P's real result
       PARTNERS.forEach(p => {
         // Always 50/50, but read the setting so Settings still means something.
         const pct = (systemSettings.partner_split?.[p] ?? (100 / PARTNERS.length)) / 100;
         share[p] = distributablePool * pct;
-        // + reimbursable: the company owes P for what they fronted ON ITS
-        // BEHALF. Personal spending is deliberately NOT added back — that
-        // omission is exactly how the cost lands on the buyer alone.
-        balance[p] = share[p] + reimbursable[p] - withdrawn[p];
-        // Everything P laid out of their own pocket, company AND personal —
-        // not just the personal part. The company half is already added back
-        // into balance as reimbursement, so subtracting only personalSpend
-        // would leave that reimbursement counted as if it were profit and
-        // overstate P by the full amount they fronted.
-        netPosition[p] = balance[p] - reimbursable[p] - personalSpend[p];
+        // Personal spending is money this partner has already taken out of the
+        // business, so it reduces what is left for them exactly as a withdrawal
+        // does. No reimbursement term: the company card paid, not the partner.
+        balance[p] = share[p] - personalSpend[p] - withdrawn[p];
       });
 
-      // Kept for the Partners table, which labels this "Spent Personally".
-      const outOfPocket = personalSpend;
-
-      const cashInAccount = collected - withdrawnTotal;
+      // EVERY expense leaves this account — company and personal alike — so
+      // both come off the cash figure. The previous model excluded them on the
+      // assumption that partners paid personally, which overstated the balance
+      // by the full amount ever spent.
+      const cashInAccount = collected - expenses - withdrawnTotal;
       const balanceSum = PARTNERS.reduce((s, p) => s + balance[p], 0);
       // Cash physically present, minus what is earmarked for SST. This is what
       // is actually available to withdraw.
@@ -3426,8 +3415,8 @@ function getProjectImageUrl(p) {
       fin = {
         byProject, collected, scheduled, outstanding, outstandingOwed, overpaidTotal,
         overdue, contractTotal,
-        expenses, companyExpenses, netProfit, share, paid, withdrawn, balance,
-        reimbursable, personalSpend, outOfPocket, netPosition, distributablePool,
+        expenses, companyExpenses, netProfit, share, withdrawn, balance,
+        personalSpend, distributablePool,
         withdrawnTotal, cashInAccount, sstReserved, distributable, unattributed,
         // `loadErrors.length` is part of this on purpose. The arithmetic
         // invariant cannot detect a table that failed to load — drop `expenses`
@@ -3439,11 +3428,13 @@ function getProjectImageUrl(p) {
         //
         // Against `distributable`, not `cashInAccount`, because SST sits in the
         // account without belonging to either partner:
-        //   Σbalance = netProfit + Σpaid − Σwithdrawn
-        //            = (collected − sst − expenses) + expenses − withdrawn
-        //            = collected − sst − withdrawn
+        //   Σbalance = pool − Σpersonal − Σwithdrawn
+        //            = (collected − sst − companyExpenses) − personal − withdrawn
+        //            = collected − sst − allExpenses − withdrawn
         //            = distributable
-        // With sstReserved 0 this is the original identity unchanged.
+        // Company spending reaches it through the pool, personal through the
+        // per-partner deduction — so every ringgit that left the account is
+        // accounted for exactly once on each side.
         reconciled: loadErrors.length === 0
                     && Math.abs(balanceSum - distributable) < 0.01
                     && unattributed.length === 0
@@ -3745,12 +3736,12 @@ function getProjectImageUrl(p) {
     }
 
     function populateDropdowns() {
-      // Partners only — NOT the wider team. Two reasons: partner balances are
-      // computed from who fronted each cost, so a non-partner payer has nowhere
-      // to be charged; and the DB now constrains paid_by to these two names, so
-      // offering a team member here would fail on insert with a raw constraint
-      // error. Who *does the work* is projectAssignedTo, below, which does still
-      // include the team.
+      // Partners only — NOT the wider team. Two reasons: a personal expense is
+      // charged against a partner's share, and a non-partner has no share to
+      // charge; and the DB constrains paid_by to these two names, so offering a
+      // team member here would fail on insert with a raw constraint error. Who
+      // *does the work* is projectAssignedTo, below, which does still include
+      // the team.
       const paidBySelect = document.getElementById('expensePaidBy');
       if (paidBySelect) {
         const prevVal = paidBySelect.value;
@@ -3860,9 +3851,8 @@ function getProjectImageUrl(p) {
       // the SUM lets an overpaid project cancel out another client's debt, and
       // Reports clamps per project, so the two tabs used to disagree.
       const totalOutstanding = fin.outstandingOwed;
-      // Cash in the shared account is what was collected less what the partners
-      // have withdrawn. Expenses are paid personally and borne by whoever paid,
-      // so they never move money in or out of this account at all.
+      // Cash in the shared account: collected, less every expense (all paid
+      // from this account), less what the partners have withdrawn.
       const cashBalance = fin.cashInAccount;
       const netProfitCollected = fin.netProfit;
       const expectedProfit = totalProjectValue - totalExpenses;
@@ -4369,10 +4359,11 @@ function getProjectImageUrl(p) {
     /* ==================================================================
        EXPENSES — one block for the company, one per partner
        ==================================================================
-       The split is not cosmetic: a company purchase is shared 50/50 and the
-       payer is reimbursed, a personal one is carried by the buyer alone. Those
-       used to sit in one table separated only by a badge, which made it easy to
-       mis-set and hard to answer "what have I spent on myself this month".
+       The split is not cosmetic: everything is paid with company money, and a
+       company purchase is shared 50/50 while a personal one comes off the
+       buyer's share alone. Those used to sit in one table separated only by a
+       badge, which made it easy to mis-set and hard to answer "what have I
+       spent on myself this month".
 
        Each block owns its Add button and pre-fills the type, so the section a
        row lives in is the answer rather than a dropdown to remember. */
@@ -4486,7 +4477,7 @@ function getProjectImageUrl(p) {
 
       blocks.push(expenseSectionHTML({
         title: 'Company Expenses',
-        subtitle: 'Bought for the studio. Split 50/50, and whoever paid is reimbursed from the account.',
+        subtitle: 'Bought for the studio with company money. The cost is shared 50/50.',
         rows: filtered.filter(e => !isPersonal(e)),
         addLabel: 'Add company expense',
         onAdd: "openExpenseModal(null, 'company')",
@@ -4497,7 +4488,7 @@ function getProjectImageUrl(p) {
       PARTNERS.forEach(p => {
         blocks.push(expenseSectionHTML({
           title: `${p} — Personal`,
-          subtitle: `Bought by ${esc(p)} for themselves. Not reimbursed, and it does not touch the other partner.`,
+          subtitle: `Bought by ${esc(p)} for themselves with company money. Comes off ${esc(p)}'s share alone.`,
           rows: filtered.filter(e => isPersonal(e) && byPartner(p)(e)),
           addLabel: `Add for ${p}`,
           onAdd: `openExpenseModal(null, 'personal', '${escArg(p)}')`,
@@ -4613,11 +4604,12 @@ function getProjectImageUrl(p) {
                 pointBackgroundColor: pal.accent, pointRadius: 3, order: 0 },
               { type: 'bar', label: 'Collected', data: sortedMonths.map(k => monthlyData[k].moneyIn),
                 backgroundColor: pal.alpha(pal.pos, 0.55), borderRadius: 4, order: 1 },
-              { type: 'bar', label: 'Withdrawn', data: sortedMonths.map(k => monthlyData[k].moneyOut),
+              // moneyOut includes expenses, so the two bars split it back
+              // apart: withdrawals and purchases are both real money leaving
+              // the account, and both are already inside the balance line.
+              { type: 'bar', label: 'Withdrawn', data: sortedMonths.map(k => (monthlyData[k].moneyOut - (monthlyData[k].expenses || 0))),
                 backgroundColor: pal.alpha(pal.warn, 0.55), borderRadius: 4, order: 2 },
-              // Shown for context, not part of the balance line: fronted
-              // personally, so it never leaves this account.
-              { type: 'bar', label: 'Expenses (fronted)', data: sortedMonths.map(k => monthlyData[k].expenses || 0),
+              { type: 'bar', label: 'Expenses', data: sortedMonths.map(k => monthlyData[k].expenses || 0),
                 backgroundColor: pal.alpha(pal.neg, 0.45), borderRadius: 4, order: 3 }
             ]
           },
@@ -4711,22 +4703,26 @@ function getProjectImageUrl(p) {
       // IN: every received payment, by the month it arrived.
       revenueByMonth().forEach(([monthKey, amt]) => { bucket(monthKey).moneyIn += amt; });
 
-      // OUT: partner withdrawals. This is the correction — expenses are fronted
-      // personally and never leave the shared account, so using them here gave a
-      // closing balance that contradicted the Overview's cash figure.
+      // OUT: withdrawals AND expenses. Every purchase — company or personal —
+      // is made with company money, so both leave this account. (An earlier
+      // model kept expenses out of money-out on the assumption partners paid
+      // personally and were owed back; that assumption was wrong for this
+      // studio and made the closing balance overstate cash by every ringgit
+      // ever spent.) `expenses` is kept as its own bucket so the table can
+      // still show the split.
       withdrawalsData.forEach(w => {
         if (!w.date) return;
         const monthKey = String(w.date).substring(0, 7);
         if (monthKey.length === 7) bucket(monthKey).moneyOut += parseFloat(w.amount) || 0;
       });
 
-      // Tracked but NOT deducted here: real money the partners are owed back,
-      // just not out of this account. It moves the partner balances, not the
-      // cash position.
       expensesData.forEach(e => {
         if (!e.date) return;
         const monthKey = String(e.date).substring(0, 7);
-        if (monthKey.length === 7) bucket(monthKey).expenses += parseFloat(e.amount) || 0;
+        if (monthKey.length !== 7) return;
+        const amt = parseFloat(e.amount) || 0;
+        bucket(monthKey).moneyOut += amt;
+        bucket(monthKey).expenses += amt;
       });
 
       const sortedMonths = Object.keys(monthlyData).sort();
@@ -4760,7 +4756,7 @@ function getProjectImageUrl(p) {
           <td style="font-weight: 500;">${monthName}</td>
           <td>${formatMYR(openingBalance)}</td>
           <td style="color: var(--pos);">${formatMYR(row.moneyIn)}</td>
-          <td style="color: var(--warn);">${formatMYR(row.moneyOut)}</td>
+          <td style="color: var(--warn);">${formatMYR(row.moneyOut - row.expenses)}</td>
           <td style="color: var(--neg);">${formatMYR(row.expenses)}</td>
           <td style="color: ${netColor}; font-weight: 500;">${netPrefix}${formatMYR(net)}</td>
           <td style="font-weight: 500; color: ${closingBalance >= 0 ? 'var(--bone)' : 'var(--neg)'}">${formatMYR(closingBalance)}</td>
@@ -5493,7 +5489,7 @@ function getProjectImageUrl(p) {
       // by whoever paid them, so there is no reimbursement term and no
       // cross-settlement between partners — see the comment on that function.
       const { collected, expenses, companyExpenses, netProfit, share, withdrawn, balance,
-              reimbursable, personalSpend, netPosition, withdrawnTotal, cashInAccount,
+              personalSpend, withdrawnTotal, cashInAccount,
               sstReserved, distributable, reconciled, unattributed } = fin;
 
       const pct = p => (systemSettings.partner_split?.[p] ?? 50);
@@ -5527,20 +5523,14 @@ function getProjectImageUrl(p) {
           <td style="font-weight: 500;">${p}</td>
           <td>${pct(p)}%</td>
           <td>${formatMYR(share[p])}</td>
-          <td style="color: ${reimbursable[p] > 0.01 ? 'var(--pos)' : 'var(--bone-dim)'};"
-              title="Company purchases ${p} paid for personally. The account owes this back, on top of their share.">
-            ${reimbursable[p] > 0.01 ? '+' : ''}${formatMYR(reimbursable[p])}
-          </td>
-          <td>${formatMYR(withdrawn[p])}</td>
-          <td style="font-weight: bold; color: ${balance[p] < 0 ? 'var(--neg)' : 'var(--accent)'};">${formatMYR(balance[p])}</td>
           <td style="color: ${personalSpend[p] > 0.01 ? 'var(--warn)' : 'var(--bone-dim)'};"
-              title="Bought for themselves. Not reimbursed and not shared — this is what puts the cost on them alone.">
+              title="Bought for themselves on the company card. Comes off their share alone.">
             ${personalSpend[p] > 0.01 ? '&minus;' : ''}${formatMYR(personalSpend[p])}
           </td>
-          <td style="color: ${netPosition[p] < 0 ? 'var(--neg)' : 'inherit'};"
-              title="Balance minus everything they paid out of their own pocket, company and personal. Two partners who only ever bought for the company end up equal here.">
-            ${formatMYR(netPosition[p])}
+          <td style="color: ${withdrawn[p] > 0.01 ? 'var(--warn)' : 'var(--bone-dim)'};">
+            ${withdrawn[p] > 0.01 ? '&minus;' : ''}${formatMYR(withdrawn[p])}
           </td>
+          <td style="font-weight: bold; color: ${balance[p] < 0 ? 'var(--neg)' : 'var(--accent)'};">${formatMYR(balance[p])}</td>
         `;
         tbody.appendChild(tr);
       });
@@ -5549,45 +5539,36 @@ function getProjectImageUrl(p) {
       trTotal.style.fontWeight = 'bold';
       trTotal.style.background = 'var(--table-header-bg)';
       const sumOop = PARTNERS.reduce((s, p) => s + personalSpend[p], 0);
-      const sumReimb = PARTNERS.reduce((s, p) => s + reimbursable[p], 0);
       const sumShare = PARTNERS.reduce((s, p) => s + share[p], 0);
       const sumBal = PARTNERS.reduce((s, p) => s + balance[p], 0);
-      const sumNet = PARTNERS.reduce((s, p) => s + netPosition[p], 0);
       const sumDrawn = PARTNERS.reduce((s, p) => s + withdrawn[p], 0);
       trTotal.innerHTML = `
         <td>Total</td>
         <td>100%</td>
         <td>${formatMYR(sumShare)}</td>
-        <td>${formatMYR(sumReimb)}</td>
+        <td>${formatMYR(sumOop)}</td>
         <td>${formatMYR(sumDrawn)}</td>
         <td style="color: var(--accent);">${formatMYR(sumBal)}</td>
-        <td>${formatMYR(sumOop)}</td>
-        <td>${formatMYR(sumNet)}</td>
       `;
       tbody.appendChild(trTotal);
 
-      // ---- what the account owes, and who spent on themselves ----
-      // Company purchases create a real debt from the account to whoever
-      // fronted them; personal ones create nothing. Stating both stops the
-      // Balance column looking wrong when one partner is owed a lot.
+      // ---- who has taken what ----
+      // Nobody owes anybody anything: every purchase used company money, so
+      // there is no cross-settlement to compute. What is worth stating is how
+      // much of the account each partner has already consumed personally.
       const settleEl = document.getElementById('partnerSettleUp');
       if (settleEl) {
-        const parts = [];
-        if (sumReimb > 0.01) {
-          const who = PARTNERS.filter(p => reimbursable[p] > 0.01)
-            .map(p => `<strong>${esc(p)}</strong> ${formatMYR(reimbursable[p])}`).join(' &middot; ');
-          parts.push(`The account owes ${who} for company purchases they paid for &mdash; ` +
-                     `that is why their Balance sits above their Share.`);
-        }
-        if (sumOop > 0.01) {
+        if (sumOop < 0.01) {
+          settleEl.innerHTML = `<span style="color: var(--bone-dim);">` +
+            `No personal spending recorded. Every expense so far was for the company, ` +
+            `so the cost is split evenly.</span>`;
+        } else {
           const who = PARTNERS.filter(p => personalSpend[p] > 0.01)
             .map(p => `<strong>${esc(p)}</strong> ${formatMYR(personalSpend[p])}`).join(' &middot; ');
-          parts.push(`Spent on themselves: ${who}. Not reimbursed, and it does not touch the other partner &mdash; ` +
-                     `see Net Position for who is actually ahead.`);
+          settleEl.innerHTML = `<span style="color: var(--bone-dim);">` +
+            `Spent on themselves &mdash; ${who}. Already deducted from that partner's Balance, ` +
+            `so there is nothing to settle between you.</span>`;
         }
-        settleEl.innerHTML = parts.length
-          ? `<span style="color: var(--bone-dim);">${parts.join('<br>')}</span>`
-          : `<span style="color: var(--bone-dim);">No expenses recorded yet.</span>`;
       }
 
       // ---- reconciliation ----
@@ -5605,13 +5586,14 @@ function getProjectImageUrl(p) {
           recEl.innerHTML =
             `<span style="color: var(--pos);">&#10003; Balanced</span> ` +
             `<span style="color: var(--bone-dim);">&mdash; partner balances (${formatMYR(sumBal)}) ` +
-            `match distributable cash (collected ${formatMYR(collected)} ` +
+            `match the cash in the account (collected ${formatMYR(collected)} ` +
+            `&minus; expenses ${formatMYR(expenses)} ` +
             `&minus; withdrawn ${formatMYR(withdrawnTotal)}${sstNote} = ${formatMYR(distributable)}).</span>`;
           recEl.style.borderColor = 'rgba(74, 222, 128, 0.3)';
         } else {
           const reasons = [];
           if (unattributed && unattributed.length) {
-            reasons.push(`${unattributed.length} expense(s) have no "Paid By" set, so they cannot be charged to a partner`);
+            reasons.push(`${unattributed.length} personal expense(s) have no valid "Paid By", so they cannot be charged to anyone's share`);
           }
           if (Math.abs(sumBal - distributable) >= 0.01) {
             reasons.push(`balances total ${formatMYR(sumBal)} but ${formatMYR(distributable)} is distributable (out by ${formatMYR(sumBal - distributable)})`);
@@ -6173,18 +6155,17 @@ function getProjectImageUrl(p) {
         hint.style.border = '1px solid rgba(251, 191, 36, 0.3)';
         hint.style.color = 'var(--bone)';
         hint.innerHTML = amt
-          ? `<strong>Personal.</strong> ${esc(who || 'The buyer')} carries the whole ${formatMYR(amt)} — `
-            + `not reimbursed${other ? `, and ${esc(other)}'s figures do not move` : ''}.`
-          : `<strong>Personal.</strong> Carried by ${esc(who || 'the buyer')} alone. `
-            + `Not reimbursed, and the other partner is unaffected.`;
+          ? `<strong>Personal.</strong> The full ${formatMYR(amt)} comes off `
+            + `${esc(who || 'the buyer')}'s share${other ? ` — ${esc(other)}'s figures do not move` : ''}.`
+          : `<strong>Personal.</strong> Paid with company money, and the whole amount `
+            + `comes off ${esc(who || 'the buyer')}'s share. The other partner is unaffected.`;
       } else {
         hint.style.background = 'rgba(56, 224, 255, 0.07)';
         hint.style.border = '1px solid var(--accent-faint)';
         hint.style.color = 'var(--bone)';
         hint.innerHTML = amt
-          ? `<strong>Company.</strong> ${formatMYR(amt / 2)} each`
-            + `${who ? `, and ${esc(who)} is paid back the full ${formatMYR(amt)} from the account` : ''}.`
-          : `<strong>Company.</strong> Split 50/50, and whoever paid is reimbursed from the account.`;
+          ? `<strong>Company.</strong> Paid from the account — the cost lands on both of you, ${formatMYR(amt / 2)} each.`
+          : `<strong>Company.</strong> Paid from the account, cost shared 50/50.`;
       }
     }
 

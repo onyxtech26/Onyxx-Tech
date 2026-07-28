@@ -5,6 +5,61 @@ Format each entry: what was done, why it mattered, and any key decisions.
 
 ---
 
+## 2026-07-28 (expense model corrected — everything is company money)
+
+### No more reimbursement, no "Owed Back"
+
+The model built earlier today assumed partners paid out of their own pockets and
+the company reimbursed them, which is where the `reimbursable` term and the
+"Owed Back" column came from. That is not how the studio operates: **every
+purchase, company or personal, is made with company money.** So nobody ever
+fronts anything, and nothing is ever owed back.
+
+Corrected model:
+
+```
+pool       = collected − SST − companyExpenses
+share(P)   = pct(P) × pool
+balance(P) = share(P) − personalSpend(P) − withdrawn(P)
+```
+
+A personal expense is, in substance, that partner taking money out of the
+business — it behaves exactly like a withdrawal, and comes off their share
+alone. It stays an expense (not a withdrawal row) so it keeps its category,
+receipt and notes.
+
+Same worked example, everything on the company card: collected RM10,000, a
+RM1,000 company laptop and RM300 of headphones for Kunacosta →
+
+| | Kunacosta | Rooben |
+|---|---|---|
+| Share of pool (9,000) | 4,500 | 4,500 |
+| Spent on self | −300 | 0 |
+| **Balance** | **4,200** | **4,500** |
+
+Cash in account = 10,000 − 1,300 = **8,700**, and 4,200 + 4,500 = 8,700.
+
+**What changed in the code:**
+- `reimbursable`, `outOfPocket`, `netPosition` and the "Owed Back" and "Net
+  Position" columns are gone. The Partners table is now Share · Spent on Self ·
+  Withdrawn · Balance.
+- `cashInAccount` = `collected − expenses − withdrawnTotal` (was excluding
+  expenses, which overstated cash by everything ever spent).
+- The Cash Flow tab counts **all** expenses as money out, not just withdrawals —
+  its old comment explicitly said expenses "never leave the shared account,"
+  which was the wrong assumption. Withdrawn and Expenses are shown as separate
+  columns/bars but both reduce the balance.
+- Reconciliation identity is now `Σbalance = collected − SST − allExpenses −
+  withdrawn`; the "Balanced" line spells out the expenses term.
+- Form hints, section subtitles and the "Settle up" card (now "Personal
+  spending") all restated — nobody owes anybody, because it is all company money.
+
+Verified: four expense scenarios exact including a legacy no-scope row, invariant
+delta 0.00e+00 throughout, sections/escaping/pages suites still pass. No schema
+change — `scope` already exists from migration 05.
+
+---
+
 ## 2026-07-28 (expenses tab restructured)
 
 ### One block per spender, instead of a dropdown

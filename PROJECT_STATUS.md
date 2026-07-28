@@ -12,35 +12,31 @@
 
 **Two migrations are written but NOT run:** `03_admin_allowlist` (needs Rooben's email filled in first) and `04_integrity`. Both are in "Next / To do" with the order they need.
 
-**⚠️ THE ACCOUNTING RULE CHANGED — read this before looking at any figure.**
-Expenses are now split by **who the purchase was for** (`expenses.scope`):
+**⚠️ THE ACCOUNTING RULE (settled 2026-07-28) — read before looking at any figure.**
+**Everything is paid with company money.** No partner ever fronts anything from their own pocket, so there is **no reimbursement anywhere** in the model. Expenses are split by **who the purchase was for** (`expenses.scope`):
 
-- **company** — cost shared 50/50, payer reimbursed from the account
-- **personal** — carried entirely by the buyer, never reimbursed, other partner untouched
+- **company** — the cost is shared 50/50
+- **personal** — the whole amount comes off that partner's share alone; the other partner is untouched
 
 ```
 pool       = collected − SST − companyExpenses
 share(P)   = pct(P) × pool
-balance(P) = share(P) + reimbursable(P) − withdrawn(P)
+balance(P) = share(P) − personalSpend(P) − withdrawn(P)
 ```
 
-`reimbursable(P)` counts **only company** expenses. Personal spending's absence from that line is what puts the cost on the buyer. Collected RM10,000, Kunacosta buys a RM1,000 company laptop and RM300 of headphones for himself:
+A personal expense behaves exactly like a withdrawal — it is that partner taking money out — but stays an expense so it keeps its category/receipt/notes. Collected RM10,000, Kunacosta buys a RM1,000 company laptop and RM300 of headphones for himself, all on the company card:
 
 | | Kunacosta | Rooben |
 |---|---|---|
 | Share of pool (9,000) | 4,500 | 4,500 |
-| Owed back | 1,000 | 0 |
-| **Balance** | **5,500** | **4,500** |
-| Spent on self | 300 | 0 |
-| **Net position** | **4,200** | **4,500** |
+| Spent on self | −300 | 0 |
+| **Balance** | **4,200** | **4,500** |
 
-Gap in net = RM300, the headphones. Laptop cost RM500 each.
+Cash in account = 10,000 − 1,300 = 8,700 = 4,200 + 4,500.
 
-**A higher Balance is not a bug** — it means the account owes that partner for something they fronted. *Net Position* is the column that says who is ahead, and it subtracts **everything** they paid out of pocket, company and personal. (Subtracting only the personal part was a bug the tests caught.)
+**Do NOT re-add a `+ reimbursable` / `+ paid` term.** An earlier version of this same day had one, plus an "Owed Back" column, on the wrong assumption that partners paid personally. It inflated the buyer's balance by everything they'd spent. If you find yourself adding reimbursement, the premise is wrong — it's all company money.
 
-**If a personal item is bought with company money, log it as a withdrawal, not an expense** — otherwise it understates what that partner has taken.
-
-`netProfit` remains `collected − SST − expenses` as a **reporting figure only** — never wire it into `share()`.
+`cashInAccount = collected − expenses − withdrawn` (every expense leaves the account). Reconciliation: `Σbalance = collected − SST − allExpenses − withdrawn`. `netProfit` stays `collected − SST − expenses` as a **reporting figure only** — never wire it into `share()`.
 
 **Closed a live exposure:** production was serving `/supabase_migration.sql` (full schema + every RLS policy), `/PROJECT_STATUS.md`, `/CLAUDE.md` and `/docs/CHANGELOG.md` as public static assets — no build step means every tracked file becomes a URL. Added `.vercelignore`; all four now return 404, verified against the live domain.
 
@@ -156,7 +152,7 @@ leaves you unable to onboard Rooben.
 4. **Run `supabase_migration_05_expense_scope.sql` — REQUIRED, not optional.** Adds `expenses.scope`. The dashboard writes it on every save, so **recording an expense fails until this is run**. Existing rows default to `'company'`, which is what every expense meant before the distinction existed. Touches no policies, safe either side of 03.
 5. **Run `supabase_migration_04_integrity.sql`** — constraints, `updated_at` triggers, indexes. Housekeeping only: no DROP, no DELETE, nothing that changes a reported figure. Touches no policies, so it is safe either side of 03. **Genuinely not urgent** — the partner/quotation CHECKs mostly guard paths the UI does not expose, and the indexes are irrelevant at current row counts. The one reason not to defer it indefinitely is `updated_at`: audit history cannot be backfilled, so the trigger has to exist before a change happens for that change to be recorded.
 6. ~~Create Rooben's account~~ — **not needed.** Both partners share one login for now. The consequence to be aware of: `updated_at` (migration 04) records *when* something changed but there is no way to tell *who* did it, and a password reset affects both of you. If that becomes a problem, see the "ADDING AN ACCOUNT LATER" note in migration 03.
-7. **Re-key the financial data.** 3 projects and 10 expenses were cleared on 2026-07-26 for re-entry (backups were exported to a local text file first). When re-entering expenses, set **Who was this for?** on each one — company purchases get shared 50/50 and reimbursed, personal ones stay with the buyer. Anything migrated in without that field is treated as a company expense. Then check the Partners tab reconciliation row reads "Balanced".
+7. **Re-key the financial data.** 3 projects and 10 expenses were cleared on 2026-07-26 for re-entry (backups exported to a local text file first). Expenses are added from the section they belong to — the **Company** block, or a partner's **Personal** block. Company costs are shared 50/50; personal ones come off that partner's balance. Rows migrated without a scope are treated as company. Then check the Partners tab reconciliation reads "Balanced".
 
 **Standing notes (not tasks):**
 - **`LOCAL_IMAGE_MAP` breaks silently** whenever a showcase image is re-uploaded — it is keyed on the upload filename, and the only symptom is `/work` getting slower. Verify with `GET /rest/v1/showcase_projects?select=title,image_url`.
@@ -174,10 +170,10 @@ leaves you unable to onboard Rooben.
 ---
 
 ## 🧠 Key decisions & context
-- **Partner accounting (CHANGED 2026-07-28): `balance(P) = pct(P) × (collected − SST) − withdrawn(P)`.** Expenses are borne **entirely by whoever paid them** — there is no reimbursement term and no cross-settlement. Do not add `+ paid(P)` back: that reimburses the payer out of shared money, which silently splits every cost 50/50 and is exactly what this replaced. `netProfit` is retained as `collected − SST − expenses` for reporting only and is **not** what shares derive from. `computeFinancials()` in `admin-dashboard.html` is the only place money is derived; everything else reads `fin`.
-  - *Superseded:* the previous rule was `0.5 × (collected − expenses) + paid(P) − withdrawn(P)`. Figures entered before 2026-07-28 were recorded under it.
-- **SST is not income.** Apportioned from the linked quotation as `sst_amount/total` of every ringgit collected, held as `fin.sstReserved`, and excluded from the distributable pool — otherwise both partners can withdraw money owed to the tax authority. With no quotations, or `sst_amount` 0, every figure is unchanged.
-- **The reconciliation row is a real invariant, but it is not a safety net.** `balance(A) + balance(B)` must equal `collected − SST − withdrawn`. It only catches bad *input* (an expense with no `paid_by`). It **cannot** detect a cascade-deleted project, a duplicated expense, or a totally failed load, because both sides of the identity move together — all three still read "Balanced". Never treat a green tick as proof the data is right.
+- **Partner accounting (settled 2026-07-28): everything is company money, split by `expenses.scope`.** `balance(P) = pct(P) × (collected − SST − companyExpenses) − personalSpend(P) − withdrawn(P)`. Company expenses come off the shared pool; a personal expense is that partner taking money out and comes off their share alone. **There is NO reimbursement term** — no partner ever pays from their own pocket, so nothing is owed back. Do not add `+ paid(P)` / `+ reimbursable(P)`. `netProfit` is `collected − SST − expenses`, reporting only, **not** what shares derive from. `computeFinancials()` in `admin-dashboard.html` is the only place money is derived; everything else reads `fin`.
+  - *Two superseded versions, both from 2026-07-28, both wrong for this studio:* (1) the original reimburse-and-split model `0.5 × (collected − expenses) + paid(P) − withdrawn(P)`; (2) a "charge the payer" model with a `reimbursable` term and an "Owed Back" column, which assumed partners paid personally. Any figure entered before the model settled needs re-checking.
+- **SST is not income.** Apportioned from the linked quotation as `sst_amount/total` of every ringgit collected, held as `fin.sstReserved`, and excluded from the pool — otherwise both partners can withdraw money owed to the tax authority. With no quotations, or `sst_amount` 0, every figure is unchanged.
+- **The reconciliation row is a real invariant, but it is not a safety net.** `balance(A) + balance(B)` must equal `collected − SST − allExpenses − withdrawn`. It only catches bad *input* (an expense with no `paid_by`). It **cannot** detect a cascade-deleted project, a duplicated expense, or a totally failed load, because both sides of the identity move together — all three still read "Balanced". Never treat a green tick as proof the data is right.
 - **`HTTP 200` from PostgREST does NOT mean a table is public.** RLS filtering returns 200 with a row count of 0; only a missing table errors. Judge exposure by the **row count**, never the status code — misreading this produced a false "your financials are public" alarm. It is also why the dashboard must gate on `is_admin()` and not merely on a session existing: a non-admin otherwise sees a confident all-zeroes dashboard reporting "Balanced".
 - **`receipts` and `quotations` buckets are PRIVATE.** Both store the object path and resolve it through a short-lived signed URL. (An older note here said `receipts` was public on purpose — that is no longer true; migration 01 sets `public = false` and the dashboard signs on click.) `avatars` and `showcase` stay public; they are site assets the marketing pages render.
 - **No build step means every tracked file deploys as a URL.** `.vercelignore` is what keeps `*.sql`, `*.md`, `docs/` and `graphify-out/` off the public site. Do not remove it, and do not drop one-off scripts in the repo root.
