@@ -673,9 +673,12 @@
       transform: translateY(-2px);
     }
 
+    /* auto-fit, not repeat(5): both users of this class now hold three cards,
+       so a fixed five-track grid left ~540px of dead space to the right of
+       them. Stale from when the Partners tab had five metrics. */
     .metrics-grid {
       display: grid;
-      grid-template-columns: repeat(5, 1fr);
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
       gap: 1.5rem;
       margin-bottom: 1.5rem;
     }
@@ -698,6 +701,25 @@
       display: grid;
       grid-template-columns: 1fr 1fr;
       gap: 1.5rem;
+    }
+
+    /* .kpi-grid only ever existed inside the <=860px media query, so on desktop
+       it fell back to display:block and the Payments KPI cards stacked full
+       width instead of sitting three-up. Every sibling layout class in that
+       query has a base rule; this one was simply missed. auto-fit rather than
+       repeat(3) so it degrades on its own as the viewport narrows. */
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 1.5rem;
+    }
+
+    /* Carries only inline styles today. Declared so the class is not a silent
+       no-op if those are ever removed. */
+    .kpi-card {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
     }
     
     .kpi-column-card {
@@ -2082,8 +2104,16 @@
               </div>
               <div class="form-group" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
                 <div>
-                  <label class="form-label" for="setTaxRate">Tax Rate (SST %)</label>
+                  <label class="form-label" for="setTaxRate">Default SST rate (%)</label>
                   <input type="number" id="setTaxRate" class="form-control" min="0" max="100" step="0.1" required />
+                  <!-- Honest about its reach: no figure anywhere derives from
+                       this. SST is taken from each quotation's own sst_amount,
+                       so a project with no accepted quote reserves nothing
+                       regardless of what is set here. -->
+                  <p style="font-size: 0.72rem; color: var(--bone-dim); margin-top: 0.35rem; line-height: 1.5;">
+                    Reference only. The SST actually reserved comes from each
+                    quotation's own SST amount, not from this figure.
+                  </p>
                 </div>
                 <div>
                   <label class="form-label" for="setCurrency">Currency</label>
@@ -2499,8 +2529,10 @@
       financial_targets: { revenue_target: 15000, expense_target: 5000 }
     };
 
-    // The two partners. Expenses and withdrawals are always attributed to one of
-    // them — there is no company card, so every expense creates a reimbursement.
+    // The two partners. Everything is bought with COMPANY money, so no expense
+    // ever creates a reimbursement; `paid_by` on a personal expense says whose
+    // share to charge it to, and on a company expense is just a record of who
+    // made the purchase.
     const PARTNERS = ['Kunacosta', 'Rooben'];
 
     // Tables that failed to load on the last refresh. Non-empty means every
@@ -2748,6 +2780,23 @@ function getProjectImageUrl(p) {
   return url;
 }
 
+    /**
+     * Make a stored URL safe to put in an href.
+     *
+     * Escaping alone is NOT enough here: `javascript:alert(1)` contains no
+     * character esc() touches, so it survives intact and runs on click. Only
+     * http and https are allowed through; anything else returns '' and the link
+     * is dropped rather than rendered as a live trap.
+     */
+    function safeUrl(u) {
+      const raw = String(u || '').trim();
+      if (!raw) return '';
+      try {
+        const proto = new URL(raw, window.location.origin).protocol;
+        return (proto === 'http:' || proto === 'https:') ? raw : '';
+      } catch { return ''; }
+    }
+
     // Render Project Showcase Portfolio cards
     function renderProjectShowcase() {
       const grid = document.getElementById('projectShowcaseGrid');
@@ -2763,8 +2812,8 @@ function getProjectImageUrl(p) {
         const desc = p.description || '';
         const tags = Array.isArray(p.tech_stack) ? p.tech_stack : (p.tech_stack ? String(p.tech_stack).split(',').map(t => t.trim()) : []);
         const imgUrl = getProjectImageUrl(p);
-        const imgMarkup = imgUrl ? `<div style="width: 100%; height: 160px; border-radius: 12px; overflow: hidden; margin-bottom: 1rem; border: 1px solid var(--glass-border);"><img src="${imgUrl}" style="width: 100%; height: 100%; object-fit: cover;" onerror="this.onerror=null; this.src='images/onyxx_logo_transparent.png';" /></div>` : '';
-        const tagSpans = tags.map(t => `<span class="project-tag" style="background: rgba(56, 224, 255, 0.08); color: var(--accent); border: 1px solid rgba(56, 224, 255, 0.15); padding: 0.2rem 0.5rem; border-radius: 4px; font-size: 0.72rem; font-family: var(--font-mono);">${t}</span>`).join(' ');
+        const imgMarkup = imgUrl ? `<div style="width: 100%; height: 160px; border-radius: 12px; overflow: hidden; margin-bottom: 1rem; border: 1px solid var(--glass-border);"><img src="${esc(imgUrl)}" style="width: 100%; height: 100%; object-fit: cover;" onerror="this.onerror=null; this.src='images/onyxx_logo_transparent.png';" /></div>` : '';
+        const tagSpans = tags.map(t => `<span class="project-tag" style="background: rgba(56, 224, 255, 0.08); color: var(--accent); border: 1px solid rgba(56, 224, 255, 0.15); padding: 0.2rem 0.5rem; border-radius: 4px; font-size: 0.72rem; font-family: var(--font-mono);">${esc(t)}</span>`).join(' ');
 
         const card = document.createElement('div');
         card.className = 'glass-card project-showcase-card';
@@ -2783,7 +2832,7 @@ function getProjectImageUrl(p) {
             
             <h3 style="font-family: var(--font-display); font-size: 1.4rem; margin-bottom: 0.5rem; font-weight: 400; color: var(--bone);">${esc(p.title)}</h3>
             
-            <p style="font-size: 0.85rem; color: var(--bone-dim); line-height: 1.5; margin-bottom: 1.2rem;">${desc}</p>
+            <p style="font-size: 0.85rem; color: var(--bone-dim); line-height: 1.5; margin-bottom: 1.2rem;">${esc(desc)}</p>
           </div>
           
           <div style="border-top: 1px solid var(--glass-border); padding-top: 1rem; margin-top: auto;">
@@ -2793,8 +2842,8 @@ function getProjectImageUrl(p) {
             
             <div style="display: flex; justify-content: space-between; align-items: center;">
               <div style="display: flex; gap: 0.5rem;">
-                ${p.github_url ? `<a href="${p.github_url}" target="_blank" style="color: var(--bone-dim); transition: color 0.3s;" title="GitHub"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 16px; height: 16px; stroke-width: 2.5;"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"></path></svg></a>` : ''}
-                ${p.live_url ? `<a href="${p.live_url}" target="_blank" style="color: var(--bone-dim); transition: color 0.3s;" title="Live URL"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 16px; height: 16px; stroke-width: 2.5;"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg></a>` : ''}
+                ${safeUrl(p.github_url) ? `<a href="${esc(safeUrl(p.github_url))}" target="_blank" rel="noopener noreferrer" style="color: var(--bone-dim); transition: color 0.3s;" title="GitHub"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 16px; height: 16px; stroke-width: 2.5;"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"></path></svg></a>` : ''}
+                ${safeUrl(p.live_url) ? `<a href="${esc(safeUrl(p.live_url))}" target="_blank" rel="noopener noreferrer" style="color: var(--bone-dim); transition: color 0.3s;" title="Live URL"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 16px; height: 16px; stroke-width: 2.5;"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg></a>` : ''}
               </div>
               <div class="actions-cell">
                 <button class="action-btn edit-btn" title="Edit" onclick="openShowcaseModal('${escArg(p.id)}')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 1 1 3 3L12 15l-4 1 1-4z"></path></svg></button>
@@ -3029,11 +3078,26 @@ function getProjectImageUrl(p) {
 
     async function savePartnerSplitSettings(e) {
       e.preventDefault();
-      const splitKuna = parseInt(document.getElementById('splitKunaVal').value) || 50;
-      const splitRooben = parseInt(document.getElementById('splitRoobenVal').value) || 50;
+      // `|| 50` turned a legitimate 0 into 50, so a 0/100 split was rejected as
+      // 50 + 100 = 150 with a message about summing to 100. Fall back only when
+      // the field is genuinely not a number.
+      const readPct = id => {
+        const v = parseInt(document.getElementById(id).value, 10);
+        return Number.isFinite(v) ? v : NaN;
+      };
+      const splitKuna = readPct('splitKunaVal');
+      const splitRooben = readPct('splitRoobenVal');
 
+      if (!Number.isFinite(splitKuna) || !Number.isFinite(splitRooben)) {
+        showToast('Enter a number for each partner’s share', 'error');
+        return;
+      }
+      if (splitKuna < 0 || splitRooben < 0) {
+        showToast('A share cannot be negative', 'error');
+        return;
+      }
       if (splitKuna + splitRooben !== 100) {
-        showToast('Partner split must sum to 100%', 'error');
+        showToast(`Partner split must sum to 100% — currently ${splitKuna + splitRooben}%`, 'error');
         return;
       }
 
@@ -3372,21 +3436,40 @@ function getProjectImageUrl(p) {
       // the account and is owed onward, so splitting it 50/50 would let both
       // partners withdraw money they have to hand over later.
       //
-      // Apportioned from the linked quotation, because that is the only place
-      // the tax is recorded: of every ringgit collected on a project, the share
-      // sst_amount/total is tax. Partial payments therefore carry their
-      // proportion of the SST rather than the tax being front-loaded.
+      // Quotations are the only place the tax is recorded, so the reserve is
+      // built from ACCEPTED ones and capped at the tax those quotes actually
+      // charge. Collected money is matched against the accepted total, so a
+      // half-paid project reserves half its SST rather than all of it.
       //
-      // With no quotations, or sst_amount 0 throughout, sstReserved is 0 and
-      // every figure below is exactly what it was before.
+      // Three bugs this replaced, all of which took money off both partners:
+      //   * the old code did `find()` over ALL quotations ignoring status, so a
+      //     DECLINED or Draft quote could set the reserve — RM740 withheld on a
+      //     project whose accepted quote charged no tax at all
+      //   * it turned one quote's sst/total into a RATE and applied it to every
+      //     ringgit collected, including billed add-ons that quote never
+      //     covered, over-reserving on each one
+      //   * with two accepted quotes it used whichever sorted first and applied
+      //     that single rate to the combined collection — exactly double when
+      //     only one of them carried SST
+      //
+      // No accepted quote means no evidence any tax is owed, so the reserve is
+      // 0 rather than a guess from a rejected document.
       let sstReserved = 0;
       Object.keys(byProject).forEach(pid => {
         const t = byProject[pid];
-        const q = (t.quotations || []).find(x => (parseFloat(x.sst_amount) || 0) > 0
-                                              && (parseFloat(x.total) || 0) > 0);
-        if (!q) return;
-        const ratio = (parseFloat(q.sst_amount) || 0) / (parseFloat(q.total) || 0);
-        sstReserved += (t.collected || 0) * ratio;
+        const accepted = (t.quotations || []).filter(x => String(x.status) === 'Accepted');
+        if (!accepted.length) return;
+
+        const sstDue = accepted.reduce((s, q) => s + (parseFloat(q.sst_amount) || 0), 0);
+        if (sstDue <= 0) return;
+
+        const quotedTotal = accepted.reduce((s, q) => s + (parseFloat(q.total) || 0), 0);
+        // Cap at 1: collecting more than was quoted (an add-on billed on top)
+        // does not create extra tax liability on the quoted work.
+        const collectedFraction = quotedTotal > 0
+          ? Math.min(1, (t.collected || 0) / quotedTotal)
+          : 0;
+        sstReserved += sstDue * collectedFraction;
       });
 
       // Company profitability, for REPORTING only — includes personal spending,
@@ -3753,7 +3836,7 @@ function getProjectImageUrl(p) {
       if (paidBySelect) {
         const prevVal = paidBySelect.value;
         paidBySelect.innerHTML = '<option value="">Select partner</option>' +
-          PARTNERS.map(name => `<option value="${name}">${name}</option>`).join('');
+          PARTNERS.map(name => `<option value="${esc(name)}">${esc(name)}</option>`).join('');
         paidBySelect.value = PARTNERS.includes(prevVal) ? prevVal : '';
       }
       
@@ -3766,7 +3849,7 @@ function getProjectImageUrl(p) {
           if (m.name) names.add(m.name);
         });
         names.forEach(name => {
-          assignSelect.innerHTML += `<option value="${name}">${name}</option>`;
+          assignSelect.innerHTML += `<option value="${esc(name)}">${esc(name)}</option>`;
         });
         assignSelect.value = prevVal;
       }
@@ -3969,7 +4052,7 @@ function getProjectImageUrl(p) {
             <div class="legend-item">
               <div class="legend-dot-wrapper">
                 <span class="legend-dot" style="background-color: ${color};"></span>
-                <span style="max-width: 110px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${label}</span>
+                <span style="max-width: 110px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${esc(label)}</span>
               </div>
               <span>${percent}%</span>
             </div>
@@ -4091,7 +4174,12 @@ function getProjectImageUrl(p) {
               hidden: currentLineChartFilter === 'revenue'
             },
             {
-              label: 'Net Profit',
+              // NOT "Net Profit": this is revenue minus expenses per month, with
+              // no SST deducted, so it does not match the Net Profit KPI (which
+              // is collected − SST − expenses). SST is recorded per project, not
+              // per month, so it cannot honestly be apportioned into these
+              // buckets — the label says what the number actually is instead.
+              label: 'Margin (before SST)',
               data: displayNet,
               borderColor: 'rgba(167, 139, 250, 1)',
               backgroundColor: 'rgba(167, 139, 250, 0.05)',
@@ -4254,7 +4342,7 @@ function getProjectImageUrl(p) {
       });
 
       if (filtered.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="15" style="text-align: center; color: var(--bone-dim);">No projects match the filters.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="10" style="text-align: center; color: var(--bone-dim);">No projects match the filters.</td></tr>`;
         return;
       }
 
@@ -4535,6 +4623,8 @@ function getProjectImageUrl(p) {
     let outstandingChartInstance = null;
 
     function monthLabel(key) {
+      // 'No date' is a real bucket, not a month — parsing it yields Invalid Date.
+      if (key === 'No date') return 'No date';
       const [y, m] = key.split('-');
       return new Date(parseInt(y), parseInt(m) - 1, 1)
         .toLocaleString('en-US', { month: 'short', year: '2-digit' });
@@ -4717,19 +4807,26 @@ function getProjectImageUrl(p) {
       // studio and made the closing balance overstate cash by every ringgit
       // ever spent.) `expenses` is kept as its own bucket so the table can
       // still show the split.
+      // Undated rows go in their own bucket rather than being skipped. Both
+      // `expenses.date` and `partner_withdrawals.date` are nullable, and
+      // dropping them made this tab's closing balance disagree with Overview's
+      // cash figure by exactly the missing amount — silently, with the Partners
+      // panel still reporting "Balanced". A visible "No date" row is worth more
+      // than a tidy table that quietly loses money.
+      const monthOf = d => {
+        const k = String(d || '').substring(0, 7);
+        return k.length === 7 ? k : 'No date';
+      };
+
       withdrawalsData.forEach(w => {
-        if (!w.date) return;
-        const monthKey = String(w.date).substring(0, 7);
-        if (monthKey.length === 7) bucket(monthKey).moneyOut += parseFloat(w.amount) || 0;
+        bucket(monthOf(w.date)).moneyOut += parseFloat(w.amount) || 0;
       });
 
       expensesData.forEach(e => {
-        if (!e.date) return;
-        const monthKey = String(e.date).substring(0, 7);
-        if (monthKey.length !== 7) return;
         const amt = parseFloat(e.amount) || 0;
-        bucket(monthKey).moneyOut += amt;
-        bucket(monthKey).expenses += amt;
+        const k = monthOf(e.date);
+        bucket(k).moneyOut += amt;
+        bucket(k).expenses += amt;
       });
 
       const sortedMonths = Object.keys(monthlyData).sort();
@@ -4747,9 +4844,12 @@ function getProjectImageUrl(p) {
 
       sortedMonths.forEach(mKey => {
         const row = monthlyData[mKey];
-        const [year, month] = mKey.split('-');
-        const monthName = new Date(parseInt(year), parseInt(month) - 1, 1).toLocaleString('en-US', { month: 'short', year: 'numeric' });
-        
+        const undated = mKey === 'No date';
+        const monthName = undated
+          ? 'No date set'
+          : (([year, month]) => new Date(parseInt(year), parseInt(month) - 1, 1)
+              .toLocaleString('en-US', { month: 'short', year: 'numeric' }))(mKey.split('-'));
+
         const openingBalance = runningBalance;
         const net = row.moneyIn - row.moneyOut;
         runningBalance += net;
@@ -4760,7 +4860,10 @@ function getProjectImageUrl(p) {
 
         const tr = document.createElement('tr');
         tr.innerHTML = `
-          <td style="font-weight: 500;">${monthName}</td>
+          <td style="font-weight: 500;${undated ? 'color: var(--warn);' : ''}">
+            ${monthName}
+            ${undated ? `<div style="font-size:0.72rem;font-weight:400;color:var(--bone-dim);">Rows with no date &mdash; still counted, but not attributable to a month</div>` : ''}
+          </td>
           <td>${formatMYR(openingBalance)}</td>
           <td style="color: var(--pos);">${formatMYR(row.moneyIn)}</td>
           <td style="color: var(--warn);">${formatMYR(row.moneyOut - row.expenses)}</td>
@@ -5458,7 +5561,9 @@ function getProjectImageUrl(p) {
       if (!q || !q.project_id) return;
       const proj = projectsData.find(p => p.id === q.project_id);
       if (!proj) return;
-      if (!confirm(`Set "${esc(proj.name)}" project value to ${formatMYR(q.total)} from quotation ${esc(q.quote_number)}?`)) return;
+      // No esc(): confirm() renders plain text, so escaping showed the user
+      // "Smith &amp;amp; Sons" instead of the project they actually picked.
+      if (!confirm(`Set "${proj.name}" project value to ${formatMYR(q.total)} from quotation ${q.quote_number}?`)) return;
       try {
         const { error } = await supabaseClient.from('projects').update({ value: q.total }).eq('id', q.project_id);
         if (error) throw error;
@@ -5492,9 +5597,9 @@ function getProjectImageUrl(p) {
       const tbody = document.getElementById('partnersTableBody');
       tbody.innerHTML = '';
 
-      // Every figure comes from computeFinancials(). Expenses are borne wholly
-      // by whoever paid them, so there is no reimbursement term and no
-      // cross-settlement between partners — see the comment on that function.
+      // Every figure comes from computeFinancials(). Company purchases are
+      // shared by the split, personal ones come off the buyer's share, and
+      // nothing is ever reimbursed — see the comment on that function.
       const { collected, expenses, companyExpenses, netProfit, share, withdrawn, balance,
               personalSpend, withdrawnTotal, cashInAccount,
               sstReserved, distributable, reconciled, unattributed } = fin;
@@ -5552,9 +5657,16 @@ function getProjectImageUrl(p) {
       // Deductions carry the same minus sign and colour as the rows above them —
       // showing "RM 300.00" in the total under a column of "−RM 300.00" reads as
       // a different quantity.
+      // Sum the real percentages instead of asserting 100. A corrupt split
+      // (50 + 30) used to show rows of 50%/30% under a Total claiming 100%,
+      // which reads as a rounding quirk rather than the data problem it is.
+      const sumPct = PARTNERS.reduce((s, p) => s + pct(p), 0);
       trTotal.innerHTML = `
         <td>Total</td>
-        <td>100%</td>
+        <td style="color: ${Math.abs(sumPct - 100) > 0.01 ? 'var(--neg)' : 'inherit'};"
+            ${Math.abs(sumPct - 100) > 0.01 ? 'title="The partner split does not add up to 100% — fix it in Settings."' : ''}>
+          ${sumPct}%
+        </td>
         <td>${formatMYR(sumShare)}</td>
         <td style="color: ${sumOop > 0.01 ? 'var(--warn)' : 'inherit'};">
           ${sumOop > 0.01 ? '&minus;' : ''}${formatMYR(sumOop)}
@@ -5606,12 +5718,20 @@ function getProjectImageUrl(p) {
           recEl.style.borderColor = 'rgba(74, 222, 128, 0.3)';
         } else {
           const reasons = [];
+          // `reconciled` is also false when a table failed to load, and that
+          // case had no branch here — so a load error produced the literal
+          // text "Does not balance — ." with no reason at all.
+          if (loadErrors.length) {
+            reasons.push(`${loadErrors.length} table(s) failed to load, so these figures are incomplete`);
+          }
           if (unattributed && unattributed.length) {
             reasons.push(`${unattributed.length} personal expense(s) have no valid "Paid By", so they cannot be charged to anyone's share`);
           }
           if (Math.abs(sumBal - distributable) >= 0.01) {
             reasons.push(`balances total ${formatMYR(sumBal)} but ${formatMYR(distributable)} is distributable (out by ${formatMYR(sumBal - distributable)})`);
           }
+          // Never render a bare "— ." if some future condition slips through.
+          if (!reasons.length) reasons.push('the figures could not be verified');
           recEl.innerHTML =
             `<span style="color: var(--neg); font-weight: 600;">&#9888; Does not balance</span> ` +
             `<span style="color: var(--bone-dim);">&mdash; ${reasons.join('; ')}.</span>`;
@@ -5628,7 +5748,7 @@ function getProjectImageUrl(p) {
         withdrawalsData.forEach(w => {
           const tr = document.createElement('tr');
           tr.innerHTML = `
-            <td>${w.date}</td>
+            <td style="white-space: nowrap;">${w.date ? formatDate(w.date) : '<span style="opacity:0.4;">&mdash;</span>'}</td>
             <td style="font-weight: 500;">${esc(w.partner)}</td>
             <td style="color: var(--warn); font-weight: 500;">${formatMYR(w.amount)}</td>
             <td style="max-width: 250px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${esc(w.notes)}">${esc(w.notes || '-')}</td>
@@ -5670,7 +5790,9 @@ function getProjectImageUrl(p) {
         const val = parseFloat(p.value) || 0;
         if (val > maxProjVal) {
           maxProjVal = val;
-          highestProj = `${esc(p.name)} (${formatMYR(val)})`;
+          // No esc(): this lands in .textContent, which does not parse HTML.
+          // Escaping first made "Alpha & Co" display as "Alpha &amp; Co".
+          highestProj = `${p.name} (${formatMYR(val)})`;
         }
       });
       
@@ -5795,7 +5917,12 @@ function getProjectImageUrl(p) {
               borderWidth: 1
             },
             {
-              label: 'Net Profit',
+              // NOT "Net Profit": this is revenue minus expenses per month, with
+              // no SST deducted, so it does not match the Net Profit KPI (which
+              // is collected − SST − expenses). SST is recorded per project, not
+              // per month, so it cannot honestly be apportioned into these
+              // buckets — the label says what the number actually is instead.
+              label: 'Margin (before SST)',
               data: netData.length > 0 ? netData : [0],
               type: 'line',
               borderColor: 'rgba(56, 224, 255, 0.85)',
@@ -5882,7 +6009,7 @@ function getProjectImageUrl(p) {
         
         card.innerHTML = `
           <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-            <img src="${avatar}" alt="${esc(t.name)}" class="team-avatar-preview" onerror="this.src='images/onyxx_logo_transparent.png'" />
+            <img src="${esc(avatar)}" alt="${esc(t.name)}" class="team-avatar-preview" onerror="this.src='images/onyxx_logo_transparent.png'" />
             <div class="actions-cell">
               <button class="action-btn edit-btn" title="Edit" onclick="openTeamModal('${escArg(t.id)}')"><svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>
               <button class="action-btn delete-btn" title="Delete" onclick="deleteTeamMember('${escArg(t.id)}')"><svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg></button>
@@ -5915,7 +6042,7 @@ function getProjectImageUrl(p) {
         card.className = 'service-detail-card glass-card';
         
         const tagBadges = Array.isArray(s.tags) 
-          ? s.tags.map(tag => `<span class="status-badge" style="margin-right: 0.4rem; font-size: 0.65rem; border-color: rgba(255,255,255,0.15); color: var(--bone-dim);">${tag}</span>`).join('') 
+          ? s.tags.map(tag => `<span class="status-badge" style="margin-right: 0.4rem; font-size: 0.65rem; border-color: rgba(255,255,255,0.15); color: var(--bone-dim);">${esc(tag)}</span>`).join('')
           : '';
 
         card.innerHTML = `
@@ -6135,13 +6262,20 @@ function getProjectImageUrl(p) {
       // A personal expense belongs to exactly one partner — the block it was
       // added from. Locking the field stops it being changed here and silently
       // moving the row to the other partner's section.
+      //
+      // UNLESS the current value is not a valid partner. Such a row shows up in
+      // the "Unassigned" block telling the user to edit it, and locking a blank
+      // select made that impossible: no partner could be chosen, the save was
+      // rejected for a missing Paid By, and the row was stuck unattributed —
+      // holding `reconciled` false forever with no way out but delete-and-re-add.
       const paidBy = document.getElementById('expensePaidBy');
       const scope = document.getElementById('expenseScope').value;
       if (paidBy) {
-        paidBy.disabled = (scope === 'personal');
-        paidBy.title = scope === 'personal'
+        const valid = PARTNERS.some(p => p.toLowerCase() === String(paidBy.value).trim().toLowerCase());
+        paidBy.disabled = (scope === 'personal') && valid;
+        paidBy.title = paidBy.disabled
           ? 'Fixed by the section this was added from. To move it, delete and re-add under the other partner.'
-          : '';
+          : (scope === 'personal' ? 'This expense is not charged to anyone yet — pick who it was for.' : '');
       }
 
       updateExpenseScopeHint();
@@ -6161,8 +6295,12 @@ function getProjectImageUrl(p) {
       const scopeEl = document.getElementById('expenseScope');
       if (!hint || !scopeEl) return;
       const amt = parseFloat(document.getElementById('expenseAmount')?.value) || 0;
-      const who = document.getElementById('expensePaidBy')?.value;
-      const other = PARTNERS.find(p => p !== who);
+      const rawWho = document.getElementById('expensePaidBy')?.value;
+      // Only treat it as a payer if it really is one. With a blank value,
+      // `PARTNERS.find(p => p !== who)` happily returns the FIRST partner, so
+      // the hint used to name someone at random as "unaffected".
+      const who = PARTNERS.find(p => p.toLowerCase() === String(rawWho || '').trim().toLowerCase()) || '';
+      const other = who ? PARTNERS.find(p => p !== who) : null;
 
       if (scopeEl.value === 'personal') {
         hint.style.background = 'rgba(251, 191, 36, 0.08)';
@@ -6177,9 +6315,19 @@ function getProjectImageUrl(p) {
         hint.style.background = 'rgba(56, 224, 255, 0.07)';
         hint.style.border = '1px solid var(--accent-faint)';
         hint.style.color = 'var(--bone)';
+        // Read the real split rather than assuming halves — this was the one
+        // place money was computed outside computeFinancials(), and under a
+        // 60/40 split it quoted both partners the wrong number.
+        const parts = PARTNERS.map(p => {
+          const pct = systemSettings.partner_split?.[p] ?? (100 / PARTNERS.length);
+          return `${esc(p)} ${formatMYR(amt * (pct / 100))}`;
+        }).join(' &middot; ');
+        const splitLabel = PARTNERS
+          .map(p => `${systemSettings.partner_split?.[p] ?? (100 / PARTNERS.length)}%`).join('/');
+
         hint.innerHTML = amt
-          ? `<strong>Company.</strong> Paid from the account — the cost lands on both of you, ${formatMYR(amt / 2)} each.`
-          : `<strong>Company.</strong> Paid from the account, cost shared 50/50.`;
+          ? `<strong>Company.</strong> Paid from the account — the cost lands on both of you: ${parts}.`
+          : `<strong>Company.</strong> Paid from the account, cost shared ${splitLabel}.`;
       }
     }
 
@@ -6192,7 +6340,7 @@ function getProjectImageUrl(p) {
       const item = document.getElementById('expenseItem').value;
       const amount = parseFloat(document.getElementById('expenseAmount').value) || 0;
       const paid_by = document.getElementById('expensePaidBy').value;
-      // 'company' splits the cost 50/50 and reimburses the payer; 'personal'
+      // 'company' shares the cost by the partner split; 'personal'
       // leaves it entirely with whoever bought it.
       const scope = document.getElementById('expenseScope')?.value || 'company';
       const recurring = document.getElementById('expenseRecurring').value === 'Yes';
@@ -6546,20 +6694,17 @@ function getProjectImageUrl(p) {
       document.documentElement.setAttribute('data-theme', savedTheme);
       updateThemeToggleIcons();
 
-      // Bind search and filter events
-      document.getElementById('projectSearchClient')?.addEventListener('input', renderProjects);
-      document.getElementById('projectFilterStatus')?.addEventListener('change', renderProjects);
-      document.getElementById('projectFilterDate')?.addEventListener('change', renderProjects);
-      
+      /* The filter and search controls are NOT bound here. Every one of them
+         already carries an inline oninput/onchange in the markup, and binding
+         again made each keystroke in the client search rebuild the entire
+         projects table and all its detail rows TWICE. One source of truth. */
+
       ['expenseScope', 'expenseAmount', 'expensePaidBy'].forEach(id => {
         const el = document.getElementById(id);
         if (el) el.addEventListener('input', updateExpenseScopeHint);
         if (el) el.addEventListener('change', updateExpenseScopeHint);
       });
 
-      document.getElementById('expenseFilterCategory')?.addEventListener('change', renderExpenses);
-      document.getElementById('expenseFilterPaidBy')?.addEventListener('change', renderExpenses);
-      document.getElementById('expenseFilterRecurring')?.addEventListener('change', renderExpenses);
     });
 
     /* ------------------------------------------------------------------

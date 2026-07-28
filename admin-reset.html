@@ -242,6 +242,22 @@
   </div>
 
   <script>
+    /* FIRST STATEMENT ON THE PAGE, deliberately — before createClient() below.
+       supabase-js `detectSessionInUrl` consumes the fragment and rewrites the
+       URL as soon as the client is constructed, so anything that reads
+       location.hash after that line sees nothing and cannot tell a genuine
+       recovery arrival from someone simply opening this URL. Moving this even
+       one line down silently disables both the recovery gate and the error
+       message. */
+    const ARRIVED_WITH = (function () {
+      const raw = (location.hash || '').replace(/^#/, '');
+      const p = new URLSearchParams(raw);
+      return {
+        recovery: p.get('type') === 'recovery' || /(^|&)type=recovery(&|$)/.test(raw),
+        error: p.get('error_description') || p.get('error') || ''
+      };
+    })();
+
     const supabaseUrl = 'https://whjstsgtximknicppllt.supabase.co';
     const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndoanN0c2d0eGlta25pY3BwbGx0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI3OTc5NzgsImV4cCI6MjA5ODM3Mzk3OH0.I_GHJG8XcyFO_WamEwWnme_-l1ZPUCUCuZ7roOE-B2U';
     const supabaseClient = window.supabase.createClient(supabaseUrl, supabaseAnonKey);
@@ -269,42 +285,68 @@
        ourselves: the exchange is async, so the session is not there yet on
        first paint. */
     let recoveryReady = false;
+    let linkFailed = false;
+
+    function revealForm(email) {
+      // A failed link must never end up showing a working form underneath its
+      // own error message.
+      if (linkFailed) return;
+      recoveryReady = true;
+      subtitle.textContent = 'Choose a new password for ' + (email || 'your account') + '.';
+      form.hidden = false;
+      msg.className = 'msg';
+      pw1.focus();
+    }
 
     supabaseClient.auth.onAuthStateChange((event, session) => {
-      if (event === 'PASSWORD_RECOVERY' || (event === 'SIGNED_IN' && session)) {
-        recoveryReady = true;
-        subtitle.textContent = 'Choose a new password for ' + (session?.user?.email || 'your account') + '.';
-        form.hidden = false;
-        msg.className = 'msg';
-        pw1.focus();
-      }
+      // PASSWORD_RECOVERY is the only event that proves a recovery token was
+      // used. SIGNED_IN is accepted ONLY when this page was opened with a
+      // recovery fragment — supabase-js sometimes reports the exchange that
+      // way, but on its own it is also what an ordinary sign-in looks like.
+      const isRecovery = event === 'PASSWORD_RECOVERY'
+        || (event === 'SIGNED_IN' && session && ARRIVED_WITH.recovery);
+      if (isRecovery) revealForm(session?.user?.email);
     });
 
-    // The link may also arrive already expired or used, in which case Supabase
-    // returns an error in the fragment rather than a token.
+    // An expired or already-used link returns an error in the fragment instead
+    // of a token.
     (function readFragmentError() {
-      const p = new URLSearchParams((location.hash || '').replace(/^#/, ''));
-      const err = p.get('error_description') || p.get('error');
-      if (err) {
-        subtitle.textContent = 'That link did not work.';
-        show(decodeURIComponent(err.replace(/\+/g, ' ')) +
-             ' Reset links expire after about an hour and can only be used once — request a new one from the login page.',
-             'error');
-      }
+      if (!ARRIVED_WITH.error) return;
+      linkFailed = true;
+      form.hidden = true;
+      subtitle.textContent = 'That link did not work.';
+      // NOT decodeURIComponent: URLSearchParams has already percent-decoded
+      // this and already turned '+' into spaces. Decoding twice threw URIError
+      // on any message containing a literal '%' — and because this runs at top
+      // level, that throw aborted the rest of the script and the submit handler
+      // was never attached, leaving a dead button.
+      show(ARRIVED_WITH.error +
+           '. Reset links expire after about an hour and can only be used once — request a new one from the login page.',
+           'error');
     })();
 
-    // Fallback: an existing session (e.g. the exchange completed before this
-    // script attached its listener) is equally valid for updateUser().
+    /* Fallback for the race where the token exchange completed before the
+       listener attached.
+
+       GATED ON ARRIVED_WITH.recovery, and that gate is the whole point. This
+       page and the dashboard share an origin, a Supabase project and therefore
+       a localStorage session key — so `getSession()` happily returns an
+       ordinary dashboard login. Without the gate, anyone opening this URL on an
+       already-signed-in browser was shown the form and could set a new password
+       with no recovery token and no knowledge of the old one. */
     (async function checkExisting() {
       const { data } = await supabaseClient.auth.getSession();
-      if (data.session && !recoveryReady) {
-        recoveryReady = true;
-        subtitle.textContent = 'Choose a new password for ' + (data.session.user?.email || 'your account') + '.';
-        form.hidden = false;
-      } else if (!data.session && !location.hash) {
-        subtitle.textContent = 'This page needs a reset link.';
-        show('Open the link from your password-reset email, or request one from the login page.', 'error');
+
+      if (data.session && ARRIVED_WITH.recovery && !recoveryReady && !linkFailed) {
+        revealForm(data.session.user?.email);
+        return;
       }
+      if (linkFailed || recoveryReady) return;
+
+      subtitle.textContent = 'This page needs a reset link.';
+      show(data.session
+        ? 'You are signed in, but changing a password here needs a fresh reset link. Request one from the login page.'
+        : 'Open the link from your password-reset email, or request one from the login page.', 'error');
     })();
 
     form.addEventListener('submit', async (e) => {
@@ -342,7 +384,16 @@
       // The recovery session is a credential in its own right. Do not leave it
       // sitting in localStorage, and do not walk the user straight into the
       // dashboard on it: signing in again proves the new password works.
-      await supabaseClient.auth.signOut();
+      //
+      // Check the result. If sign-out fails the session survives, and the
+      // redirect below lands on admin-login, whose checkSession() sees that
+      // session and forwards straight to the dashboard — the exact outcome
+      // this sign-out exists to prevent. Say so rather than pretending.
+      const { error: outErr } = await supabaseClient.auth.signOut();
+      if (outErr) {
+        show('Password updated — but this browser could not be signed out of the '
+             + 'recovery session. Close this tab, then sign in fresh with the new password.', 'error');
+      }
 
       // Strip the token out of the URL and out of history.
       history.replaceState(null, '', location.pathname);

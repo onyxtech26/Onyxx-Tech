@@ -18,10 +18,13 @@
 -- Splits an expense by WHO IT WAS FOR, which is what decides how the cost is
 -- carried:
 --
---   'company'   Bought for the studio. Cost is shared 50/50, and the partner
---               who fronted it is reimbursed out of the account.
---   'personal'  Bought for the buyer. Carried entirely by them, never
---               reimbursed, and the other partner's figures do not move.
+-- Everything is paid with COMPANY money, so nothing is ever reimbursed:
+--
+--   'company'   Bought for the studio. Shrinks the pool before it is divided,
+--               so the cost lands on both partners by the agreed split.
+--   'personal'  Bought for the buyer. Comes off that partner's share alone —
+--               in substance them taking money out — and the other partner's
+--               figures do not move.
 --
 -- DEFAULT 'company' is deliberate and matters for the existing rows: before
 -- this column existed, every expense was a business cost, so 'company' is not
