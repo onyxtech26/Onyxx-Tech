@@ -5,6 +5,45 @@ Format each entry: what was done, why it mattered, and any key decisions.
 
 ---
 
+## 2026-07-28 (applied to production)
+
+### Migrations 03, 04 and 05 run; the admin data is closed to the public
+
+All three applied to `whjstsgtximknicppllt`, plus public signup turned off in
+the dashboard. Verified from outside with the anon key: **0 rows** on
+`projects`, `expenses`, `partner_withdrawals`, `project_payments`,
+`project_addons`, `quotations`, `system_settings` and `admin_users`;
+`services`/`showcase_projects`/`team_members` still return 5/10/2 for the
+website. `receipts` and `quotations` buckets private, `avatars`/`showcase`
+public. `disable_signup: true`.
+
+**Two things worth recording.**
+
+*The allowlist email was wrong twice.* The seed listed
+`kunacosta0702@gmail.com`, taken from notes about the personal GitHub account
+and never checked against `auth.users`. The real login is
+`onyxtech26@gmail.com`. Migration 03 aborted with `admin_users holds 0 row(s),
+expected 1` and rolled back cleanly — the guard doing exactly its job, twice,
+because the second attempt re-ran a stale SQL Editor tab rather than the
+corrected file. **Supabase's SQL Editor persists tab contents between visits**,
+so "re-run the file" means opening it fresh, not pressing Run again.
+
+*A storage policy survived the migration.* Section 3's table loop enumerated
+`pg_policies`; the storage section named its drops instead. A policy called
+`"Allow authenticated read access to receipts"`, created at some point through
+the dashboard UI, was therefore left in place — and since Postgres OR-s
+permissive policies, it granted every signed-in user SELECT on the receipts
+bucket, straight past `is_admin()`. The audit had flagged this exact risk before
+the run and it was only half-fixed. Found by reading the verify output. Storage
+now enumerates too, scoped to policies mentioning one of the four project
+buckets, so a re-run repairs the drift instead of layering on top of it.
+
+Practical exposure was low throughout — signup was already off and there is only
+one account — but it defeated the allowlist the moment a second account existed,
+which is the entire point of the file.
+
+---
+
 ## 2026-07-28 (late)
 
 ### Expenses split by who the purchase was for

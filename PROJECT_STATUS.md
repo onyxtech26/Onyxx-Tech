@@ -127,7 +127,26 @@ Verified in Chrome via Playwright: 7 pages × dark/light with zero errors, 28 pa
 
 ### ⏭️ Next / To do
 
-**🔴 OWNER ONLY — do these in this order (2026-07-28).** Steps 1–5 are Supabase
+**✅ THE LOCKDOWN IS DONE (2026-07-28).** Signup is off, migrations 03/04/05 are
+applied, and an anonymous probe returns **0 rows** on every financial table
+(`projects`, `expenses`, `partner_withdrawals`, `project_payments`,
+`project_addons`, `quotations`, `system_settings`, `admin_users`) while
+`services`/`showcase_projects`/`team_members` stay public for the website.
+`receipts` and `quotations` buckets are private; `avatars`/`showcase` public.
+
+Admin login is **`onyxtech26@gmail.com`**, the only account in `auth.users`.
+
+*One thing found by reading the verify output rather than assuming:* migration
+03's first version named the storage policies it dropped instead of enumerating
+them, so a dashboard-created `"Allow authenticated read access to receipts"`
+survived and granted every signed-in user read on the receipts bucket, past
+`is_admin()`. Dropped manually; the file now enumerates. **Always read the
+verify tables at the end of a migration.**
+
+The original ordered list is kept below for reference and for rebuilding a fresh
+environment.
+
+**🔴 OWNER ONLY — do these in this order.** Steps 1–5 are Supabase
 dashboard/SQL actions Claude cannot perform. The order matters: doing 2 before 1
 leaves you unable to onboard Rooben.
 
