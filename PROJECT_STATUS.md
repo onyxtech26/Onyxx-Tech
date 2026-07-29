@@ -2,24 +2,24 @@
 
 > **Living board.** Read at the start of every session; updated when significant tasks finish. Newest state on top.
 
-**Last updated:** 2026-07-28
+**Last updated:** 2026-07-29
 
 ---
 
 ## 📍 Where I left off
 
-**All work is committed and pushed** — `main` is at `8431366`. Everything through 2026-07-26 went up in `da983fe`; a four-agent audit followed, and its findings, the expense-rule change and the audit backlog are in `0d3d681`, `6607fbd`, `acea598`, `bb7199d`, `908b9fc` and `8431366`.
+**Committed locally, NOT yet pushed** — `main` is at `9485fa1`. Today's three commits (`02e1a14` mobile/keyboard/light-theme, `810582f` SST removal + UX pass, `9485fa1` the file split) are ahead of `origin`.
 
-**Two migrations are written but NOT run:** `03_admin_allowlist` (needs Rooben's email filled in first) and `04_integrity`. Both are in "Next / To do" with the order they need.
+**All migrations are run.** 03, 04 and 05 are applied; the lockdown is verified. See "Next / To do".
 
-**⚠️ THE ACCOUNTING RULE (settled 2026-07-28) — read before looking at any figure.**
-**Everything is paid with company money.** No partner ever fronts anything from their own pocket, so there is **no reimbursement anywhere** in the model. Expenses are split by **who the purchase was for** (`expenses.scope`):
+**⚠️ THE ACCOUNTING RULE (settled 2026-07-28, SST removed 2026-07-29) — read before looking at any figure.**
+**Everything is paid with company money.** No partner ever fronts anything from their own pocket, so there is **no reimbursement anywhere** in the model. **There is also no SST** — whatever a project brings in, the partners get in full. Expenses are split by **who the purchase was for** (`expenses.scope`):
 
 - **company** — the cost is shared 50/50
 - **personal** — the whole amount comes off that partner's share alone; the other partner is untouched
 
 ```
-pool       = collected − SST − companyExpenses
+pool       = collected − companyExpenses
 share(P)   = pct(P) × pool
 balance(P) = share(P) − personalSpend(P) − withdrawn(P)
 ```
@@ -36,7 +36,9 @@ Cash in account = 10,000 − 1,300 = 8,700 = 4,200 + 4,500.
 
 **Do NOT re-add a `+ reimbursable` / `+ paid` term.** An earlier version of this same day had one, plus an "Owed Back" column, on the wrong assumption that partners paid personally. It inflated the buyer's balance by everything they'd spent. If you find yourself adding reimbursement, the premise is wrong — it's all company money.
 
-`cashInAccount = collected − expenses − withdrawn` (every expense leaves the account). Reconciliation: `Σbalance = collected − SST − allExpenses − withdrawn`. `netProfit` stays `collected − SST − expenses` as a **reporting figure only** — never wire it into `share()`.
+`cashInAccount = collected − expenses − withdrawn` (every expense leaves the account). Reconciliation: `Σbalance = collected − allExpenses − withdrawn`. `netProfit` stays `collected − expenses` as a **reporting figure only** — never wire it into `share()`.
+
+**Do NOT re-add SST.** `fin.sstReserved` still exists but is permanently `0`, so anything still reading it reports nothing withheld instead of throwing. A quotation row carrying an `sst_amount` is deliberately ignored.
 
 **Closed a live exposure:** production was serving `/supabase_migration.sql` (full schema + every RLS policy), `/PROJECT_STATUS.md`, `/CLAUDE.md` and `/docs/CHANGELOG.md` as public static assets — no build step means every tracked file becomes a URL. Added `.vercelignore`; all four now return 404, verified against the live domain.
 
@@ -49,7 +51,9 @@ Cash in account = 10,000 − 1,300 = 8,700 = 4,200 + 4,500.
 - **RLS denial is HTTP 200 with zero rows, not an error.** Judge exposure by row count. This is also why a non-admin session used to render a confident all-zeroes dashboard.
 - **`revenueByMonth()` returns sorted `[month, amount]` pairs, not an object.** Indexing it by month name silently yields `undefined`.
 - **Check a class or element exists before writing code against it.** Two separate slips this session: CSS rules for `.filter-bar` / `.modal` / `.badge` that matched nothing, and `openQuotationForm` written against a `quotationModal` that does not exist. Both were invisible until something rendered.
-- **Playwright tests must abort `*.supabase.co` at the network layer.** Stubbing `window.supabaseClient` does NOT work — the page holds it as a script-scoped `const`, so the assignment creates a separate binding and the real client is still used. One run reached production this way.
+- **Playwright tests must abort `*.supabase.co` at the network layer.** Stubbing `window.supabaseClient` does NOT work — the page holds it as a script-scoped `const`, so the assignment creates a separate binding and the real client is still used. **This has now happened twice** (2026-07-28, and again 2026-07-29 in `verify_guard.py`, which was written before the rule and never retrofitted). Both were rejected by RLS with nothing written. When adding a test, the abort route is not optional.
+- **The dashboard is three files now.** Any harness that patched `admin-dashboard.html` to suppress the login redirect must patch `admin-dashboard.js` instead — that is where the redirect lives. Getting this wrong makes every global undefined, which looks exactly like the product being broken.
+- **A `fetch()` whose body is never drained records no Resource Timing entry.** The entry is finalised only once the response is fully received, so a measurement that skips `.text()`/`.arrayBuffer()` silently reports nothing.
 
 **The blocking items in "Next / To do" need the account owner** — they are Supabase dashboard settings I cannot change.
 
@@ -115,6 +119,14 @@ Verified in Chrome via Playwright: 7 pages × dark/light with zero errors, 28 pa
 - [x] **`supabase_migration_04_integrity.sql` written** — constraints, `updated_at` triggers, indexes. Not yet run (2026-07-28)
 - [x] **Modal focus trap, scroll lock, single-open and focus restore**; dead deposit-prompt code removed; unused payment/add-on columns wired up; `.inline-select` contrast and touch targets fixed (2026-07-28)
 
+- [x] **SST removed entirely** at the user's direction — the studio does not charge it, so project money is theirs in full. `sstReserved` kept at a permanent `0`; the quotation form lost Subtotal/SST for a single Amount; a quote still carrying `sst_amount` is ignored (2026-07-29)
+- [x] **Admin tables become cards below 860px** — every cell labelled from its own `<thead>`, so a table that gains a column keeps working. All 7 tabs fit 390px with no overflow (2026-07-29)
+- [x] **Empty Overview guides instead of alarming** — and deliberately does *not* fire when a load failed, so a broken fetch is never dressed up as an empty studio (2026-07-29)
+- [x] **Quotation form moved into a modal**, list above the fold (2026-07-29)
+- [x] **Expense donut rolls up** to the top 6 categories plus "Other (n categories)" — 7 colours, 7 slices, no reuse (2026-07-29)
+- [x] **`admin-dashboard.html` split into three files** — 313 KB → 63 KB HTML + 49 KB CSS + 201 KB JS. A repeat visit re-fetches only the HTML and takes 250 KB from cache, measured over real HTTP (2026-07-29)
+- [x] **22 Playwright harnesses repointed at the extracted JS**, and `verify_guard.py` rewritten to intercept Supabase at the network layer instead of stubbing the client (2026-07-29)
+
 ### 🔄 In progress
 - (nothing active)
 
@@ -172,7 +184,7 @@ leaves you unable to onboard Rooben.
 ## 🧠 Key decisions & context
 - **Partner accounting (settled 2026-07-28): everything is company money, split by `expenses.scope`.** `balance(P) = pct(P) × (collected − SST − companyExpenses) − personalSpend(P) − withdrawn(P)`. Company expenses come off the shared pool; a personal expense is that partner taking money out and comes off their share alone. **There is NO reimbursement term** — no partner ever pays from their own pocket, so nothing is owed back. Do not add `+ paid(P)` / `+ reimbursable(P)`. `netProfit` is `collected − SST − expenses`, reporting only, **not** what shares derive from. `computeFinancials()` in `admin-dashboard.html` is the only place money is derived; everything else reads `fin`.
   - *Two superseded versions, both from 2026-07-28, both wrong for this studio:* (1) the original reimburse-and-split model `0.5 × (collected − expenses) + paid(P) − withdrawn(P)`; (2) a "charge the payer" model with a `reimbursable` term and an "Owed Back" column, which assumed partners paid personally. Any figure entered before the model settled needs re-checking.
-- **SST is not income.** Apportioned from the linked quotation as `sst_amount/total` of every ringgit collected, held as `fin.sstReserved`, and excluded from the pool — otherwise both partners can withdraw money owed to the tax authority. With no quotations, or `sst_amount` 0, every figure is unchanged.
+- **~~SST is not income.~~ SST is GONE (2026-07-29).** The studio does not charge it: whatever a project brings in, the partners get in full. `fin.sstReserved` remains in the returned object but is permanently `0` so nothing reading it throws, and a quotation carrying an `sst_amount` is ignored rather than honoured. The previous apportionment (`sst_amount/total` of every ringgit collected, withheld from the pool) is removed. Do not reintroduce it without the user asking.
 - **The reconciliation row is a real invariant, but it is not a safety net.** `balance(A) + balance(B)` must equal `collected − SST − allExpenses − withdrawn`. It only catches bad *input* (an expense with no `paid_by`). It **cannot** detect a cascade-deleted project, a duplicated expense, or a totally failed load, because both sides of the identity move together — all three still read "Balanced". Never treat a green tick as proof the data is right.
 - **`HTTP 200` from PostgREST does NOT mean a table is public.** RLS filtering returns 200 with a row count of 0; only a missing table errors. Judge exposure by the **row count**, never the status code — misreading this produced a false "your financials are public" alarm. It is also why the dashboard must gate on `is_admin()` and not merely on a session existing: a non-admin otherwise sees a confident all-zeroes dashboard reporting "Balanced".
 - **`receipts` and `quotations` buckets are PRIVATE.** Both store the object path and resolve it through a short-lived signed URL. (An older note here said `receipts` was public on purpose — that is no longer true; migration 01 sets `public = false` and the dashboard signs on click.) `avatars` and `showcase` stay public; they are site assets the marketing pages render.
@@ -208,13 +220,15 @@ leaves you unable to onboard Rooben.
 - **The global `html, body, *` scrollbar kill in `admin-dashboard.html` uses `!important`.** Any element that genuinely needs a scrollbar (`.table-container`, `.custom-modal`) must use `!important` too — specificity does not beat `!important`. A documented past fix to the table scrollbar was silently re-broken by exactly this.
 - **Check class names against the markup before writing a CSS rule for them.** Rules for `.filter-bar`, `.modal`, `.modal-content` and `.badge` all matched nothing; the real names are `.search-filter-bar`, `.modal-backdrop`, `.custom-modal` and `.status-badge`. Same failure as the earlier `.project-card--link` incident.
 - **`opacity: 0` + `pointer-events: none` does not remove an element from the tab order.** The closed project modal and the closed mobile nav drawer both kept their controls focusable. `visibility: hidden` is what does it, and it still transitions.
-- **Verification must not be able to reach production.** Route `**://*.supabase.co/**` to abort in Playwright tests. Stubbing `window.supabaseClient` does **not** work — the page holds it as a script-scoped `const`, so the assignment creates a separate binding and the real client is still used. One test run reached the live database this way (rejected by RLS, nothing written).
+- **Verification must not be able to reach production.** Route `**://*.supabase.co/**` to abort in Playwright tests. Stubbing `window.supabaseClient` does **not** work — the page holds it as a script-scoped `const`, so the assignment creates a separate binding and the real client is still used. **Two test runs have reached the live database this way** (2026-07-28, and 2026-07-29 via `verify_guard.py`); both were rejected by RLS with nothing written. Where a test needs the client to *respond* rather than fail, fulfil the route locally — never `continue()`.
+- **The admin dashboard is `admin-dashboard.html` + `.css` + `.js`.** The HTML keeps only the theme bootstrap (must run before first paint or the wrong theme flashes) and the lottie flag. Anything that used to rewrite inline JS — notably the login-redirect suppression every test depends on — has to target `admin-dashboard.js` now.
 - **Domain:** production is `https://onyxx-tech.vercel.app`.
 - Site previously had a real hero-flicker bug (mix-blend-mode + scale-animated blur) that an earlier session had incorrectly written off as "the user's display, not the site" — turned out that session's claimed fix was never actually in the repo. Lesson logged in memory: verify actual file state before trusting a prior session's conclusion.
 
 ---
 
 ## 📝 Session log
+- **2026-07-29 (no SST, UX pass, dashboard split)** — Removed SST entirely at the user's direction: the studio does not charge it, so project money is theirs in full. Then five dashboard improvements — tables that become labelled cards on a phone (all 7 tabs now fit 390px), an empty-state Overview that guides rather than reading as a business with no money, the quotation form moved into a modal, a donut that rolls up to the top 6 categories plus "Other", and finally splitting `admin-dashboard.html` from 313 KB into 63 KB HTML + 49 KB CSS + 201 KB JS, with a repeat visit taking 250 KB from cache. **Two things I got wrong.** The split broke all 22 Playwright harnesses at once — every one suppressed the login redirect by rewriting the HTML, and that line had moved into the `.js`, so the page navigated away and every global read as undefined. That looks identical to the product being catastrophically broken; it was the harness. And `verify_guard.py` reached the live database, because it stubbed `window.supabaseClient` — the same script-scoped-`const` mistake as 2026-07-28, in a test written before the rule and never retrofitted. RLS refused the insert and nothing was written, but it should not have left the machine; it now intercepts at the network layer. Also cost myself a while chasing a cache measurement that reported nothing: a `fetch()` whose body is never drained records no Resource Timing entry. Full write-up in `docs/CHANGELOG.md`.
 - **2026-07-28 (backlog cleared)** — Built the password-reset flow that did not exist: `admin-reset.html` plus a forgot-password control on the login page. The design turns on one fact — supabase-js defaults `detectSessionInUrl: true`, so a recovery link landing on *any* page silently signs the user in with their old password still set; the reset page must be the only redirect target, and the login page now forwards a `type=recovery` fragment rather than consuming it. The recovery session is a credential, so it is signed out immediately after the change and the token stripped from history. Wrote `supabase_migration_04_integrity.sql` (constraints, `updated_at` triggers, indexes — no DROP, no DELETE, no figure changes). Gave the admin modals a focus trap, scroll lock, single-open and focus restore. Removed the dead deposit-prompt code. Wired up `project_payments.method`/`.notes` and `project_addons.notes`, and fixed `addPayment` reusing a `sort_order` after a middle row was deleted. Fixed the `.inline-select` contrast and the touch targets — and found in passing that `#themeToggleBtn` was revealed only by `.sidebar:hover`, i.e. **unreachable on a phone**. Caught in review: the anon key I wrote into the reset page from memory was a stale one with different `iat`/`exp` claims. Also corrected the dating of this whole session's entries — they were written as 2026-07-27 while every commit is stamped 2026-07-28.
 - **2026-07-28 (audit + expense rule)** — Started from a report of invisible icons in the Add Project modal; the cause was that `color-scheme` was never declared, so Chrome painted native control chrome for a light UI on a dark background. Ran four parallel audits (admin CSS, admin JS, public site, data layer) and fixed the findings across four commits. The most serious was not in the audit brief: **production was publicly serving `/supabase_migration.sql`, `/PROJECT_STATUS.md`, `/CLAUDE.md` and `/docs/CHANGELOG.md`** — no build step means every tracked file becomes a URL. Closed with `.vercelignore`, verified 404 live. Then, at the user's direction, **changed the accounting rule so expenses are borne entirely by whoever paid them** rather than reimbursed and split 50/50 (see Key decisions). **Four errors of my own worth recording:** `escArg()` was written backwards and provided no protection at all (proved by executing the payload, not by reading it); writing U+2028 literally into its regex was a SyntaxError that would have killed the whole dashboard script; `openQuotationForm` was written against a `quotationModal` that does not exist; and the new targets indexed `revenueByMonth()` by month name when it returns sorted pairs. The last two were caught only because the tests asserted rendered output. Also: one verification run reached the live database, because stubbing `window.supabaseClient` does not work when the page holds it as a script-scoped `const` — RLS rejected the insert and nothing was written, and all later runs abort Supabase at the network layer. Full write-up in `docs/CHANGELOG.md`.
 - **2026-07-26 (admin portal)** — Rebuilt the admin financials: fixed the partner-balance bug (the expense settlement was computed then discarded, so a partner who fronted costs was never credited), replaced the two fixed payment slots with arbitrary installments, added add-ons and quotations, and collapsed nine independent money sums into one `computeFinancials()`. Applied `supabase_migration_02_financials.sql` to production; financial data cleared for re-entry at the user's request. **Also corrected a wrong security finding of my own**: `projects`/`expenses` were never publicly readable — `HTTP 200 + 0 rows` from PostgREST means RLS filtered everything, not that the table is open. Only `partner_withdrawals` and `system_settings` were actually exposed, and both are now closed.

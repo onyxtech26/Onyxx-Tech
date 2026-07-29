@@ -5,6 +5,96 @@ Format each entry: what was done, why it mattered, and any key decisions.
 
 ---
 
+## 2026-07-29 (no SST, dashboard UX pass, dashboard split into three files)
+
+### SST removed entirely
+
+At the user's direction: **the studio does not charge SST.** Whatever a project
+brings in is theirs in full. The apportionment logic built the day before — the
+one that reserved a slice of every ringgit collected against the linked
+quotation's tax — is gone.
+
+```
+pool       = collected − companyExpenses          (no SST term)
+share(P)   = pct(P) × pool
+balance(P) = share(P) − personalSpend(P) − withdrawn(P)
+```
+
+`sstReserved` is kept in the returned object but permanently `0`, so any figure
+still reading it reports nothing withheld rather than throwing. The quotation
+form lost its Subtotal and SST fields and now carries a single **Amount**; a
+quotation row that still has an `sst_amount` in the database is ignored rather
+than honoured.
+
+Verified 3/3 against hand-worked figures, including a quote carrying
+`sst_amount: 800` which must now change nothing. Reconciliation invariant
+`|Σbalance − distributable|` came out at exactly `0.00e+00` in every case.
+
+### Five dashboard improvements
+
+1. **Tables become cards on a phone.** Below 860px each row stacks and every
+   cell is labelled from its own column header — `applyResponsiveTableLabels()`
+   reads each table's `<thead>` and stamps `data-label` on the `<td>`s, so a
+   table that gains a column keeps working. All 7 tabs now fit 390px with no
+   horizontal overflow; previously they scrolled sideways.
+2. **An empty Overview guides instead of alarming.** A dashboard with no data
+   read as a business with no money. It now shows a "Nothing tracked yet" card
+   pointing at the first step. It deliberately does **not** fire when
+   `loadErrors` is non-empty — a failed load must never be dressed up as an
+   empty studio.
+3. **The quotation form moved into a modal** and the list came above the fold.
+4. **The expense donut rolls up.** Top 6 categories plus "Other (n categories)",
+   7 colours for at most 7 slices, so no two wedges ever share a colour.
+5. **CSS and JS split out of `admin-dashboard.html`** — see below.
+
+### The dashboard is three files now
+
+`admin-dashboard.html` was a single 313 KB file with every rule and every
+function inline, so the browser re-downloaded all of it on every visit and none
+of it could be cached.
+
+| | before | after |
+|---|---|---|
+| `admin-dashboard.html` | 313 KB | 63 KB |
+| `admin-dashboard.css` | — | 49 KB |
+| `admin-dashboard.js` | — | 201 KB |
+
+Two inline scripts stay in the HTML on purpose: the theme bootstrap, which must
+run before first paint or the wrong theme flashes, and the lottie flag it sets.
+
+Measured over real HTTP with a cache header: a repeat visit re-fetches only the
+63 KB HTML and takes all 250 KB of CSS+JS from cache (`transferSize` 0).
+
+**The split broke every test, and that is worth recording.** Each Playwright
+harness suppressed the "no session → go to login" redirect by rewriting the
+dashboard HTML in flight. That line now lives in the `.js`, so the patch matched
+nothing, the page navigated away, and every global the tests assign to came back
+undefined — which looks identical to the product being catastrophically broken.
+It was the harness. 22 test files now patch the `.js` too.
+
+**A test reached the live database again.** `verify_guard.py` stubbed
+`window.supabaseClient`, but the page holds that client in a script-scoped
+`const`, so the stub was ignored and a project insert went to production. RLS
+refused it (`new row violates row-level security policy`) and nothing was
+written, but it should never have left the machine — that test was missing the
+`**://*.supabase.co/**` abort route the others have. This is the **second**
+time this exact mistake has been made. It is now rewritten to intercept at the
+network layer, counting POSTs and answering them slowly to open the mid-flight
+window: 3 rapid submits produce exactly 1 insert.
+
+**Also worth remembering:** a `fetch()` whose body is never drained records no
+Resource Timing entry, because the entry is only finalised once the response is
+fully received. A cache measurement that never reads `.text()`/`.arrayBuffer()`
+silently reports nothing at all — which cost a while of chasing the wrong cause.
+
+**Verification after the split:** `admin-dashboard.js` parses clean; the
+financial model (3/3), expense scope (4/4), the three expense sections, nav,
+mobile at 390px across all 7 tabs, modals (focus trap, scroll lock, focus
+restore), quotations, escaping, icons, partners and the reset page all pass;
+all 8 pages load clean.
+
+---
+
 ## 2026-07-28 (expense model corrected — everything is company money)
 
 ### No more reimbursement, no "Owed Back"
