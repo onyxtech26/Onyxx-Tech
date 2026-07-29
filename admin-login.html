@@ -484,8 +484,15 @@
 
       // Absolute URL, and it must be listed under Authentication > URL
       // Configuration > Redirect URLs or Supabase silently falls back to the
-      // project's Site URL.
-      const redirectTo = new URL('admin-reset.html', window.location.href).href;
+      // project's Site URL — which would sign the user in on the homepage with
+      // their old password still set, and never offer to change it.
+      //
+      // Note the EXTENSIONLESS path. Supabase matches the allowlist literally,
+      // and the site runs with vercel.json cleanUrls, so the canonical address
+      // is /admin-reset. Resolving 'admin-reset.html' here produced
+      // .../admin-reset.html, which an allowlist entry of .../admin-reset does
+      // not match. Both resolve to the same page; only one matches.
+      const redirectTo = new URL('admin-reset', window.location.href).href;
       const { error } = await supabaseClient.auth.resetPasswordForEmail(email, { redirectTo });
 
       if (error) console.error('resetPasswordForEmail:', error);
