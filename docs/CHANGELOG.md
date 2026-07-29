@@ -114,6 +114,30 @@ existed inside the test. Production sends `max-age=0, must-revalidate`. A test
 server that invents its own headers is not measuring the deployment — check the
 real ones before quoting a number.
 
+### The reset redirect asked for a URL that was not on the allowlist
+
+Checking the owner's Supabase URL configuration turned up a live bug. The login
+page built its recovery redirect as `new URL('admin-reset.html', location.href)`,
+so on production it asked for `https://onyxx-tech.vercel.app/admin-reset.html`.
+The allowlist holds exactly one entry — `https://onyxx-tech.vercel.app/admin-reset`,
+extensionless, because the site runs with `cleanUrls` — and Supabase matches
+that list **literally**.
+
+What makes this worth writing down is the failure mode. A `redirect_to` that
+does not match is **not an error**. Supabase falls back to the project's Site
+URL. So the reset email would have arrived, the link would have worked, and the
+user would have been signed in — on the homepage, with their old password still
+set, never offered the chance to change it. Every visible signal says success.
+That is precisely the scenario `admin-reset.html` was built to prevent, and it
+would have been invisible until someone noticed their password still worked.
+
+Fixed in `a78c198`: the redirect is now built extensionless. Verified against a
+local server mimicking `cleanUrls`, then against production — the live page
+asks for exactly the allowlisted string.
+
+**Rule:** anywhere a redirect URL is constructed for Supabase, compare it to the
+allowlist entry character for character. `cleanUrls` means extensionless.
+
 **Deploy verified live** (2026-07-29): all three files return 200 and match the
 local bytes; `/supabase_migration.sql`, `/PROJECT_STATUS.md`, `/CLAUDE.md` and
 `/docs/CHANGELOG.md` still 404, so the `.vercelignore` guard survived the split.
