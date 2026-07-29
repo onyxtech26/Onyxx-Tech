@@ -8,7 +8,9 @@
 
 ## 📍 Where I left off
 
-**Committed locally, NOT yet pushed** — `main` is at `9485fa1`. Today's three commits (`02e1a14` mobile/keyboard/light-theme, `810582f` SST removal + UX pass, `9485fa1` the file split) are ahead of `origin`.
+**All work is committed and pushed, and the deploy is verified live** — `main` is at `95acae8`. Today's commits: `02e1a14` (mobile/keyboard/light-theme), `810582f` (SST removal + UX pass), `9485fa1` (the file split), `95acae8` (docs).
+
+Live check on 2026-07-29: all three dashboard files return 200 and match the local bytes; `/supabase_migration.sql`, `/PROJECT_STATUS.md`, `/CLAUDE.md` and `/docs/CHANGELOG.md` still 404, so the `.vercelignore` guard survived the split; `/admin-dashboard.html` without a session bounces to `/admin-login` with no page errors and no failed requests.
 
 **All migrations are run.** 03, 04 and 05 are applied; the lockdown is verified. See "Next / To do".
 
@@ -54,6 +56,7 @@ Cash in account = 10,000 − 1,300 = 8,700 = 4,200 + 4,500.
 - **Playwright tests must abort `*.supabase.co` at the network layer.** Stubbing `window.supabaseClient` does NOT work — the page holds it as a script-scoped `const`, so the assignment creates a separate binding and the real client is still used. **This has now happened twice** (2026-07-28, and again 2026-07-29 in `verify_guard.py`, which was written before the rule and never retrofitted). Both were rejected by RLS with nothing written. When adding a test, the abort route is not optional.
 - **The dashboard is three files now.** Any harness that patched `admin-dashboard.html` to suppress the login redirect must patch `admin-dashboard.js` instead — that is where the redirect lives. Getting this wrong makes every global undefined, which looks exactly like the product being broken.
 - **A `fetch()` whose body is never drained records no Resource Timing entry.** The entry is finalised only once the response is fully received, so a measurement that skips `.text()`/`.arrayBuffer()` silently reports nothing.
+- **Vercel serves un-versioned static files as `public, max-age=0, must-revalidate`.** So there is no silent cache hit: every visit re-requests every asset and gets a `304` with an empty body. The bytes are saved, the round-trips are not. A local test server that sets its own `max-age` is measuring a policy that exists only in the test — check the live headers before quoting a caching number.
 
 **The blocking items in "Next / To do" need the account owner** — they are Supabase dashboard settings I cannot change.
 
@@ -124,7 +127,7 @@ Verified in Chrome via Playwright: 7 pages × dark/light with zero errors, 28 pa
 - [x] **Empty Overview guides instead of alarming** — and deliberately does *not* fire when a load failed, so a broken fetch is never dressed up as an empty studio (2026-07-29)
 - [x] **Quotation form moved into a modal**, list above the fold (2026-07-29)
 - [x] **Expense donut rolls up** to the top 6 categories plus "Other (n categories)" — 7 colours, 7 slices, no reuse (2026-07-29)
-- [x] **`admin-dashboard.html` split into three files** — 313 KB → 63 KB HTML + 49 KB CSS + 201 KB JS. A repeat visit re-fetches only the HTML and takes 250 KB from cache, measured over real HTTP (2026-07-29)
+- [x] **`admin-dashboard.html` split into three files** — 313 KB → 63 KB HTML + 49 KB CSS + 201 KB JS. Verified live: a repeat visit revalidates all three and gets `304`/empty on each, so 307 KB of body is not re-sent (2026-07-29)
 - [x] **22 Playwright harnesses repointed at the extracted JS**, and `verify_guard.py` rewritten to intercept Supabase at the network layer instead of stubbing the client (2026-07-29)
 
 ### 🔄 In progress

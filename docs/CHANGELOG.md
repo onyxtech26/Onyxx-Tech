@@ -62,8 +62,29 @@ of it could be cached.
 Two inline scripts stay in the HTML on purpose: the theme bootstrap, which must
 run before first paint or the wrong theme flashes, and the lottie flag it sets.
 
-Measured over real HTTP with a cache header: a repeat visit re-fetches only the
-63 KB HTML and takes all 250 KB of CSS+JS from cache (`transferSize` 0).
+**What the repeat visit actually costs, verified against production** (an earlier
+draft of this entry overstated it, because the local test server was configured
+with `max-age=3600` — Vercel does not send that):
+
+Vercel serves un-versioned static files as `public, max-age=0, must-revalidate`
+with an ETag. So a repeat visit is **not** a silent cache hit — the browser asks
+again for all three files. It gets `304 Not Modified` with an empty body on each:
+
+```
+                          first visit    repeat
+admin-dashboard.html         63,395 B     304, 0 B
+admin-dashboard.css          49,030 B     304, 0 B
+admin-dashboard.js          201,873 B     304, 0 B
+                            ---------     --------
+                            314,298 B          0 B
+```
+
+The bytes saved are real — 307 KB of body not re-sent — but three conditional
+round-trips still happen. The split is what makes this possible at all: when
+everything was inline there was one 313 KB file, and any change to a single CSS
+rule invalidated the whole thing. Now a JS-only change leaves the CSS ETag
+valid. Getting to a true zero-request cache hit would need long `max-age` plus
+versioned filenames, which has no build step to generate them — not done.
 
 **The split broke every test, and that is worth recording.** Each Playwright
 harness suppressed the "no session → go to login" redirect by rewriting the
@@ -86,6 +107,20 @@ window: 3 rapid submits produce exactly 1 insert.
 Resource Timing entry, because the entry is only finalised once the response is
 fully received. A cache measurement that never reads `.text()`/`.arrayBuffer()`
 silently reports nothing at all — which cost a while of chasing the wrong cause.
+
+**And the measurement itself was misleading.** The local harness set
+`max-age=3600` on its own responses, so it measured a cache policy that only
+existed inside the test. Production sends `max-age=0, must-revalidate`. A test
+server that invents its own headers is not measuring the deployment — check the
+real ones before quoting a number.
+
+**Deploy verified live** (2026-07-29): all three files return 200 and match the
+local bytes; `/supabase_migration.sql`, `/PROJECT_STATUS.md`, `/CLAUDE.md` and
+`/docs/CHANGELOG.md` still 404, so the `.vercelignore` guard survived the split.
+Loading `/admin-dashboard.html` without a session bounces to `/admin-login` with
+no page errors and no failed requests. Note the CSS and JS do download before
+that redirect fires — which is fine, since the only credential in them is the
+anon key, and RLS is the real gate.
 
 **Verification after the split:** `admin-dashboard.js` parses clean; the
 financial model (3/3), expense scope (4/4), the three expense sections, nav,
