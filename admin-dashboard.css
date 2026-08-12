@@ -325,14 +325,24 @@
       transition-delay: 0.1s;
     }
 
-    .nav-item:hover, .nav-item.active {
-      background: var(--nav-item-hover-bg);
+    /* Selected state. Kept SEPARATE from :hover — see below. */
+    .nav-item.active {
+      background: var(--nav-item-active-bg);
       color: var(--accent);
       border-color: rgba(56, 224, 255, 0.2);
     }
-    
-    .nav-item.active {
-      background: var(--nav-item-active-bg);
+
+    /* Hover is gated on an actual pointer. A touch device keeps :hover on the
+       last thing tapped, and because this styling used to be shared with
+       .active, the tapped tab stayed lit — so the phone showed two selected
+       tabs at once: the real one, and whatever you touched last. The public
+       site already gates its hovers this way; the dashboard never did. */
+    @media (hover: hover) {
+      .nav-item:hover {
+        background: var(--nav-item-hover-bg);
+        color: var(--accent);
+        border-color: rgba(56, 224, 255, 0.2);
+      }
     }
 
     /* Redesigned Sidebar Submenu Layout */
@@ -547,6 +557,21 @@
        eleven tabs are in the sidebar and a "More" would lead nowhere. */
     .nav-more { display: none; }
 
+    /* Was an inline style on the button; moved here so the phone bar can size
+       it to match the nav slots. */
+    .theme-toggle-btn {
+      background: transparent;
+      border: none;
+      color: var(--bone-dim);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 5px;
+      transition: color 0.3s ease, background 0.3s ease, border-color 0.3s ease;
+    }
+    .theme-toggle-label { display: none; }
+
     .more-nav-sheet { width: min(94vw, 460px); }
     .more-nav-grid {
       display: grid;
@@ -580,11 +605,18 @@
       fill: none; stroke: currentColor; stroke-width: 2;
       stroke-linecap: round; stroke-linejoin: round;
     }
-    .more-nav-item:hover,
     .more-nav-item:focus-visible {
       color: var(--accent);
       border-color: var(--accent);
       outline: none;
+    }
+    /* Same reason as .nav-item: on touch this would stick to the tile you
+       tapped last and read as a second selection. */
+    @media (hover: hover) {
+      .more-nav-item:hover {
+        color: var(--accent);
+        border-color: var(--accent);
+      }
     }
     .more-nav-item.active {
       color: var(--accent);
@@ -706,6 +738,29 @@
       }
 
       .nav-more { display: flex; }
+
+      /* The theme button shares the bar with the five slots, so it is built to
+         match them: same column layout, same height, its own label. It was a
+         30x30 unlabelled icon beside 65x46 labelled ones, which read as a
+         stray glyph rather than a control. Narrower than a nav slot on
+         purpose — it is a utility, not a destination. */
+      .theme-toggle-btn {
+        flex: 0 0 auto;
+        flex-direction: column;
+        gap: 0.2rem;
+        width: 52px;
+        min-height: 46px;
+        padding: 0.4rem 0.15rem;
+        border-radius: 10px;
+      }
+      .theme-toggle-label {
+        display: block;
+        font-family: var(--font-mono);
+        font-size: 0.5rem;
+        letter-spacing: 0.04em;
+        line-height: 1.1;
+        text-transform: uppercase;
+      }
 
       .main-content {
         padding: 1.25rem 1rem 5.5rem;   /* bottom clears the fixed nav bar */

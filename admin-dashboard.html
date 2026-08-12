@@ -70,7 +70,11 @@
           <img src="images/onyxx_logo_&_name_transparent.webp" alt="Onyxx Tech Hub" class="sidebar-logo logo-full"
                width="2032" height="774" decoding="async" />
         </div>
-        <button id="themeToggleBtn" onclick="toggleTheme()" aria-label="Toggle Theme" style="background: transparent; border: none; color: var(--bone-dim); cursor: pointer; display: flex; align-items: center; justify-content: center; padding: 5px; transition: all 0.3s ease;">
+        <!-- Styling lives in the stylesheet rather than inline, so the phone
+             layout can size this like the nav slots beside it. Inline
+             display/padding outrank any stylesheet rule without !important,
+             which left a 30x30 unlabelled button next to 65x46 labelled ones. -->
+        <button id="themeToggleBtn" class="theme-toggle-btn" onclick="toggleTheme()" aria-label="Toggle Theme">
           <svg class="sun-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 20px; height: 20px;">
             <circle cx="12" cy="12" r="5"></circle>
             <line x1="12" y1="1" x2="12" y2="3"></line>
@@ -85,6 +89,9 @@
           <svg class="moon-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 20px; height: 20px; display: none;">
             <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
           </svg>
+          <!-- Shown only on the phone bar, where this sits in a row of labelled
+               slots and a bare icon reads as a stray. -->
+          <span class="theme-toggle-label">Theme</span>
         </button>
       </div>
       
