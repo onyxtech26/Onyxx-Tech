@@ -1276,6 +1276,20 @@ function getProjectImageUrl(p) {
       return `${day}/${month}/${year}`;
     }
 
+    /**
+     * "02 Jul" — for the expense card's second line on a phone, where the full
+     * dd/mm/yyyy squeezed the category badge down to "Software & Subscr…".
+     * The year is dropped deliberately: these are this year's costs, and the
+     * full date is one tap away in the editor.
+     */
+    function formatDateShort(dateStr) {
+      if (!dateStr) return '';
+      const d = parseLocalDate(dateStr);
+      if (!d) return dateStr;
+      return `${String(d.getDate()).padStart(2, '0')} ` +
+             d.toLocaleString('en-US', { month: 'short' });
+    }
+
     function clearProjectFilters() {
       const sClient = document.getElementById('projectSearchClient');
       const fStatus = document.getElementById('projectFilterStatus');
@@ -2023,9 +2037,14 @@ function getProjectImageUrl(p) {
                    style="background:none;border:none;padding:0;cursor:pointer;color: var(--accent); text-decoration: underline; font-weight: 500; font-size: 0.85rem;">View</button>`
         : '<span style="color: var(--bone-faint); font-size: 0.85rem;">None</span>';
 
+      // On a phone the card collapses to Item/Amount over Date/Category and the
+      // whole row becomes the tap target for editing — see .expense-table in
+      // the <=860px block. openExpenseRow() no-ops above that width, where the
+      // Edit button is visible and doing nothing surprising is the right call.
       return `
-        <tr>
-          <td style="white-space: nowrap;">${formatDate(e.date)}</td>
+        <tr class="${e.recurring ? 'is-recurring' : ''}"
+            onclick="openExpenseRow(event, '${escArg(e.id)}')">
+          <td style="white-space: nowrap;"><span class="date-full">${formatDate(e.date)}</span><span class="date-short">${formatDateShort(e.date)}</span></td>
           <td style="font-weight: 500;">
             ${esc(e.item)}
             ${e.notes ? `<div style="font-size:0.75rem;color:var(--bone-dim);margin-top:0.15rem;">${esc(e.notes)}</div>` : ''}
@@ -2058,12 +2077,20 @@ function getProjectImageUrl(p) {
      */
     function expenseSectionHTML(o) {
       const total = o.rows.reduce((s, e) => s + (parseFloat(e.amount) || 0), 0);
+      const open = openExpenseSections.has(o.key);
       return `
-        <div class="glass-card" style="padding: 1.25rem 1.5rem; margin-bottom: 1.5rem;">
-          <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:1rem;flex-wrap:wrap;margin-bottom:0.9rem;">
-            <div>
-              <h3 style="font-family: var(--font-display); font-size: 1.05rem; margin: 0 0 0.2rem;">${esc(o.title)}</h3>
-              <p style="font-size: 0.78rem; color: var(--bone-dim); margin: 0; line-height: 1.5;">${o.subtitle}</p>
+        <div class="glass-card expense-section ${open ? 'is-open' : ''}" data-key="${esc(o.key)}"
+             style="padding: 1.25rem 1.5rem; margin-bottom: 1.5rem;">
+          <div class="expense-section-head" style="display:flex;align-items:flex-start;justify-content:space-between;gap:1rem;flex-wrap:wrap;margin-bottom:0.9rem;">
+            <div style="min-width:0;flex:1 1 auto;">
+              <button type="button" class="expense-section-toggle"
+                      onclick="toggleExpenseSection('${escArg(o.key)}')"
+                      aria-expanded="${open}">
+                <span class="chev" aria-hidden="true"></span>
+                <h3 style="font-family: var(--font-display); font-size: 1.05rem; margin: 0 0 0.2rem;">${esc(o.title)}</h3>
+                <span class="sr-only">${open ? 'Collapse' : 'Expand'} ${esc(o.title)}, ${o.rows.length} item${o.rows.length === 1 ? '' : 's'}</span>
+              </button>
+              <p class="expense-section-sub" style="font-size: 0.78rem; color: var(--bone-dim); margin: 0; line-height: 1.5;">${o.subtitle}</p>
             </div>
             <div style="display:flex;align-items:center;gap:1rem;">
               <div style="text-align:right;">
@@ -2075,8 +2102,8 @@ function getProjectImageUrl(p) {
             </div>
           </div>
 
-          <div class="table-container">
-            <table>
+          <div class="table-container expense-section-body">
+            <table class="expense-table">
               <thead>
                 <tr>
                   <th>Date</th><th>Item / Description</th><th>Category</th>
@@ -2119,7 +2146,8 @@ function getProjectImageUrl(p) {
 
       const blocks = [];
 
-      blocks.push(expenseSectionHTML({
+      const sections = [{
+        key: 'company',
         title: 'Company Expenses',
         subtitle: 'Bought for the studio with company money. The cost is shared 50/50.',
         rows: filtered.filter(e => !isPersonal(e)),
@@ -2127,10 +2155,11 @@ function getProjectImageUrl(p) {
         onAdd: "openExpenseModal(null, 'company')",
         accent: 'var(--accent)',
         empty: 'No company expenses yet.'
-      }));
+      }];
 
       PARTNERS.forEach(p => {
-        blocks.push(expenseSectionHTML({
+        sections.push({
+          key: `personal:${p}`,
           title: `${p} — Personal`,
           subtitle: `Bought by ${esc(p)} for themselves with company money. Comes off ${esc(p)}'s share alone.`,
           rows: filtered.filter(e => isPersonal(e) && byPartner(p)(e)),
@@ -2138,14 +2167,21 @@ function getProjectImageUrl(p) {
           onAdd: `openExpenseModal(null, 'personal', '${escArg(p)}')`,
           accent: 'var(--warn)',
           empty: `Nothing recorded for ${esc(p)}.`
-        }));
+        });
       });
+
+      initExpenseSectionState(sections.map(s => s.key));
+      sections.forEach(s => blocks.push(expenseSectionHTML(s)));
 
       // Personal rows whose paid_by matches no partner would otherwise vanish
       // from every block — surfaced rather than silently dropped.
       const orphans = filtered.filter(e => isPersonal(e) && !PARTNERS.some(p => byPartner(p)(e)));
       if (orphans.length) {
+        // Always open: this block only exists when something is wrong, so
+        // collapsing it by default would hide the very thing it is reporting.
+        openExpenseSections.add('orphans');
         blocks.push(expenseSectionHTML({
+          key: 'orphans',
           title: 'Unassigned personal expenses',
           subtitle: 'Marked personal but the Paid By value matches neither partner, so these are charged to nobody. Edit each one to fix it.',
           rows: orphans,
@@ -2157,6 +2193,82 @@ function getProjectImageUrl(p) {
       }
 
       host.innerHTML = blocks.join('');
+
+      // renderExpenses() is wired straight to three filter dropdowns and runs
+      // again after every save, so the rows it rebuilds are NOT the ones the
+      // post-load pass labelled. Without this, changing a filter on a phone
+      // left every card showing bare unlabelled values.
+      applyResponsiveTableLabels(host);
+      markScrollableTables();
+      updateExpenseFilterCount();
+    }
+
+    /* Which expense blocks are expanded. Kept outside renderExpenses() because
+       that function re-runs on every filter change and every save — rebuilding
+       the markup must not silently re-collapse what the user just opened. */
+    const openExpenseSections = new Set();
+    let expenseSectionStateReady = false;
+
+    /**
+     * Phones start collapsed — three headers with their subtotals fit one
+     * screen, where the expanded lists ran to nine. Desktop starts open,
+     * because there the length was never the problem.
+     */
+    function initExpenseSectionState(keys) {
+      if (expenseSectionStateReady) return;
+      expenseSectionStateReady = true;
+      if (!window.matchMedia('(max-width: 860px)').matches) {
+        keys.forEach(k => openExpenseSections.add(k));
+      }
+    }
+
+    function toggleExpenseFilters() {
+      const bar = document.getElementById('expenseFilterBar');
+      const btn = document.querySelector('.filter-toggle[aria-controls="expenseFilterBar"]');
+      if (!bar) return;
+      const open = !bar.classList.contains('is-open');
+      bar.classList.toggle('is-open', open);
+      if (btn) {
+        btn.classList.toggle('is-open', open);
+        btn.setAttribute('aria-expanded', String(open));
+      }
+    }
+
+    /**
+     * How many expense filters are actually narrowing the list. Shown beside
+     * the collapsed Filters toggle so a hidden filter can never quietly explain
+     * a short list.
+     */
+    function updateExpenseFilterCount() {
+      const badge = document.getElementById('expenseFilterCount');
+      if (!badge) return;
+      const n = ['expenseFilterCategory', 'expenseFilterPaidBy', 'expenseFilterRecurring']
+        .filter(id => (document.getElementById(id) || {}).value).length;
+      badge.textContent = String(n);
+      badge.hidden = n === 0;
+    }
+
+    function toggleExpenseSection(key) {
+      const card = document.querySelector(`.expense-section[data-key="${CSS.escape(key)}"]`);
+      if (!card) return;
+      const open = !openExpenseSections.has(key);
+      open ? openExpenseSections.add(key) : openExpenseSections.delete(key);
+      card.classList.toggle('is-open', open);
+      const btn = card.querySelector('.expense-section-toggle');
+      if (btn) btn.setAttribute('aria-expanded', String(open));
+    }
+
+    /**
+     * Tapping anywhere on an expense card opens it for editing — but only where
+     * the card layout is actually in use. Above 860px the row is a normal table
+     * row with its own Edit button, and a click that swallowed text selection
+     * would be a surprise.
+     */
+    function openExpenseRow(event, id) {
+      if (!window.matchMedia('(max-width: 860px)').matches) return;
+      // Let the row's own buttons win — otherwise Delete would open the editor.
+      if (event.target.closest('button, a')) return;
+      openExpenseModal(id);
     }
 
     // RENDER CASH FLOW

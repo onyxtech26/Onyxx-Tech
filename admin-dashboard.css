@@ -484,6 +484,69 @@
 
        Below 860px the sidebar becomes a horizontal bar pinned to the bottom —
        thumb-reachable, and it stops competing with the content for width. */
+    /* ============================================================
+       COLLAPSIBLE EXPENSE SECTIONS
+       ============================================================
+       Three blocks each listing every row was ~9.5 phone screens. Collapsed,
+       the three headers and their subtotals fit one — you open the one you
+       want. Useful on desktop too, so this is not inside a media query;
+       only the DEFAULT differs (see initExpenseSectionState). */
+    .sr-only {
+      position: absolute;
+      width: 1px; height: 1px;
+      padding: 0; margin: -1px;
+      overflow: hidden;
+      clip-path: inset(50%);
+      white-space: nowrap;
+      border: 0;
+    }
+
+    .expense-section-toggle {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      background: none;
+      border: none;
+      padding: 0;
+      margin: 0;
+      color: inherit;
+      font: inherit;
+      text-align: left;
+      cursor: pointer;
+    }
+    .expense-section-toggle:focus-visible {
+      outline: 2px solid var(--accent);
+      outline-offset: 3px;
+      border-radius: 4px;
+    }
+
+    /* A triangle drawn in CSS rather than a glyph — no font dependency, and it
+       rotates rather than swapping character, so it can animate. */
+    .expense-section-toggle .chev {
+      flex: 0 0 auto;
+      width: 0; height: 0;
+      border-left: 6px solid var(--bone-dim);
+      border-top: 4.5px solid transparent;
+      border-bottom: 4.5px solid transparent;
+      transition: transform 0.18s ease;
+    }
+    .expense-section.is-open .expense-section-toggle .chev { transform: rotate(90deg); }
+    .expense-section-toggle:hover .chev { border-left-color: var(--accent); }
+
+    .expense-section:not(.is-open) .expense-section-body { display: none; }
+    /* Collapsed, the explanatory line is noise between two headers. */
+    .expense-section:not(.is-open) .expense-section-sub { display: none; }
+
+    /* The Filters toggle only exists on phones — above 860px the bar is short
+       enough to simply show, so the button would be a control with nothing to
+       control. */
+    .filter-toggle { display: none; }
+    .date-short { display: none; }
+
+    /* Was an inline style on the element; moved here so the <=860px collapse
+       can actually override it. */
+    #expenseFilterBar { display: flex; }
+
     @media (max-width: 1100px) {
       .main-content { padding: 2rem 1.5rem; }
       .section-title { font-size: 2rem; }
@@ -692,6 +755,136 @@
 
       /* The row's own actions sit together on the last line. */
       .table-container td .actions-cell { justify-content: flex-end; }
+
+      /* ----------------------------------------------------------
+         EXPENSES: two lines, not ten
+         ----------------------------------------------------------
+         The generic card above gives every column a labelled line. That is
+         right for a 5-column table and absurd for this one: ten lines and
+         344px PER EXPENSE, so twenty of them ran to nine screens.
+
+         On a phone you are scanning what / how much / when. Everything else
+         is detail you only want when acting on one row — and tapping the card
+         opens the edit modal, which already shows all ten fields.
+
+             Figma seat                    RM 97.00
+             02 Jul   [Software & Subs]     [edit][del]
+
+         Cells are placed by nth-child against the <thead> order:
+         1 Date · 2 Item · 3 Category · 4 Amount · 5 Paid By · 6 Recurring? ·
+         7 Recurring Type · 8 Linked Project · 9 Receipt · 10 Actions. */
+      .expense-table tr {
+        display: grid;
+        grid-template-columns: auto 1fr auto;
+        align-items: baseline;
+        gap: 0.1rem 0.55rem;
+        padding: 0.6rem 0.8rem;
+      }
+
+      .expense-table td {
+        display: block;
+        padding: 0;
+        border-bottom: none;
+        text-align: left;
+      }
+      /* The card is self-explanatory at a glance; the labels were the noise. */
+      .expense-table td::before { content: none; }
+
+      .expense-table td:nth-child(2) { grid-area: 1 / 1 / 2 / 3; font-weight: 600; }
+      .expense-table td:nth-child(4) {
+        grid-area: 1 / 3 / 2 / 4;
+        text-align: right;
+        white-space: nowrap;
+        font-variant-numeric: tabular-nums;
+      }
+      .expense-table td:nth-child(1) {
+        grid-area: 2 / 1 / 3 / 2;
+        font-size: 0.75rem;
+        color: var(--bone-dim);
+      }
+      .expense-table td:nth-child(3) { grid-area: 2 / 2 / 3 / 3; min-width: 0; }
+      .expense-table td:nth-child(10) { grid-area: 2 / 3 / 3 / 4; }
+
+      /* Paid By, Recurring?, Recurring Type, Linked Project, Receipt. All five
+         are in the edit modal, and three of them printed the word "None". */
+      .expense-table td:nth-child(5),
+      .expense-table td:nth-child(6),
+      .expense-table td:nth-child(7),
+      .expense-table td:nth-child(8),
+      .expense-table td:nth-child(9) { display: none; }
+
+      /* The category badge has to survive a narrow middle column. */
+      .expense-table td:nth-child(3) .status-badge {
+        display: block;
+        max-width: 100%;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        font-size: 0.65rem;
+      }
+
+      /* Recurring is the one hidden field worth a hint, so it rides the date. */
+      .expense-table tr.is-recurring td:nth-child(1)::after {
+        content: " \21BB";
+        color: var(--accent);
+      }
+
+      /* The whole card is the tap target (openExpenseRow). */
+      .expense-table tr { cursor: pointer; }
+      .expense-table tr:active { background: var(--glass-border); }
+
+      /* Empty-state row must still span the card rather than land in a cell. */
+      .expense-table td[colspan] { grid-area: 1 / 1 / 2 / 4; text-align: center; }
+
+      /* "02 Jul" instead of "02/07/2026" — the full date pushed the category
+         badge down to "Software & Subscr…". */
+      .date-full { display: none; }
+      .date-short { display: inline; }
+
+      /* ----------------------------------------------------------
+         COLLAPSIBLE FILTER BAR
+         ---------------------------------------------------------- */
+      .filter-toggle {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        width: 100%;
+        margin-bottom: 1rem;
+        padding: 0.6rem 0.8rem;
+        background: var(--table-header-bg);
+        border: 1px solid var(--glass-border);
+        border-radius: 10px;
+        color: var(--bone-dim);
+        font-family: var(--font-mono);
+        font-size: 0.7rem;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        cursor: pointer;
+      }
+      .filter-toggle:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+      .filter-toggle .chev {
+        width: 0; height: 0;
+        border-left: 6px solid var(--bone-dim);
+        border-top: 4.5px solid transparent;
+        border-bottom: 4.5px solid transparent;
+        transition: transform 0.18s ease;
+      }
+      .filter-toggle.is-open .chev { transform: rotate(90deg); }
+
+      .filter-count {
+        margin-left: auto;
+        min-width: 1.3rem;
+        padding: 0.05rem 0.4rem;
+        border-radius: 999px;
+        background: var(--accent);
+        color: var(--ink, #05070a);
+        font-weight: 700;
+        text-align: center;
+      }
+
+      #expenseFilterBar { display: none; }
+      #expenseFilterBar.is-open { display: flex; }
+      #expenseFilterBar .form-control { max-width: none !important; width: 100%; }
 
       /* Nothing to fade when the table no longer scrolls sideways. */
       .table-container.is-scrollable {

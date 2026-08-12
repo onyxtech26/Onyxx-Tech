@@ -428,8 +428,22 @@
           personal ones come off that partner's share alone. Add from the section it belongs to.
         </p>
 
-        <!-- Search & Filter Controls -->
-        <div class="search-filter-bar" style="display: flex; gap: 1rem; margin-bottom: 1.5rem; flex-wrap: wrap; align-items: center;">
+        <!-- Search & Filter Controls.
+             Three stacked selects plus Clear ate 370px of a 844px phone screen
+             before a single expense was visible, so below 860px they collapse
+             behind this toggle. The count beside it is not decoration: a
+             collapsed bar hiding an active filter would show a short list with
+             no visible reason, which is how you end up trusting a wrong total. -->
+        <button type="button" class="filter-toggle" onclick="toggleExpenseFilters()"
+                aria-expanded="false" aria-controls="expenseFilterBar">
+          <span class="chev" aria-hidden="true"></span>
+          <span>Filters</span>
+          <span class="filter-count" id="expenseFilterCount" hidden></span>
+        </button>
+        <!-- display lives in the stylesheet, not inline: an inline display:flex
+             outranks any stylesheet rule without !important, so the collapse
+             below 860px could never hide this bar. -->
+        <div class="search-filter-bar" id="expenseFilterBar" style="gap: 1rem; margin-bottom: 1.5rem; flex-wrap: wrap; align-items: center;">
           <select id="expenseFilterCategory" class="form-control" style="max-width: 200px; padding: 0.4rem 0.6rem; font-size: 0.85rem;" onchange="renderExpenses()">
             <option value="">All Categories</option>
             <option value="AI Tools">AI Tools</option>
