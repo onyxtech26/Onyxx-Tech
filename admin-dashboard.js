@@ -255,6 +255,78 @@
       if (tabId === 'settings') {
         populateSettingsFields();
       }
+
+      // The phone bar only carries four tabs. When the current section is one
+      // of the other seven, light up More instead — otherwise the bar claims
+      // nothing is selected while you are plainly looking at Reports.
+      syncMoreNavActive(tabId);
+      closeMoreNav();
+    }
+
+    /* ==================================================================
+       MOBILE NAV: FOUR TABS PLUS "MORE"
+       ==================================================================
+       Eleven items in a 390px bar was 3,703px of sideways strip showing one
+       unlabelled icon at a time — the tabs were technically reachable and
+       practically not. Four stay on the bar (data-primary in the markup);
+       the rest are listed here.
+
+       The sheet is CLONED from the real nav rather than written out again, so
+       a tab added to the sidebar shows up automatically instead of quietly
+       becoming unreachable on phones. */
+    function moreNavItems() {
+      return [...document.querySelectorAll('.sidebar nav .nav-item[data-tab]')]
+        .filter(el => el.getAttribute('data-primary') !== '1');
+    }
+
+    function syncMoreNavActive(tabId) {
+      const more = document.querySelector('.nav-more');
+      if (!more) return;
+      const inSheet = moreNavItems().some(el => el.getAttribute('data-tab') === tabId);
+      more.classList.toggle('active', inSheet);
+    }
+
+    function buildMoreNav() {
+      const grid = document.getElementById('moreNavGrid');
+      if (!grid) return;
+      const active = localStorage.getItem('activeTab');
+      grid.innerHTML = '';
+      moreNavItems().forEach(src => {
+        const tab = src.getAttribute('data-tab');
+        const label = (src.querySelector('span')?.textContent || tab).trim();
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'more-nav-item' + (tab === active ? ' active' : '');
+        btn.setAttribute('data-tab', tab);
+        // The icon is the nav's own SVG, so the two can never disagree.
+        const icon = src.querySelector('svg');
+        if (icon) btn.appendChild(icon.cloneNode(true));
+        const text = document.createElement('span');
+        text.textContent = label;
+        btn.appendChild(text);
+        // switchTab closes this sheet itself, so there is one code path for
+        // "a section was chosen" no matter which control started it.
+        btn.addEventListener('click', () => switchTab(tab));
+        grid.appendChild(btn);
+      });
+    }
+
+    function openMoreNav() {
+      buildMoreNav();
+      openModal('moreNavModal');
+      document.querySelector('.nav-more')?.setAttribute('aria-expanded', 'true');
+    }
+
+    /**
+     * Guarded because switchTab() calls this on EVERY tab change, including
+     * ones with no sheet involved. closeModal() restores focus and clears
+     * _lastFocusBeforeModal unconditionally, so calling it blind would steal
+     * the focus restore belonging to whatever modal is genuinely open.
+     */
+    function closeMoreNav() {
+      const sheet = document.getElementById('moreNavModal');
+      document.querySelector('.nav-more')?.setAttribute('aria-expanded', 'false');
+      if (sheet && sheet.classList.contains('active')) closeModal('moreNavModal');
     }
 
 function getProjectImageUrl(p) {
@@ -696,6 +768,12 @@ function getProjectImageUrl(p) {
       const modal = document.getElementById(modalId);
       if (!modal) return;
       modal.classList.remove('active');
+
+      // Escape, the backdrop and the × all land here, so the More button's
+      // state is reset in one place rather than at each of those call sites.
+      if (modalId === 'moreNavModal') {
+        document.querySelector('.nav-more')?.setAttribute('aria-expanded', 'false');
+      }
 
       if (!document.querySelector('.modal-backdrop.active')) {
         document.body.style.overflow = '';
