@@ -570,6 +570,8 @@
       padding: 5px;
       transition: color 0.3s ease, background 0.3s ease, border-color 0.3s ease;
     }
+    /* Was inline on each <svg>, which made it 20px against the nav's 19px. */
+    .theme-toggle-btn svg { width: 20px; height: 20px; }
     .theme-toggle-label { display: none; }
 
     .more-nav-sheet { width: min(94vw, 460px); }
@@ -639,9 +641,17 @@
       .sidebar {
         width: 100%;
         height: auto;
-        flex-direction: row;
-        align-items: center;
-        gap: 0.4rem;
+        /* ONE grid for the whole bar, not a button sitting beside a nav.
+           Previously the theme button was its own 52px flex item next to a
+           5-column nav of 60.6px cells, so nothing shared a rhythm.
+           auto-flow/auto-columns rather than repeat(6): the column count then
+           follows however many children are actually visible, so hiding or
+           adding one cannot silently break the row. */
+        display: grid;
+        grid-auto-flow: column;
+        grid-auto-columns: 1fr;
+        align-items: stretch;
+        gap: 0.15rem;
         padding: 0.4rem 0.6rem;
         border-right: none;
         border-top: 1px solid var(--glass-border);
@@ -680,15 +690,9 @@
          was never reset here, so each of the eleven tabs claimed the whole bar
          and you dragged 3,369px to reach Settings, one unlabelled icon at a
          time. Four tabs stay; the other seven moved into the More sheet. */
-      .sidebar nav {
-        flex: 1 1 auto;
-        min-width: 0;
-        display: grid;
-        grid-template-columns: repeat(5, 1fr);
-        align-items: stretch;
-        gap: 0.15rem;
-        overflow: visible;
-      }
+      /* Dissolved so its buttons become cells of the bar's own grid, sharing
+         one set of column tracks with the theme button. */
+      .sidebar nav { display: contents; }
 
       /* Lets the grouped Projects item join the row instead of forming a
          second axis; its hover submenu has no place in a bottom bar. */
@@ -713,7 +717,12 @@
         border-radius: 10px;
         text-align: center;
       }
-      .nav-item svg { width: 19px; height: 19px; flex: 0 0 auto; }
+      /* margin-right must go. It is 1.2rem on desktop, where the icon sits to
+         the LEFT of its label in a row. Stacked, that margin is still applied
+         and pushed every nav icon 9.6px left of its own cell centre — while
+         the theme icon, which never had it, sat centred. That mismatch is
+         what made the finished bar still read as crooked. */
+      .nav-item svg { width: 19px; height: 19px; margin-right: 0; flex: 0 0 auto; }
 
       /* Labels are back. Eleven identical-looking outline glyphs with no text
          is a guessing game — "Cash Flow" and "Reports" are not distinguishable
@@ -744,17 +753,40 @@
          30x30 unlabelled icon beside 65x46 labelled ones, which read as a
          stray glyph rather than a control. Narrower than a nav slot on
          purpose — it is a utility, not a destination. */
+      /* Identical box to a nav slot, so icons and labels land on the same two
+         lines across the whole bar. Every value here mirrors .nav-item above;
+         they are siblings in one grid now, not a control beside a menu. */
+      /* Unconditionally visible here, and written with the ID because the rule
+         that hides it is `#themeToggleBtn` — an ID beats a class whatever the
+         media-query order, so `.theme-toggle-btn` alone silently lost.
+
+         Why it needs overriding at all: the desktop rule hides this and reveals
+         it on `.sidebar:hover`, with an escape hatch gated on
+         `(pointer: coarse)`. That covers a real phone but NOT a narrow desktop
+         window, which gets this bottom bar with a fine pointer and no sidebar
+         to hover — leaving an empty cell mid-row. Width is the right condition
+         here, not pointer type. */
+      #themeToggleBtn {
+        opacity: 1;
+        visibility: visible;
+      }
+
       .theme-toggle-btn {
-        flex: 0 0 auto;
+        width: auto;
+        min-width: 0;
         flex-direction: column;
         gap: 0.2rem;
-        width: 52px;
-        min-height: 46px;
         padding: 0.4rem 0.15rem;
         border-radius: 10px;
+        text-align: center;
       }
+      .theme-toggle-btn svg { width: 19px; height: 19px; }
       .theme-toggle-label {
         display: block;
+        max-width: 100%;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
         font-family: var(--font-mono);
         font-size: 0.5rem;
         letter-spacing: 0.04em;
