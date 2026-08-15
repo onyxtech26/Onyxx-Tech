@@ -256,6 +256,15 @@
         populateSettingsFields();
       }
 
+      // Opening Expenses always starts collapsed, however you left it last
+      // time. The re-render is what pushes that back into the DOM — the cards
+      // survive tab switches, so clearing the set alone would leave the old
+      // .is-open classes sitting there.
+      if (tabId === 'expenses') {
+        resetExpenseSections();
+        renderExpenses();
+      }
+
       // The phone bar only carries four tabs. When the current section is one
       // of the other seven, light up More instead — otherwise the bar claims
       // nothing is selected while you are plainly looking at Reports.
@@ -2248,7 +2257,6 @@ function getProjectImageUrl(p) {
         });
       });
 
-      initExpenseSectionState(sections.map(s => s.key));
       sections.forEach(s => blocks.push(expenseSectionHTML(s)));
 
       // Personal rows whose paid_by matches no partner would otherwise vanish
@@ -2285,19 +2293,19 @@ function getProjectImageUrl(p) {
        that function re-runs on every filter change and every save — rebuilding
        the markup must not silently re-collapse what the user just opened. */
     const openExpenseSections = new Set();
-    let expenseSectionStateReady = false;
 
     /**
-     * Phones start collapsed — three headers with their subtotals fit one
-     * screen, where the expanded lists ran to nine. Desktop starts open,
-     * because there the length was never the problem.
+     * Everything starts collapsed, at EVERY width — arriving at Expenses should
+     * show three headers with their subtotals, and nothing opens until you ask
+     * for it. Desktop used to start expanded on the reasoning that length was
+     * only a phone problem; the user wants the same behaviour on both.
+     *
+     * Called when the Expenses tab is opened, not from renderExpenses() — that
+     * re-runs on every filter change and every save, so resetting there would
+     * collapse the block you were working in the moment you saved a row.
      */
-    function initExpenseSectionState(keys) {
-      if (expenseSectionStateReady) return;
-      expenseSectionStateReady = true;
-      if (!window.matchMedia('(max-width: 860px)').matches) {
-        keys.forEach(k => openExpenseSections.add(k));
-      }
+    function resetExpenseSections() {
+      openExpenseSections.clear();
     }
 
     function toggleExpenseFilters() {

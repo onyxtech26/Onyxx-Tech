@@ -546,6 +546,10 @@
     .expense-section:not(.is-open) .expense-section-body { display: none; }
     /* Collapsed, the explanatory line is noise between two headers. */
     .expense-section:not(.is-open) .expense-section-sub { display: none; }
+    /* The header's bottom margin exists to separate it from the table. With no
+       table showing it is just dead space under every collapsed row. */
+    .expense-section:not(.is-open) .expense-section-head { margin-bottom: 0 !important; }
+    .expense-section:not(.is-open) { padding-bottom: 0.9rem !important; }
 
     /* The Filters toggle only exists on phones — above 860px the bar is short
        enough to simply show, so the button would be a control with nothing to
