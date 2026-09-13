@@ -2721,10 +2721,10 @@ function getProjectImageUrl(p) {
             <td style="white-space:nowrap;">${a.date ? formatDate(a.date) : '<span style="opacity:0.4;">&mdash;</span>'}</td>
             <td>
               <label style="display:inline-flex;align-items:center;gap:0.4rem;cursor:pointer;"
-                     title="Until this is ticked the add-on is agreed but not yet invoiced, so it does not count toward what the client owes.">
+                     title="Invoiced, not paid. Ticking this means the invoice has been sent — it adds the amount to the contract total, so Outstanding goes UP. Outstanding only comes down when you add a row to the payment schedule above and tick Received.">
                 <input type="checkbox" class="addon-billed" data-id="${a.id}" ${a.billed ? 'checked' : ''} />
                 <span style="color:${a.billed ? 'var(--pos)' : 'var(--warn)'};font-size:0.78rem;">
-                  ${a.billed ? 'Billed' : 'Not billed'}
+                  ${a.billed ? 'Invoiced' : 'Not invoiced'}
                 </span>
               </label>
             </td>
@@ -2749,7 +2749,7 @@ function getProjectImageUrl(p) {
       host.innerHTML = `
         <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:1rem;margin-bottom:1.25rem;">
           ${[['Project value', formatMYR(t.value), 'inherit'],
-             ['Add-ons', formatMYR(t.addonsTotal), 'inherit'],
+             ['Add-ons (invoiced)', formatMYR(t.addonsTotal), 'inherit'],
              ['Contract total', formatMYR(t.contractTotal), 'var(--accent)'],
              ['Collected', formatMYR(t.collected), 'var(--pos)'],
              ['Outstanding', formatMYR(t.outstanding), t.outstanding > 0.01 ? 'var(--neg)' : 'var(--bone-dim)'],
@@ -2786,7 +2786,7 @@ function getProjectImageUrl(p) {
         <table style="width:100%;font-size:0.85rem;margin-bottom:0.5rem;"><tbody>${addonRows}</tbody></table>
         ${t.addonsUnbilled > 0.01 ? `
         <p style="font-size:0.78rem;color:var(--warn);margin:0 0 0.75rem;">
-          ${formatMYR(t.addonsUnbilled)} of add-ons agreed but not yet billed &mdash;
+          ${formatMYR(t.addonsUnbilled)} of add-ons agreed but not yet invoiced &mdash;
           not counted in the contract total or in what the client owes.
         </p>` : ''}
         <form class="add-addon-form" data-project="${projectId}"
@@ -2795,8 +2795,9 @@ function getProjectImageUrl(p) {
           <input name="amount" class="form-control" type="number" step="0.01" min="0" placeholder="Amount" style="width:8rem;" required />
           <input name="date" class="form-control" type="date" style="width:10rem;" />
           <input name="notes" class="form-control" placeholder="Notes (optional)" style="width:12rem;" />
-          <label style="display:inline-flex;align-items:center;gap:0.4rem;font-size:0.8rem;cursor:pointer;">
-            <input type="checkbox" name="billed" /> Already billed
+          <label style="display:inline-flex;align-items:center;gap:0.4rem;font-size:0.8rem;cursor:pointer;"
+                 title="Invoiced, not paid. Tick only if the invoice for this add-on has already been sent. It adds the amount to what the client owes; record the money itself in the payment schedule above.">
+            <input type="checkbox" name="billed" /> Invoice already sent
           </label>
           <button type="submit" class="btn-primary" style="margin:0;width:auto;padding:0.5rem 1rem;">Add add-on</button>
         </form>
@@ -2900,7 +2901,7 @@ function getProjectImageUrl(p) {
         const { error } = await supabaseClient.from('project_addons')
           .update({ billed }).eq('id', addonId);
         if (error) throw error;
-        showToast(billed ? 'Add-on marked billed' : 'Add-on marked not billed', 'success');
+        showToast(billed ? 'Add-on marked invoiced' : 'Add-on marked not invoiced', 'success');
         await loadAllData();
       } catch (err) {
         showToast('Failed: ' + err.message, 'error');

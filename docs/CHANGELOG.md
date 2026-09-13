@@ -5,6 +5,45 @@ Format each entry: what was done, why it mattered, and any key decisions.
 
 ---
 
+## 2026-09-13 (add-on wording)
+
+### Add-on "billed" renamed to "invoiced" in the UI
+
+- **Symptom (as reported):** ticking *Already billed* on a project add-on left
+  the money still showing under Outstanding, which read as a broken figure.
+- **Root cause: none in the logic — the defect was the label.** `billed`
+  means *invoiced*, not *paid*. Ticking it moves the amount from
+  `addonsUnbilled` into `addonsTotal`, and since
+  `contractTotal = value + addonsTotal` and
+  `outstanding = contractTotal − collected`, ticking it makes Outstanding go
+  **up** by the add-on amount. That is correct: an invoice you have sent but
+  not been paid for *is* outstanding debt. Outstanding only falls when a row in
+  the payment schedule is ticked **Received**, which is the only thing that
+  feeds `collected`.
+- **Why it misled:** the create-form checkbox said "Already billed" with no
+  tooltip at all, and "billed" reads as "paid" to almost anyone. The row
+  checkbox had a tooltip, but it explained the mechanism without ever saying
+  the one thing that mattered — that invoiced is not paid.
+- **Fix (display text only, 6 strings in `admin-dashboard.js`):**
+  `Billed`/`Not billed` → `Invoiced`/`Not invoiced`; `Already billed` →
+  `Invoice already sent`; the summary tile `Add-ons` → `Add-ons (invoiced)`
+  since that figure counts billed add-ons only; "not yet billed" → "not yet
+  invoiced"; both toasts. Added a tooltip to the create-form checkbox (it had
+  none) and rewrote the row tooltip to state outright that Outstanding goes up,
+  and clears only via a Received payment.
+- **Key decision — the `project_addons.billed` column was deliberately left
+  alone.** Renaming it to `invoiced` would need a migration against the live
+  database plus ~6 code sites, and a migration/deploy landing out of order
+  breaks every add-on at once. That is real risk for a purely cosmetic gain;
+  the column name is internal and nobody reads it. **If a future session is
+  tempted to "finish" this rename for consistency, that is the reason not to.**
+- Verified by `node --check` and a line-by-line diff review: every changed line
+  is a string literal, and `a.billed`, `class="addon-billed"`, `name="billed"`
+  and `.update({ billed })` are all untouched. Not clicked through in a live
+  browser — that needs a Supabase admin session.
+
+---
+
 ## 2026-07-29 (no SST, dashboard UX pass, dashboard split into three files)
 
 ### SST removed entirely
