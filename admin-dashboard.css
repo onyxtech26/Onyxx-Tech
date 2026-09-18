@@ -194,6 +194,57 @@
       padding: 2rem 1.5rem;
     }
 
+    /* The NAV scrolls, not the sidebar. `.sidebar` is height:100vh with
+       overflow:hidden (the width animation needs that clip), and <nav> is
+       eleven tabs plus a submenu that expands on hover — so on any screen
+       shorter than the content, whatever didn't fit was simply cut off the
+       bottom. The first thing past the edge is .user-profile, i.e. Sign Out:
+       measured at 926px of content in a 610px viewport, the button sat ~250px
+       below the screen. It came back at 80% browser zoom only because zooming
+       out buys ~190px of CSS viewport height — the sidebar itself never
+       changed. `min-height: 0` is the line that actually does the work: a flex
+       item defaults to min-height:auto and refuses to shrink below its own
+       content, so without it the nav keeps demanding its full height and
+       nothing scrolls. */
+    .sidebar nav {
+      flex: 1 1 auto;
+      min-height: 0;
+      overflow-y: auto;
+      overflow-x: hidden;
+      /* A scrollbar gutter is wider than the icon rail it would sit in, and it
+         would appear and disappear as the sidebar expands. Wheel, trackpad and
+         keyboard all still scroll this. */
+      scrollbar-width: none;
+      -ms-overflow-style: none;
+    }
+    .sidebar nav::-webkit-scrollbar { width: 0; height: 0; }
+
+    /* ...but once the sidebar is expanded there is room for a hint, and a rail
+       that scrolls with no indication that it scrolls is a tab you never find.
+       The 6px gutter appears during the 76px -> 260px width animation, so the
+       labels never visibly jump. */
+    .sidebar:hover nav {
+      scrollbar-width: thin;
+      scrollbar-color: var(--glass-border-top) transparent;
+    }
+    .sidebar:hover nav::-webkit-scrollbar { width: 6px; }
+    .sidebar:hover nav::-webkit-scrollbar-track { background: transparent; }
+    .sidebar:hover nav::-webkit-scrollbar-thumb {
+      background: var(--glass-border-top);
+      border-radius: 999px;
+    }
+
+    /* Was an inline style on the element (display/justify/align + a 3rem
+       bottom margin), which no rule could override — moved here so the
+       short-screen block below can tighten it. */
+    .sidebar-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 3rem;
+      flex-shrink: 0;
+    }
+
     .sidebar-logo {
       transition: opacity 0.3s ease;
     }
@@ -441,6 +492,9 @@
 
     .user-profile {
       margin-top: auto;
+      /* The nav above absorbs the overflow now; this stays put at the bottom
+         of the SCREEN at every height. */
+      flex: 0 0 auto;
       padding-top: 1.5rem;
       border-top: 1px solid var(--glass-border);
       font-size: 0.8rem;
@@ -578,7 +632,26 @@
     .theme-toggle-btn svg { width: 20px; height: 20px; }
     .theme-toggle-label { display: none; }
 
-    .more-nav-sheet { width: min(94vw, 460px); }
+    /* The nav scrolls instead of clipping now, so nothing is ever unreachable
+       — but a rail with a hidden scrollbar is still something you have to
+       discover. On a short screen the same chrome is simply drawn tighter,
+       which fits all eleven tabs plus Sign Out on a 768px-tall laptop at 100%
+       zoom. Width-gated at 861px so it cannot reach the phone's bottom bar,
+       which has its own geometry entirely. */
+    @media (min-width: 861px) and (max-height: 900px) {
+      .sidebar,
+      .sidebar:hover { padding-top: 1.25rem; padding-bottom: 1.25rem; }
+      .sidebar-header { margin-bottom: 1.5rem; }
+      .nav-item { padding: 0.55rem 0.6rem; margin-bottom: 0.25rem; }
+      .user-profile { padding-top: 1rem; }
+      .user-profile .btn-outline { margin-top: 0.6rem; }
+    }
+
+    /* `.custom-modal` (further down this file) also sets a width, at the same
+       specificity — so the later rule won and this one did nothing: the sheet
+       rendered flush to both screen edges. Qualified with .custom-modal so the
+       cap actually applies. */
+    .custom-modal.more-nav-sheet { width: min(94vw, 460px); }
     .more-nav-grid {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
@@ -628,6 +701,35 @@
       color: var(--accent);
       border-color: var(--accent);
       background: color-mix(in srgb, var(--accent) 12%, transparent);
+    }
+
+    /* Phone sign-out. The sidebar's .user-profile is display:none below 860px
+       (it was eating ~108px of a 390px bar), and the sheet is built by cloning
+       nav tabs — so there was no way to sign out on a phone at all. It lives
+       here because the sheet IS the phone's overflow navigation, and the email
+       above the button answers "which account am I about to leave?", which the
+       hidden .user-profile used to answer on desktop. */
+    .more-nav-account {
+      display: flex;
+      flex-direction: column;
+      gap: 0.6rem;
+      margin-top: 0.25rem;
+      padding-top: 1rem;
+      border-top: 1px solid var(--glass-border);
+    }
+    .more-nav-email {
+      font-family: var(--font-mono);
+      font-size: 0.7rem;
+      letter-spacing: 0.04em;
+      color: var(--bone-dim);
+      /* A long address must wrap rather than widen the sheet past the screen. */
+      overflow-wrap: anywhere;
+    }
+    /* .btn-outline carries a 1rem top margin for the sidebar; the gap above
+       already spaces it here. */
+    .more-nav-account .btn-outline {
+      margin-top: 0;
+      min-height: 44px;
     }
 
     /* Was an inline style on the element; moved here so the <=860px collapse
@@ -1091,8 +1193,10 @@
       .add-payment-form, .add-addon-form { flex-direction: column; align-items: stretch; }
       .add-payment-form > *, .add-addon-form > * { width: 100% !important; }
 
-      /* Likewise: the classes are .modal-backdrop and .custom-modal. */
-      .custom-modal { width: 94vw; }
+      /* Likewise: the classes are .modal-backdrop and .custom-modal.
+         The width lives with the base .custom-modal rule further down — placed
+         here it lost to that rule, which is later in the file at the same
+         specificity, and every modal sat flush against both screen edges. */
     }
 
     @media (max-width: 480px) {
@@ -1712,6 +1816,13 @@
       box-shadow: 0 20px 50px rgba(0, 0, 0, 0.25);
       transform: scale(0.9);
       transition: transform 0.3s ease, background 0.3s ease, border-color 0.3s ease;
+    }
+    /* The phone gutter. Must come AFTER the rule above: media queries add no
+       specificity, so the copy that used to live in the <=860px block lost to
+       `width: 100%` and never took effect, and every modal sat flush against
+       both screen edges. */
+    @media (max-width: 860px) {
+      .custom-modal { width: 94vw; }
     }
     .modal-backdrop.active .custom-modal {
       transform: scale(1);

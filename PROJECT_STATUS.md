@@ -2,13 +2,13 @@
 
 > **Living board.** Read at the start of every session; updated when significant tasks finish. Newest state on top.
 
-**Last updated:** 2026-09-13
+**Last updated:** 2026-09-17
 
 ---
 
 ## 📍 Where I left off
 
-**All work is committed and pushed, and the deploy is verified live** — `main` is at `95acae8`. Today's commits: `02e1a14` (mobile/keyboard/light-theme), `810582f` (SST removal + UX pass), `9485fa1` (the file split), `95acae8` (docs).
+**All work is committed and pushed** — latest is the 2026-09-18 commit making the admin dashboard's Sign Out reachable on every screen (desktop sidebar clipping + no sign-out on phones). Not yet checked against the live deploy.
 
 Live check on 2026-07-29: all three dashboard files return 200 and match the local bytes; `/supabase_migration.sql`, `/PROJECT_STATUS.md`, `/CLAUDE.md` and `/docs/CHANGELOG.md` still 404, so the `.vercelignore` guard survived the split; `/admin-dashboard.html` without a session bounces to `/admin-login` with no page errors and no failed requests.
 
@@ -80,6 +80,13 @@ Verified in Chrome via Playwright: 7 pages × dark/light with zero errors, 28 pa
 ## 🗂️ Board
 
 ### ✅ Done
+- [x] **Sign Out made reachable everywhere** — it was clipped off the bottom of the
+  desktop sidebar (fixed-height flex column + `overflow: hidden`, nothing allowed to
+  scroll; visible only at 80% browser zoom, which just buys viewport height) and did
+  not exist at all on phones. `<nav>` is now the scroll region and `.user-profile` is
+  pinned; the More sheet gained an account block with the signed-in email and a second
+  Sign Out wired to the same `signOutNow()` handler. Also fixed two dead CSS width
+  rules that had left every phone modal flush against the screen edges (2026-09-17)
 - [x] **Add-on `billed` wording corrected to `invoiced`** across the dashboard, with tooltips stating that invoiced ≠ paid — display text only, DB column deliberately unchanged (2026-09-13)
 - [x] Set up cross-session project tracking (this system)
 - [x] Split single-page `index.html` into 7 static pages (Home + services/why/work/process/founders/contact), shared `styles.css`/`common.js`
@@ -237,6 +244,7 @@ leaves you unable to onboard Rooben.
 ---
 
 ## 📝 Session log
+- **2026-09-17 (Sign Out reachability)** — The user reported Sign Out was only visible at 80% browser zoom. Root cause: `.sidebar` is `height: 100vh; overflow: hidden` and nothing in its flex column could shrink or scroll, so `.user-profile` (`margin-top: auto`) sat at the bottom of the *content* and was clipped — measured 926px of content in a 610px viewport, button ~250px off-screen. Zooming out only bought viewport height. Fixed by making `<nav>` the scroll region (`flex: 1 1 auto; min-height: 0; overflow-y: auto` — the `min-height: 0` is what makes it work) and pinning the profile, plus a short-screen compaction pass. Phones had **no** sign-out at all (`.user-profile` hidden below 860px, More sheet cloned from tabs only) — the sheet now ends with the email and a second Sign Out sharing one `signOutNow()` handler. Found in passing: two phone-modal width rules were dead, beaten by a later `.custom-modal { width: 100% }` at equal specificity, so every phone modal was flush to the screen edges. Full write-up in `docs/CHANGELOG.md`.
 - **2026-09-13 (add-on wording)** — The user reported that ticking *Already billed* on an add-on left the payment showing as Outstanding. Nothing was broken: `billed` means **invoiced, not paid**, so ticking it adds the amount to `contractTotal` and pushes Outstanding *up* by design — it clears only when a payment row is ticked Received. The real defect was the wording: the create-form checkbox read "Already billed" with no tooltip, and "billed" reads as "paid". Renamed six display strings to *invoiced* and gave both checkboxes a tooltip that says outright that Outstanding goes up. **The `project_addons.billed` column was left alone on purpose** — a live migration for cosmetics is not worth the risk of a migration/deploy landing out of order; don't "finish" the rename later. Full write-up in `docs/CHANGELOG.md`.
 - **2026-07-29 (reset redirect)** — The owner set the Supabase Site URL and added `https://onyxx-tech.vercel.app/admin-reset` to Redirect URLs. Verifying that against the code found a live bug: the login page was asking for `/admin-reset.html`, which does not match the extensionless entry. Supabase does not error on an unmatched `redirect_to` — it falls back to the Site URL, so the email would have arrived, the link would have worked, the user would have been signed in on the homepage, and only the password would never have changed. Fixed extensionless in `a78c198` and confirmed against production. The reset page itself was checked live across three cases: no link, expired link, and a forged `type=recovery` fragment — the form stays hidden in all three, so a crafted URL cannot reveal it. The one thing still unproven is a real recovery email, which can only be tested by clicking one.
 - **2026-07-29 (no SST, UX pass, dashboard split)** — Removed SST entirely at the user's direction: the studio does not charge it, so project money is theirs in full. Then five dashboard improvements — tables that become labelled cards on a phone (all 7 tabs now fit 390px), an empty-state Overview that guides rather than reading as a business with no money, the quotation form moved into a modal, a donut that rolls up to the top 6 categories plus "Other", and finally splitting `admin-dashboard.html` from 313 KB into 63 KB HTML + 49 KB CSS + 201 KB JS, with a repeat visit taking 250 KB from cache. **Two things I got wrong.** The split broke all 22 Playwright harnesses at once — every one suppressed the login redirect by rewriting the HTML, and that line had moved into the `.js`, so the page navigated away and every global read as undefined. That looks identical to the product being catastrophically broken; it was the harness. And `verify_guard.py` reached the live database, because it stubbed `window.supabaseClient` — the same script-scoped-`const` mistake as 2026-07-28, in a test written before the rule and never retrofitted. RLS refused the insert and nothing was written, but it should not have left the machine; it now intercepts at the network layer. Also cost myself a while chasing a cache measurement that reported nothing: a `fetch()` whose body is never drained records no Resource Timing entry. Full write-up in `docs/CHANGELOG.md`.

@@ -200,8 +200,9 @@
       if (lost) window.location.href = 'admin-login.html?v=' + Date.now();
     });
 
-    // Sign out
-    document.getElementById('signOutBtn').addEventListener('click', async () => {
+    // Sign out. ONE code path, because there are two buttons: the sidebar's
+    // (desktop) and the More sheet's (phone, where the sidebar's is hidden).
+    async function signOutNow() {
       // Check the result: on failure the token stays in localStorage, and
       // redirecting anyway made it look signed out while the session lived on.
       const { error } = await supabaseClient.auth.signOut();
@@ -210,7 +211,9 @@
         return;
       }
       window.location.href = 'index.html';
-    });
+    }
+    document.getElementById('signOutBtn').addEventListener('click', signOutNow);
+    document.getElementById('moreSignOutBtn')?.addEventListener('click', signOutNow);
     
     // Tab Switching Logic
     function switchTab(tabId) {
@@ -318,6 +321,11 @@
         btn.addEventListener('click', () => switchTab(tab));
         grid.appendChild(btn);
       });
+      // Read from the sidebar's own element rather than from the session, so
+      // there is one source for the signed-in address and the sheet cannot
+      // show a stale one. textContent, never innerHTML — it is user data.
+      const email = document.getElementById('moreNavEmail');
+      if (email) email.textContent = document.getElementById('userEmail')?.textContent || '';
     }
 
     function openMoreNav() {

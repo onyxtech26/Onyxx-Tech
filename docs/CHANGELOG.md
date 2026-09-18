@@ -5,6 +5,74 @@ Format each entry: what was done, why it mattered, and any key decisions.
 
 ---
 
+## 2026-09-17 (Sign Out reachability)
+
+### Sign Out was clipped off the desktop sidebar, and absent entirely on phones
+
+- **Symptom (as reported):** the Sign Out button in the admin dashboard is only
+  visible after zooming the browser out to 80%.
+- **Root cause — a fixed-height flex column with `overflow: hidden`.**
+  `.sidebar` is `height: 100vh` and clips its overflow (the clip is what makes
+  the 76px -> 260px hover-expand look clean). `<nav>` holds eleven tabs plus a
+  submenu that expands on hover, and nothing in the column was allowed to
+  shrink or scroll — so `.user-profile` (`margin-top: auto`) sat at the bottom
+  of the **content**, not of the screen, and anything past 100vh was simply cut
+  off. Measured: 926px of sidebar content in a 610px viewport, with the button
+  at y 858-894, roughly 250px below the screen edge. 80% zoom "fixes" it
+  because zooming out buys ~190px of CSS viewport height; the sidebar itself
+  never changed.
+- **Fix:** `<nav>` became the flexible scroll region — `flex: 1 1 auto;
+  min-height: 0; overflow-y: auto` — and `.user-profile` is `flex: 0 0 auto`,
+  so it is pinned to the bottom of the screen at every height and the nav
+  absorbs the overflow. **`min-height: 0` is the line that does the work:** a
+  flex item defaults to `min-height: auto` and refuses to shrink below its own
+  content, so without it the nav keeps demanding its full height and nothing
+  scrolls. Verified at 400px viewport height: nav overflowing by 258px, Sign
+  Out still fully on screen.
+- **Plus a short-screen compaction pass** (`@media (min-width: 861px) and
+  (max-height: 900px)`) that tightens the sidebar padding, header margin and
+  nav-item spacing, so all eleven tabs usually fit without scrolling at all on
+  a 768px-tall laptop. Width-gated at 861px so it cannot reach the phone's
+  bottom bar. The scrollbar is hidden in the collapsed 76px rail and appears as
+  a 6px thumb only while the sidebar is expanded — a rail that scrolls with no
+  indication that it scrolls is a tab you never find.
+- **The `.sidebar-header` inline style was moved into the CSS**, the same move
+  already made for `#expenseFilterBar` and `.theme-toggle-btn`: its 3rem bottom
+  margin was inline, so no rule could override it.
+
+### Phones had no way to sign out at all
+
+- **Root cause:** `.user-profile { display: none !important; }` below 860px
+  (it was eating ~108px of the 390px bottom bar), and the More sheet is built
+  by cloning nav **tabs** — so no sign-out control existed anywhere on a phone.
+- **Fix:** the More sheet now ends with an account block — the signed-in email
+  plus a Sign Out button. `buildMoreNav()` fills the email from the sidebar's
+  own `#userEmail` via `textContent`, so there is one source for the address
+  and it cannot drift or inject markup. The click handler was extracted to
+  `signOutNow()` and both buttons bind to it: **one code path**, so the
+  deliberate "check the result before redirecting" guard cannot exist on one
+  button and not the other.
+
+### Two dead CSS rules found while measuring the sheet
+
+Both `.more-nav-sheet { width: min(94vw, 460px) }` and, inside the <=860px
+block, `.custom-modal { width: 94vw }` were being beaten by the base
+`.custom-modal { width: 100% }` further down the file — same specificity, later
+rule wins, and **media queries add no specificity**. The intended phone gutter
+had therefore never existed: every modal, including the sheet holding the new
+Sign Out, rendered flush against both screen edges. Fixed by qualifying the
+sheet rule as `.custom-modal.more-nav-sheet` and moving the 94vw override to
+sit after the base rule. This is the ordering cousin of the "check a class
+exists before writing rules against it" entry — **a rule that parses cleanly
+can still do nothing.**
+
+Verified in a real browser across 390/1280/1366/1440 widths and 400/610/700/950
+heights, dark and light: Sign Out on screen in every combination, phone bar
+still six equal slots, no horizontal overflow, no console errors, and both
+buttons confirmed to reach the same handler.
+
+---
+
 ## 2026-09-13 (add-on wording)
 
 ### Add-on "billed" renamed to "invoiced" in the UI

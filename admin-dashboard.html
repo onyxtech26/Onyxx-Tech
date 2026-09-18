@@ -58,7 +58,7 @@
   <div class="dashboard-container">
     <!-- SIDEBAR -->
     <aside class="sidebar">
-      <div class="sidebar-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 3rem;">
+      <div class="sidebar-header">
         <div class="logo-container" style="display: flex; align-items: center; justify-content: flex-start; height: 40px;">
           <img src="images/onyxx_logo_transparent.png" alt="Onyxx Tech Hub" class="sidebar-logo logo-icon" />
           <!-- .webp, not the .png: same image, 29KB against 831KB. The PNG was
@@ -821,6 +821,14 @@
           <button class="modal-close-btn" onclick="closeModal('moreNavModal')" aria-label="Close">&times;</button>
         </div>
         <div class="more-nav-grid" id="moreNavGrid"></div>
+        <!-- The sidebar's email + Sign Out are display:none below 860px, and
+             this sheet is cloned from the nav tabs only — so a phone had no
+             sign-out control anywhere. Filled by buildMoreNav() from the real
+             #userEmail, so the address here cannot drift out of sync. -->
+        <div class="more-nav-account">
+          <div class="more-nav-email" id="moreNavEmail">Loading...</div>
+          <button type="button" class="btn-outline" id="moreSignOutBtn">Sign Out</button>
+        </div>
       </div>
     </div>
 
