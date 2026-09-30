@@ -7,6 +7,12 @@
       "permanent": true
     },
     {
+      "source": "/",
+      "has": [{ "type": "host", "value": "onyxx-tech.vercel.app" }],
+      "destination": "https://www.onyxxtechhub.com.my/",
+      "permanent": true
+    },
+    {
       "source": "/:path*",
       "has": [{ "type": "host", "value": "onyxx-tech.vercel.app" }],
       "destination": "https://www.onyxxtechhub.com.my/:path*",
