@@ -5,6 +5,12 @@
       "source": "/index.html",
       "destination": "/",
       "permanent": true
+    },
+    {
+      "source": "/:path*",
+      "has": [{ "type": "host", "value": "onyxx-tech.vercel.app" }],
+      "destination": "https://www.onyxxtechhub.com.my/:path*",
+      "permanent": true
     }
   ]
 }

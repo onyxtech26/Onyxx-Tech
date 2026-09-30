@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<script>
+  (function() {
+    var root = document.documentElement;
+    root.setAttribute('data-theme', localStorage.getItem('theme') || 'dark');
+    /* Interior pages have no splash, so nothing gates the entrance animations —
+       release them at once. Without this, anything behind `html.splash-done`
+       (the masked line reveals) would never play here. */
+    root.classList.add('splash-done');
+  })();
+</script>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Web & Mobile App Development Malaysia | Onyxx Tech</title>
+<meta name="description" content="Modern websites and cross-platform mobile apps built fast, with AI woven in from day one. Web and app development for Malaysian businesses." />
+<link rel="canonical" href="https://www.onyxxtechhub.com.my/web-apps" />
+
+<meta property="og:title" content="Web & Mobile App Development Malaysia | Onyxx Tech" />
+<meta property="og:description" content="Modern websites and cross-platform mobile apps built fast, with AI woven in from day one. Web and app development for Malaysian businesses." />
+<meta property="og:image" content="https://www.onyxxtechhub.com.my/images/onyxx-banner.png" />
+<meta property="og:type" content="website" />
+<meta property="og:url" content="https://www.onyxxtechhub.com.my/web-apps" />
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:title" content="Web & Mobile App Development Malaysia | Onyxx Tech" />
+<meta name="twitter:description" content="Modern websites and cross-platform mobile apps built fast, with AI woven in from day one. Web and app development for Malaysian businesses." />
+<meta name="twitter:image" content="https://www.onyxxtechhub.com.my/images/onyxx-banner.png" />
+<meta name="robots" content="index, follow" />
+
+<link rel="icon" type="image/png" href="images/favicon-white.png" />
+<link rel="icon" type="image/png" href="images/favicon-black.png" media="(prefers-color-scheme: light)" />
+<link rel="icon" type="image/png" href="images/favicon-white.png" media="(prefers-color-scheme: dark)" />
+<link rel="preload" as="image" href="images/onyxx_logo_transparent.png" type="image/png" />
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,400;9..144,500;9..144,600;9..144,700&family=JetBrains+Mono:wght@300;400;500;600&family=Outfit:wght@200;300;400;500;600;700&display=swap" rel="stylesheet">
+
+<link rel="stylesheet" href="styles.css">
+<!-- Not deferred: matches every other page, and nothing in common.js touches
+     the DOM at parse time — all of it is behind DOMContentLoaded. -->
+<script src="common.js"></script>
+<script src="https://unpkg.com/@dotlottie/player-component@latest/dist/dotlottie-player.mjs" type="module"></script>
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "Service",
+      "name": "Web Development",
+      "serviceType": "Web Development",
+      "description": "Modern websites and cross-platform mobile apps built fast, with AI woven in from day one. Web and app development for Malaysian businesses.",
+      "url": "https://www.onyxxtechhub.com.my/web-apps",
+      "areaServed": {
+        "@type": "Country",
+        "name": "Malaysia"
+      },
+      "provider": {
+        "@type": "Organization",
+        "name": "Onyxx Tech",
+        "url": "https://www.onyxxtechhub.com.my/",
+        "email": "onyxtech26@gmail.com"
+      }
+    },
+    {
+      "@type": "FAQPage",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "How much does a website cost in Malaysia?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "The market runs from a few hundred ringgit for a template someone fills in, to five figures for a bespoke build. We sit in the middle and are upfront about it: you are paying for design and engineering time, not licences. Tell us the scope and we will give you a fixed number before anything starts."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Do you build on WordPress?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Only if there is a reason to — for example if your team is already trained on it. Left alone, we prefer modern static or app-framework builds: faster, cheaper to host, and without the plugin-update treadmill that breaks sites nobody is watching."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Can you build an app for both iPhone and Android?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Yes, from one codebase, which keeps the cost far closer to one app than two. We have shipped cross-platform apps in Flutter and Capacitor for retail, finance and education clients."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Will I be able to update the content myself?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "If you want to, yes — we will put an admin panel behind the parts that change often and leave the rest as fast static pages. Not every site needs a CMS, and one you never log into is just another thing to keep patched."
+          }
+        }
+      ]
+    },
+    {
+      "@type": "BreadcrumbList",
+      "itemListElement": [
+        {
+          "@type": "ListItem",
+          "position": 1,
+          "name": "Home"
+        },
+        {
+          "@type": "ListItem",
+          "position": 2,
+          "name": "Services",
+          "item": "https://www.onyxxtechhub.com.my/services"
+        },
+        {
+          "@type": "ListItem",
+          "position": 3,
+          "name": "Web & Apps",
+          "item": "https://www.onyxxtechhub.com.my/web-apps"
+        }
+      ]
+    }
+  ]
+}
+</script>
+</head>
+<body>
+
+<a href="#main-content" class="skip-link">Skip to main content</a>
+<canvas id="pageGalaxy" aria-hidden="true"></canvas>
+<div class="cursor-glow" id="cursorGlow"></div>
+<div class="noise"></div>
+
+<!-- ============ NAV ============ -->
+<div class="nav-container">
+  <nav id="nav">
+    <a href="/" class="nav-logo" aria-label="Onyxx Tech — home" title="Double-click for admin login">
+      <img src="images/onyxx_logo_transparent.png" alt="Onyxx Tech" class="nav-logo-img" />
+    </a>
+
+    <ul class="nav-links" id="navLinks">
+        <li><a href="services" aria-current="page">Services</a></li>
+        <li><a href="why">Why Us</a></li>
+        <li><a href="work">Work</a></li>
+        <li><a href="process">Process</a></li>
+        <li><a href="blog">Blog</a></li>
+        <li><a href="founders">Founders</a></li>
+        <li class="nav-link-contact"><a href="contact">Contact</a></li>
+    </ul>
+
+    <div class="nav-right">
+      <a href="contact" class="nav-email">Contact</a>
+
+      <button id="themeToggleBtn" class="theme-toggle" aria-label="Toggle theme">
+        <svg class="sun-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+          <circle cx="12" cy="12" r="5"></circle>
+          <line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line>
+          <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+          <line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line>
+          <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+        </svg>
+        <svg class="moon-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:none" aria-hidden="true">
+          <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+        </svg>
+      </button>
+    </div>
+
+    <button class="nav-toggle" id="navToggle" aria-label="Toggle menu" aria-expanded="false" aria-controls="navLinks">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+        <line x1="3" y1="8" x2="21" y2="8"/><line x1="3" y1="16" x2="21" y2="16"/>
+      </svg>
+    </button>
+  </nav>
+</div>
+
+<header class="page-header">
+  <div class="crumbs">Home<span>/</span><a href="services">Services</a><span>/</span>Web & Apps</div>
+  <div class="section-label">Web & Apps</div>
+  <h1 class="page-title lines">
+      <span class="line"><span>Websites and apps</span></span>
+      <span class="line"><span><em>built to convert.</em></span></span>
+  </h1>
+  <p class="page-intro">A website is not a brochure you tick off a list. It is the thing a customer judges you by before they ever speak to you — and increasingly, the thing an AI summarises on your behalf.</p>
+</header>
+<main id="main-content" class="page-body">
+<section class="section">
+  <div class="section-inner">
+    <div class="belief-grid">
+    <div class="belief-card reveal">
+      <div class="belief-num">#01</div>
+      <h3>Speed is a feature people feel.</h3>
+      <p>Most sites in this market are heavy templates carrying plugins nobody uses. We build lean, which means pages that open instantly on a phone on mobile data — which is where your customers actually are.</p>
+    </div>
+    <div class="belief-card reveal">
+      <div class="belief-num">#02</div>
+      <h3>Design that looks expensive, built to be cheap to run.</h3>
+      <p>A distinctive site does not have to mean a heavy one. Our own site runs as static files with no CMS behind it, and that is deliberate: nothing to patch, nothing to break, almost nothing to host.</p>
+    </div>
+    <div class="belief-card reveal">
+      <div class="belief-num">#03</div>
+      <h3>Built so Google can read it.</h3>
+      <p>Plenty of beautiful modern sites render entirely in JavaScript and are close to invisible in search. We build the content into the page, add proper structured data, and treat being findable as part of the design rather than an afterthought.</p>
+    </div>
+    </div>
+  </div>
+</section>
+
+<section class="section reveal">
+  <div class="section-inner">
+    <div class="section-label">What you get</div>
+    <ul class="deliver-list">
+      <li>Marketing sites, landing pages and full company websites</li>
+      <li>Cross-platform mobile apps for iOS and Android from one codebase</li>
+      <li>Web apps with logins, dashboards and real data behind them</li>
+      <li>Technical SEO built in — structured data, meta, sitemap, clean URLs</li>
+      <li>A CMS or admin panel if you want to edit content yourself</li>
+      <li>Analytics wired up so you can see what visitors actually do</li>
+    </ul>
+  </div>
+</section>
+
+<section class="trust-band reveal">
+  <div class="trust-label">Businesses we've built for</div>
+  <div class="trust-names">
+    <span>Great Eastern</span>
+    <span>Million Precision Time</span>
+    <span>RSTAR Mini Mart</span>
+    <span>Sun Tours</span>
+    <span>A Malaysian government school</span>
+    <span>Conglomerate Consultant</span>
+  </div>
+</section>
+
+<section class="section reveal">
+  <div class="section-inner">
+    <div class="section-label">Common questions</div>
+    <div class="faq-list">
+      <div class="faq-item">
+        <button type="button" class="faq-q" aria-expanded="false">How much does a website cost in Malaysia?</button>
+        <div class="faq-a"><p>The market runs from a few hundred ringgit for a template someone fills in, to five figures for a bespoke build. We sit in the middle and are upfront about it: you are paying for design and engineering time, not licences. Tell us the scope and we will give you a fixed number before anything starts.</p></div>
+      </div>
+      <div class="faq-item">
+        <button type="button" class="faq-q" aria-expanded="false">Do you build on WordPress?</button>
+        <div class="faq-a"><p>Only if there is a reason to — for example if your team is already trained on it. Left alone, we prefer modern static or app-framework builds: faster, cheaper to host, and without the plugin-update treadmill that breaks sites nobody is watching.</p></div>
+      </div>
+      <div class="faq-item">
+        <button type="button" class="faq-q" aria-expanded="false">Can you build an app for both iPhone and Android?</button>
+        <div class="faq-a"><p>Yes, from one codebase, which keeps the cost far closer to one app than two. We have shipped cross-platform apps in Flutter and Capacitor for retail, finance and education clients.</p></div>
+      </div>
+      <div class="faq-item">
+        <button type="button" class="faq-q" aria-expanded="false">Will I be able to update the content myself?</button>
+        <div class="faq-a"><p>If you want to, yes — we will put an admin panel behind the parts that change often and leave the rest as fast static pages. Not every site needs a CMS, and one you never log into is just another thing to keep patched.</p></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="home-cta reveal">
+  <h2 class="contact-title">Tell us what you're trying to build.</h2>
+  <p class="contact-sub">We'll tell you honestly whether this is the right service for it — and roughly what it costs — before anyone signs anything.</p>
+  <div class="home-cta-actions">
+    <a href="contact" class="btn btn-primary">Start a project <span class="arrow">→</span></a>
+    <a href="work" class="btn btn-secondary">See our work <span class="arrow">→</span></a>
+  </div>
+</section>
+</main>
+
+<!-- ============ FOOTER ============ -->
+<footer>
+  <div class="footer-inner">
+    <div>
+      <img src="images/onyxx_logo_transparent.png" alt="" class="footer-brand-mark" />
+      <p class="footer-tagline">Custom AI agents, chatbots, and automations — engineered to work where your business already lives.</p>
+    </div>
+
+    <div>
+      <div class="footer-col-title">Explore</div>
+      <ul class="footer-links">
+        <li><a href="">Home</a></li>
+        <li><a href="services">Services</a></li>
+        <li><a href="work">Work</a></li>
+        <li><a href="why">Why Us</a></li>
+        <li><a href="process">Process</a></li>
+        <li><a href="blog">Blog</a></li>
+        <li><a href="founders">Founders</a></li>
+      </ul>
+    </div>
+
+    <div>
+      <div class="footer-col-title">Services</div>
+      <ul class="footer-links">
+        <li><a href="ai-agents">AI Agents</a></li>
+        <li><a href="chatbots">Chatbots</a></li>
+        <li><a href="custom-software">Custom Software</a></li>
+        <li><a href="web-apps">Web &amp; Apps</a></li>
+        <li><a href="automations">Automations</a></li>
+      </ul>
+    </div>
+
+    <div>
+      <div class="footer-col-title">Talk to us</div>
+      <div class="footer-contact">
+        <a href="mailto:onyxtech26@gmail.com">onyxtech26@gmail.com</a>
+        <a href="https://wa.me/601139884927" target="_blank" rel="noopener">WhatsApp Kunacosta</a>
+        <a href="https://wa.me/60194688052" target="_blank" rel="noopener">WhatsApp Rooben</a>
+        <a href="contact">Start a project</a>
+      </div>
+    </div>
+  </div>
+
+  <div class="footer-bottom">
+    <div>© 2026 Onyxx Tech · Located in Malaysia · <a href="privacy">Privacy</a> · <a href="cookies">Cookies</a></div>
+    <div>Founder-led · AI-native · Built to ship</div>
+  </div>
+</footer>
+
+</body>
+</html>

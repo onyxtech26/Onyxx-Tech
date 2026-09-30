@@ -396,6 +396,33 @@
       }
     }
 
+    /* Unread count on the Messages nav item. Sits inside the button, so it
+       inherits the collapse behaviour of the rail: the number is what you can
+       still read at 76px when the label is hidden. */
+    .nav-badge {
+      margin-left: auto;
+      min-width: 18px;
+      padding: 0.05rem 0.35rem;
+      border-radius: 999px;
+      background: var(--accent);
+      color: #05070a;
+      font-family: var(--font-mono);
+      font-size: 0.62rem;
+      font-weight: 700;
+      text-align: center;
+      line-height: 1.5;
+      flex: 0 0 auto;
+    }
+    /* In the collapsed rail there is no room beside a 20px icon, so it rides
+       the corner of the icon instead of pushing the layout around. */
+    .sidebar:not(:hover) .nav-badge {
+      position: absolute;
+      top: 0.35rem;
+      right: 0.55rem;
+      margin-left: 0;
+    }
+    .sidebar:not(:hover) .nav-item[data-tab="messages"] { position: relative; }
+
     /* Redesigned Sidebar Submenu Layout */
     .nav-group {
       position: relative;

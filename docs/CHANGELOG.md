@@ -5,6 +5,118 @@ Format each entry: what was done, why it mattered, and any key decisions.
 
 ---
 
+## 2026-09-30 (conversion, SEO and content build-out)
+
+Prompted by a competitor comparison: the user pointed at a Johor web studio's
+site and asked what ours lacked. The answer was not design — ours reads better
+— it was that the site had **no way to capture an enquiry, nothing for Google to
+rank, and no proof anyone had ever hired us.** This pass fixes all three.
+
+### The domain was telling Google the wrong site was canonical
+
+`www.onyxxtechhub.com.my` was already live and serving the site, but **every
+page on it declared `<link rel="canonical">` pointing at
+`onyxx-tech.vercel.app`** — so Google was being explicitly instructed to index
+the Vercel subdomain and treat the real domain as a duplicate. That is exactly
+why searching found the vercel.app URL.
+
+Fixed by pointing all 23 canonical/OG/sitemap/robots references at the real
+domain, and adding a host-conditioned 308 in `vercel.json` so the vercel.app
+hostname now redirects to it rather than serving a second copy.
+
+### A contact form, and somewhere for it to land
+
+There was no form anywhere on the public site — `/contact` offered a `mailto:`
+and two WhatsApp links. A `mailto:` on a desktop with no mail client configured
+does nothing at all, and leaves no record of who tried.
+
+- `/contact` now carries a real form (name, email, phone, company, project type,
+  message) writing to a new `contact_messages` table.
+- **`supabase_migration_06_contact_messages.sql` must be run before it works.**
+  Until then the form fails gracefully to "please WhatsApp us" — verified by
+  execution, not assumed.
+- RLS is deliberately lopsided: `anon` gets INSERT and nothing else, so one
+  visitor cannot read another's enquiry back. The anon key ships in the page
+  source, so "anon" means anyone on the internet. The insert policy also pins
+  `status = 'new'`, because otherwise a crafted POST could arrive already
+  marked `archived` and never be seen.
+- Anti-spam is a honeypot field plus a submit lock. A filled honeypot gets a
+  *success* message and is never stored — telling a bot what caught it just
+  teaches the next one.
+- The dashboard gained a **Messages tab** with an unread badge, status workflow
+  (new/read/replied/archived/spam), a viewer that marks read on open, and a
+  WhatsApp deep link built from the phone number. `source_page` is recorded and
+  displayed, which is the cheapest possible read on which service page is
+  actually earning its place.
+- On the phone bar, Messages takes a primary slot and Expenses moves into the
+  More sheet — an unread enquiry matters more on a phone than a spending form.
+
+### Five service pages instead of one
+
+`/services` covered five disciplines on one page, so it ranked strongly for
+nothing. Split into `/ai-agents`, `/chatbots`, `/custom-software`, `/web-apps`
+and `/automations`, each with the market in the title tag (the old titles had
+no location at all), three belief cards, a deliverables list, four FAQs, and
+`Service` + `FAQPage` + `BreadcrumbList` structured data.
+
+### Ten case studies that are actually pages
+
+The ten showcase projects existed only as modals — not linkable, not
+shareable, not indexable, and unreachable by a crawler since the cards are
+rendered by JS and have no href. Each is now a real page under `/case-studies/`,
+generated from the live Supabase rows.
+
+**Deliberately no invented outcomes.** Every page states the brief, the build
+and the stack, all of which are facts already in the database. There are no
+percentages, no "increased sales by", no fabricated quotes. Those need real
+numbers from the client and are marked as the obvious next improvement.
+
+Linked two ways, because two different readers need them: a crawlable list of
+plain `<a>` links on `/work` (without which the pages are orphans reachable
+only from the sitemap), and a button inside the project modal. The
+title→slug map in `common.js` is explicit rather than a `slugify()`, so
+renaming a project in the dashboard cannot silently start linking to a 404.
+
+### A blog, written for buyers rather than developers
+
+Four posts, static HTML with `BlogPosting` schema — not database-driven, because
+a blog that renders through JavaScript is a blog Google indexes reluctantly,
+which defeats the entire point of having one. Grounded in current research
+rather than memory: Malaysian AI/digitalisation grants for 2026, what a
+WhatsApp chatbot really costs, agent vs chatbot vs automation, and what to
+automate first. Cited figures carry a note telling the reader to verify them.
+
+### Everything else
+
+- **Floating WhatsApp button** sitewide with a two-founder chooser. It had been
+  a footer text link on five of seven pages — i.e. below everything, and absent
+  from the moment someone decides to get in touch.
+- **Vercel Web Analytics**, skipped on localhost so dev does not log a 404.
+  There was previously no analytics of any kind, so every decision about this
+  site was guesswork.
+- **Privacy and cookie notices** — needed now that a form collects personal data
+  (PDPA), and before any ad platform will take the account.
+- **A trust band** on the homepage and every service page naming real clients
+  from the database (Great Eastern, Million Precision Time, RSTAR Mini Mart and
+  others). The proof was sitting in Supabase, unused.
+- Nav gained Blog; the footer gained a services column and policy links.
+- Sitemap regenerated: 7 URLs → 29.
+
+### Verification
+
+All 29 URLs served locally and checked: titles, canonicals, structured data
+parsed (not just present), no horizontal overflow at 390px, the FAQ accordion,
+the form's success/error/honeypot paths, the dashboard inbox against seeded
+rows, and the modal→case-study wiring.
+
+One thing worth recording for next time: **scripted scrolling in the test
+browser does not fire the reveal IntersectionObserver**, so `.reveal` elements
+read as `opacity: 0` and it looks like the new pages are broken. They are not —
+the existing `/why` page behaves identically under the same scripted scroll.
+Always run that control before chasing it.
+
+---
+
 ## 2026-09-17 (Sign Out reachability)
 
 ### Sign Out was clipped off the desktop sidebar, and absent entirely on phones

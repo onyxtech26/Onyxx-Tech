@@ -746,6 +746,29 @@
   // ================================================================
   // PROJECT MODAL — work.html only
   // ================================================================
+
+  /* Title -> case-study page. Deliberately an explicit map rather than a
+     slugify() of the title: a project renamed in the admin dashboard would
+     otherwise silently start linking to a 404. An unlisted project just does
+     not show the button. */
+  const CASE_STUDY_SLUGS = {
+    'Policy Snap': 'policy-snap',
+    'Sun Tours Roma': 'sun-tours-roma',
+    'Conglomerate Website': 'conglomerate-corporate-website',
+    'POS System': 'rstar-pos-system',
+    'Carousel Generator': 'carousel-generator',
+    'Walletwise': 'walletwise',
+    'Xcraft Cloud': 'xcraft-cloud',
+    'LogicLens.AI': 'logiclens-ai',
+    'MPT Watch Sales Bot': 'mpt-watch-sales-bot',
+    'MPT OmniPortal': 'mpt-omniportal'
+  };
+
+  function caseStudyHref(title) {
+    const slug = CASE_STUDY_SLUGS[(title || '').trim()];
+    return slug ? 'case-studies/' + slug : '';
+  }
+
   function initProjectModal() {
     const overlay = document.getElementById('projectModal');
     if (!overlay) return null;
@@ -793,6 +816,13 @@
       const stackEl = document.getElementById('modalStack');
       stackEl.innerHTML = (d.stack || '').split(',').filter(s => s.trim())
         .map(s => `<span>${s.trim()}</span>`).join('');
+
+      const caseBtn = document.getElementById('modalCase');
+      if (caseBtn) {
+        const href = caseStudyHref(d.name);
+        caseBtn.style.display = href ? 'inline-flex' : 'none';
+        if (href) caseBtn.href = href;
+      }
 
       const gh = document.getElementById('modalGithub');
       if (d.github) {
@@ -1263,6 +1293,184 @@
   // ================================================================
   // BOOT
   // ================================================================
+
+  /* ---------------------------------------------------------------------
+     WhatsApp FAB, analytics, contact form, FAQ accordions.
+
+     All four live here rather than in the page shells for the reason given
+     in CLAUDE.md: the shells are duplicated by hand, so anything shared has
+     to live in one file or it drifts. Each is a no-op on a page that does
+     not have the markup it needs.
+     --------------------------------------------------------------------- */
+
+  const WA_CONTACTS = [
+    { name: 'Kunacosta', number: '601139884927' },
+    { name: 'Rooben', number: '60194688052' }
+  ];
+
+  /* A floating WhatsApp entry point on every page. In Malaysia WhatsApp is
+     how an SME actually starts a conversation, and before this it was a text
+     link in the footer of five of the seven pages — i.e. below everything,
+     and absent from exactly the moment someone decides to get in touch.
+
+     Two founders, so the button opens a chooser rather than guessing. */
+  function initWhatsAppFab() {
+    if (document.body.hasAttribute('data-no-fab')) return;
+    if (document.querySelector('.wa-fab')) return;
+
+    const wrap = document.createElement('div');
+    wrap.className = 'wa-fab';
+    wrap.innerHTML =
+      '<div class="wa-fab-menu" id="waFabMenu" hidden>' +
+        '<div class="wa-fab-menu-title">Chat with a founder</div>' +
+        WA_CONTACTS.map(function (c) {
+          return '<a class="wa-fab-person" href="https://wa.me/' + c.number + '"' +
+                 ' target="_blank" rel="noopener">' + esc(c.name) + '</a>';
+        }).join('') +
+        '<a class="wa-fab-person wa-fab-email" href="mailto:onyxtech26@gmail.com">Email instead</a>' +
+      '</div>' +
+      '<button type="button" class="wa-fab-btn" id="waFabBtn" aria-expanded="false"' +
+      ' aria-controls="waFabMenu" aria-label="Chat with us on WhatsApp">' +
+        '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M17.47 14.38c-.3-.15-1.76-.87-2.03-.97-.27-.1-.47-.15-.67.15-.2.3-.77.96-.94 1.16-.17.2-.35.22-.65.07-.3-.15-1.26-.46-2.4-1.48-.89-.79-1.49-1.76-1.66-2.06-.17-.3-.02-.46.13-.61.14-.14.3-.35.45-.53.15-.18.2-.3.3-.5.1-.2.05-.38-.02-.53-.08-.15-.67-1.61-.92-2.21-.24-.58-.49-.5-.67-.51h-.57c-.2 0-.52.07-.8.38-.27.3-1.04 1.02-1.04 2.48s1.07 2.88 1.22 3.08c.15.2 2.1 3.2 5.08 4.49.71.3 1.26.49 1.7.63.71.23 1.36.2 1.87.12.57-.09 1.76-.72 2-1.41.25-.7.25-1.29.17-1.42-.07-.13-.27-.2-.57-.35zM12.04 2C6.58 2 2.13 6.45 2.13 11.91c0 1.75.46 3.45 1.32 4.95L2 22l5.25-1.38a9.87 9.87 0 0 0 4.79 1.22h.01c5.46 0 9.91-4.45 9.91-9.91C21.96 6.45 17.5 2 12.04 2z"/></svg>' +
+      '</button>';
+    document.body.appendChild(wrap);
+
+    const btn = wrap.querySelector('#waFabBtn');
+    const menu = wrap.querySelector('#waFabMenu');
+    function setOpen(open) {
+      menu.hidden = !open;
+      wrap.classList.toggle('is-open', open);
+      btn.setAttribute('aria-expanded', String(open));
+    }
+    btn.addEventListener('click', function () { setOpen(menu.hidden); });
+    document.addEventListener('click', function (e) {
+      if (!wrap.contains(e.target)) setOpen(false);
+    });
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape') setOpen(false);
+    });
+  }
+
+  /* Vercel Web Analytics. One script, no account or key needed, but the
+     /_vercel/insights/ path only exists on the deployed site — so this is
+     skipped on localhost to keep a 404 out of the console during dev. */
+  function initAnalytics() {
+    const host = location.hostname;
+    if (host === 'localhost' || host === '127.0.0.1' || host === '') return;
+    if (document.querySelector('script[src*="/_vercel/insights"]')) return;
+    const s = document.createElement('script');
+    s.defer = true;
+    s.src = '/_vercel/insights/script.js';
+    document.head.appendChild(s);
+  }
+
+  /* The contact form. Writes straight to Supabase `contact_messages`, which
+     the admin dashboard reads back as an inbox.
+
+     Guards, in the order they matter:
+     - honeypot: a field no human can see. Filled in means a bot, and we
+       silently pretend it worked rather than telling the bot what caught it.
+     - a submit lock, so a double-click cannot file the same enquiry twice.
+     - length caps mirroring the CHECK constraints in the migration, so an
+       over-long field is explained here instead of arriving as a raw
+       Postgres error.
+
+     RLS grants anon INSERT and nothing else: a visitor can file a message and
+     cannot read anybody else's back. */
+  const FORM_LIMITS = { name: 120, email: 200, phone: 40, company: 160, message: 5000 };
+
+  function initContactForm() {
+    const form = document.getElementById('contactForm');
+    if (!form) return;
+
+    const status = document.getElementById('formStatus');
+    const submit = form.querySelector('[type="submit"]');
+    let inFlight = false;
+
+    function say(msg, kind) {
+      if (!status) return;
+      status.textContent = msg;
+      status.className = 'form-status is-' + kind;
+    }
+
+    form.addEventListener('submit', async function (e) {
+      e.preventDefault();
+      if (inFlight) return;
+
+      const data = Object.fromEntries(new FormData(form).entries());
+      if (data.website) {
+        say('Thanks \u2014 we will be in touch shortly.', 'ok');
+        form.reset();
+        return;
+      }
+
+      const payload = {
+        name: (data.name || '').trim(),
+        email: (data.email || '').trim(),
+        phone: (data.phone || '').trim() || null,
+        company: (data.company || '').trim() || null,
+        project_type: (data.project_type || '').trim() || null,
+        message: (data.message || '').trim(),
+        source_page: location.pathname
+      };
+
+      if (!payload.name || !payload.email || !payload.message) {
+        say('Please fill in your name, email and a short message.', 'err');
+        return;
+      }
+      for (const k in FORM_LIMITS) {
+        if (payload[k] && payload[k].length > FORM_LIMITS[k]) {
+          say('That ' + k + ' is too long \u2014 please shorten it.', 'err');
+          return;
+        }
+      }
+
+      const db = supabase();
+      if (!db) { say('Could not reach the server. Please WhatsApp us instead.', 'err'); return; }
+
+      inFlight = true;
+      if (submit) {
+        submit.disabled = true;
+        submit.dataset.label = submit.textContent;
+        submit.textContent = 'Sending\u2026';
+      }
+      say('Sending\u2026', 'pending');
+
+      const { error } = await db.from('contact_messages').insert(payload);
+
+      inFlight = false;
+      if (submit) {
+        submit.disabled = false;
+        submit.textContent = submit.dataset.label || 'Send message';
+      }
+
+      if (error) {
+        console.error('contact form:', error);
+        say('Something went wrong sending that. Please WhatsApp us \u2014 button bottom right.', 'err');
+        return;
+      }
+      form.reset();
+      say('Got it. One of the founders will reply within one working day.', 'ok');
+    });
+  }
+
+  /* FAQ accordions on the service pages. <details>/<summary> would give this
+     for free but cannot animate its own height, and its marker would not
+     match the rest of the site — so these are buttons with an aria-expanded
+     pair and a measured max-height. */
+  function initFaq() {
+    document.querySelectorAll('.faq-item').forEach(function (item) {
+      const btn = item.querySelector('.faq-q');
+      const ans = item.querySelector('.faq-a');
+      if (!btn || !ans) return;
+      btn.addEventListener('click', function () {
+        const open = item.classList.toggle('is-open');
+        btn.setAttribute('aria-expanded', String(open));
+        ans.style.maxHeight = open ? ans.scrollHeight + 'px' : '';
+      });
+    });
+  }
+
   function init() {
     initCursorGlow();
     initNav();
@@ -1276,6 +1484,10 @@
     initMagneticButtons();
     initServiceCardGlow();
     initScramble();
+    initWhatsAppFab();
+    initAnalytics();
+    initContactForm();
+    initFaq();
     loadPageData();
   }
 

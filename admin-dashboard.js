@@ -23,6 +23,7 @@
     let paymentsData = [];        // project_payments — the installment schedule
     let addonsData = [];          // project_addons  — scope added after the quote
     let quotationsData = [];      // quotations      — header totals + the sent file
+    let messagesData = [];       // contact_messages — public enquiries from /contact
     let systemSettings = {
       company_profile: { name: "Onyxx Tech Hub", sst_rate: 8, currency: "MYR" },
       partner_split: { Kunacosta: 50, Rooben: 50 },
@@ -1168,7 +1169,7 @@ function getProjectImageUrl(p) {
       try {
         // Parallel fetching
         const [projectsRes, expensesRes, teamRes, servicesRes, showcaseRes, settingsRes,
-               withdrawalsRes, paymentsRes, addonsRes, quotationsRes] = await Promise.all([
+               withdrawalsRes, paymentsRes, addonsRes, quotationsRes, messagesRes] = await Promise.all([
           supabaseClient.from('projects').select('*').order('created_at', { ascending: false }),
           supabaseClient.from('expenses').select('*').order('date', { ascending: false }),
           supabaseClient.from('team_members').select('*').order('name'),
@@ -1178,7 +1179,8 @@ function getProjectImageUrl(p) {
           supabaseClient.from('partner_withdrawals').select('*').order('date', { ascending: false }),
           supabaseClient.from('project_payments').select('*').order('sort_order'),
           supabaseClient.from('project_addons').select('*').order('date', { ascending: false }),
-          supabaseClient.from('quotations').select('*').order('quote_date', { ascending: false })
+          supabaseClient.from('quotations').select('*').order('quote_date', { ascending: false }),
+          supabaseClient.from('contact_messages').select('*').order('created_at', { ascending: false })
         ]);
 
         /* A failed fetch used to be console.error'd and then coerced to [] —
@@ -1210,6 +1212,7 @@ function getProjectImageUrl(p) {
         noteError('project_payments', paymentsRes, MIGRATION_HINT);
         noteError('project_addons', addonsRes, MIGRATION_HINT);
         noteError('quotations', quotationsRes, MIGRATION_HINT);
+        noteError('contact_messages', messagesRes, 'run supabase_migration_06_contact_messages.sql');
 
         projectsData = projectsRes.data || [];
         expensesData = expensesRes.data || [];
@@ -1220,6 +1223,7 @@ function getProjectImageUrl(p) {
         paymentsData = paymentsRes.data || [];
         addonsData = addonsRes.data || [];
         quotationsData = quotationsRes.data || [];
+        messagesData = messagesRes.data || [];
 
         if (settingsRes.data) {
           settingsRes.data.forEach(item => {
@@ -1246,6 +1250,7 @@ function getProjectImageUrl(p) {
         renderTeam();
         renderServices();
         renderProjectShowcase();
+        renderMessages();
 
         // Both need the rows to exist first.
         applyResponsiveTableLabels();
@@ -3744,6 +3749,134 @@ function getProjectImageUrl(p) {
     }
 
     // RENDER TEAM
+
+    /* ---------------------------------------------------------------
+       MESSAGES — the inbox for the public contact form.
+
+       Enquiries arrive from /contact (and from the service pages, which
+       all point at it). `source_page` records which page the person was
+       reading when they sent it, so it is visible here — that is the
+       cheapest read there is on which service page is earning its place.
+       --------------------------------------------------------------- */
+    function messageStatusBadge(status) {
+      const map = {
+        new:      ['New', 'var(--accent)'],
+        read:     ['Read', 'var(--bone-dim)'],
+        replied:  ['Replied', '#4ade80'],
+        archived: ['Archived', 'var(--bone-dim)'],
+        spam:     ['Spam', '#ff8080']
+      };
+      const [label, colour] = map[status] || [status, 'var(--bone-dim)'];
+      return `<span style="font-family:var(--font-mono);font-size:0.7rem;letter-spacing:0.08em;text-transform:uppercase;color:${colour};">${esc(label)}</span>`;
+    }
+
+    function renderMessages() {
+      const body = document.getElementById('messagesTableBody');
+      if (!body) return;
+
+      const filter = document.getElementById('msgStatusFilter')?.value || 'open';
+      const rows = messagesData.filter(m => {
+        if (filter === 'all') return true;
+        if (filter === 'open') return m.status === 'new' || m.status === 'read';
+        return m.status === filter;
+      });
+
+      // The badge counts unread regardless of the filter in front of you —
+      // filtering the view should not make the unread count disappear.
+      const unread = messagesData.filter(m => m.status === 'new').length;
+      const badge = document.getElementById('msgBadge');
+      if (badge) {
+        badge.textContent = unread;
+        badge.hidden = unread === 0;
+      }
+
+      if (rows.length === 0) {
+        body.innerHTML = `<tr><td colspan="7" style="text-align:center;color:var(--bone-dim);padding:2rem;">No messages here yet.</td></tr>`;
+        applyResponsiveTableLabels();
+        return;
+      }
+
+      body.innerHTML = rows.map(m => {
+        const when = m.created_at ? new Date(m.created_at).toLocaleString('en-MY', {
+          day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit'
+        }) : '—';
+        const short = (m.message || '').length > 140
+          ? (m.message || '').slice(0, 140) + '…'
+          : (m.message || '');
+        const contact = [m.phone, m.company].filter(Boolean).map(esc).join(' · ');
+        return `
+          <tr${m.status === 'new' ? ' style="background:var(--accent-faint);"' : ''}>
+            <td>${esc(when)}</td>
+            <td>
+              <div style="font-weight:600;">${esc(m.name)}</div>
+              <div style="font-size:0.8rem;"><a href="mailto:${esc(m.email)}" style="color:var(--accent);">${esc(m.email)}</a></div>
+              ${contact ? `<div style="font-size:0.78rem;color:var(--bone-dim);">${contact}</div>` : ''}
+            </td>
+            <td>${esc(m.project_type || '—')}</td>
+            <td style="max-width:320px;white-space:normal;">${esc(short)}</td>
+            <td style="font-family:var(--font-mono);font-size:0.72rem;">${esc(m.source_page || '—')}</td>
+            <td>${messageStatusBadge(m.status)}</td>
+            <td>
+              <div class="actions-cell">
+                <button class="action-btn" title="Open full message" onclick="viewMessage('${escArg(m.id)}')"><svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button>
+                <button class="action-btn" title="Mark replied" onclick="setMessageStatus('${escArg(m.id)}','replied')"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></button>
+                <button class="action-btn" title="Archive" onclick="setMessageStatus('${escArg(m.id)}','archived')"><svg viewBox="0 0 24 24"><polyline points="21 8 21 21 3 21 3 8"/><rect x="1" y="3" width="22" height="5"/><line x1="10" y1="12" x2="14" y2="12"/></svg></button>
+                <button class="action-btn delete-btn" title="Mark spam" onclick="setMessageStatus('${escArg(m.id)}','spam')"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg></button>
+              </div>
+            </td>
+          </tr>`;
+      }).join('');
+
+      applyResponsiveTableLabels();
+      markScrollableTables();
+    }
+
+    /* Opening a message marks it read, because having to click a separate
+       "mark as read" is the kind of step everyone skips — after which the
+       unread badge means nothing. */
+    async function viewMessage(id) {
+      const m = messagesData.find(x => x.id === id);
+      if (!m) return;
+
+      document.getElementById('msgViewTitle').textContent = m.name || 'Message';
+      document.getElementById('msgViewBody').innerHTML = `
+        <div class="form-group"><label class="form-label">From</label>
+          <div>${esc(m.name)} — <a href="mailto:${esc(m.email)}" style="color:var(--accent);">${esc(m.email)}</a></div></div>
+        ${m.phone ? `<div class="form-group"><label class="form-label">Phone / WhatsApp</label><div><a href="https://wa.me/${esc((m.phone || '').replace(/[^0-9]/g, ''))}" target="_blank" rel="noopener" style="color:var(--accent);">${esc(m.phone)}</a></div></div>` : ''}
+        ${m.company ? `<div class="form-group"><label class="form-label">Company</label><div>${esc(m.company)}</div></div>` : ''}
+        <div class="form-group"><label class="form-label">Wants</label><div>${esc(m.project_type || 'Not specified')}</div></div>
+        <div class="form-group"><label class="form-label">Sent from</label><div style="font-family:var(--font-mono);font-size:0.8rem;">${esc(m.source_page || '—')}</div></div>
+        <div class="form-group"><label class="form-label">Message</label>
+          <div style="white-space:pre-wrap;line-height:1.7;">${esc(m.message)}</div></div>`;
+
+      const reply = document.getElementById('msgReplyBtn');
+      if (reply) {
+        reply.href = 'mailto:' + encodeURIComponent(m.email || '') +
+          '?subject=' + encodeURIComponent('Re: your enquiry — Onyxx Tech');
+      }
+
+      openModal('messageViewModal');
+      if (m.status === 'new') await setMessageStatus(id, 'read', true);
+    }
+
+    async function setMessageStatus(id, status, quiet) {
+      const { error } = await supabaseClient
+        .from('contact_messages')
+        .update({ status })
+        .eq('id', id);
+
+      if (error) {
+        showToast('Could not update: ' + error.message, 'error');
+        return;
+      }
+      // Patch locally instead of a full reload — a status change should not
+      // cost a re-fetch of every table on the dashboard.
+      const m = messagesData.find(x => x.id === id);
+      if (m) m.status = status;
+      renderMessages();
+      if (!quiet) showToast('Message marked ' + status, 'success');
+    }
+
     function renderTeam() {
       const grid = document.getElementById('teamGrid');
       grid.innerHTML = '';

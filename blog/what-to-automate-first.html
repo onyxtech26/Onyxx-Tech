@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<script>
+  (function() {
+    var root = document.documentElement;
+    root.setAttribute('data-theme', localStorage.getItem('theme') || 'dark');
+    /* Interior pages have no splash, so nothing gates the entrance animations —
+       release them at once. Without this, anything behind `html.splash-done`
+       (the masked line reveals) would never play here. */
+    root.classList.add('splash-done');
+  })();
+</script>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Five processes worth automating before you touch AI | Onyxx Tech</title>
+<meta name="description" content="The unglamorous automations that pay for themselves fastest in a small business — and the honest test for whether a process is worth automating at all." />
+<link rel="canonical" href="https://www.onyxxtechhub.com.my/blog/what-to-automate-first" />
+
+<meta property="og:title" content="Five processes worth automating before you touch AI | Onyxx Tech" />
+<meta property="og:description" content="The unglamorous automations that pay for themselves fastest in a small business — and the honest test for whether a process is worth automating at all." />
+<meta property="og:image" content="https://www.onyxxtechhub.com.my/images/onyxx-banner.png" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://www.onyxxtechhub.com.my/blog/what-to-automate-first" />
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:title" content="Five processes worth automating before you touch AI | Onyxx Tech" />
+<meta name="twitter:description" content="The unglamorous automations that pay for themselves fastest in a small business — and the honest test for whether a process is worth automating at all." />
+<meta name="twitter:image" content="https://www.onyxxtechhub.com.my/images/onyxx-banner.png" />
+<meta name="robots" content="index, follow" />
+
+<link rel="icon" type="image/png" href="../images/favicon-white.png" />
+<link rel="icon" type="image/png" href="../images/favicon-black.png" media="(prefers-color-scheme: light)" />
+<link rel="icon" type="image/png" href="../images/favicon-white.png" media="(prefers-color-scheme: dark)" />
+<link rel="preload" as="image" href="../images/onyxx_logo_transparent.png" type="image/png" />
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,400;9..144,500;9..144,600;9..144,700&family=JetBrains+Mono:wght@300;400;500;600&family=Outfit:wght@200;300;400;500;600;700&display=swap" rel="stylesheet">
+
+<link rel="stylesheet" href="../styles.css">
+<!-- Not deferred: matches every other page, and nothing in common.js touches
+     the DOM at parse time — all of it is behind DOMContentLoaded. -->
+<script src="../common.js"></script>
+<script src="https://unpkg.com/@dotlottie/player-component@latest/dist/dotlottie-player.mjs" type="module"></script>
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "BlogPosting",
+      "headline": "Five processes worth automating before you touch AI",
+      "description": "The unglamorous automations that pay for themselves fastest in a small business — and the honest test for whether a process is worth automating at all.",
+      "datePublished": "2026-09-08",
+      "dateModified": "2026-09-08",
+      "url": "https://www.onyxxtechhub.com.my/blog/what-to-automate-first",
+      "mainEntityOfPage": {
+        "@type": "WebPage",
+        "@id": "https://www.onyxxtechhub.com.my/blog/what-to-automate-first"
+      },
+      "image": "https://www.onyxxtechhub.com.my/images/onyxx-banner.png",
+      "author": {
+        "@type": "Organization",
+        "name": "Onyxx Tech",
+        "url": "https://www.onyxxtechhub.com.my/"
+      },
+      "publisher": {
+        "@type": "Organization",
+        "name": "Onyxx Tech",
+        "url": "https://www.onyxxtechhub.com.my/",
+        "logo": {
+          "@type": "ImageObject",
+          "url": "https://www.onyxxtechhub.com.my/images/onyxx_logo_transparent.png"
+        }
+      },
+      "articleSection": "Automation"
+    },
+    {
+      "@context": "https://schema.org",
+      "@type": "BreadcrumbList",
+      "itemListElement": [
+        {
+          "@type": "ListItem",
+          "position": 1,
+          "name": "Home"
+        },
+        {
+          "@type": "ListItem",
+          "position": 2,
+          "name": "Blog",
+          "item": "https://www.onyxxtechhub.com.my/blog"
+        },
+        {
+          "@type": "ListItem",
+          "position": 3,
+          "name": "Five processes worth automating before you touch AI",
+          "item": "https://www.onyxxtechhub.com.my/blog/what-to-automate-first"
+        }
+      ]
+    }
+  ]
+}
+</script>
+</head>
+<body>
+
+<a href="#main-content" class="skip-link">Skip to main content</a>
+<canvas id="pageGalaxy" aria-hidden="true"></canvas>
+<div class="cursor-glow" id="cursorGlow"></div>
+<div class="noise"></div>
+
+<!-- ============ NAV ============ -->
+<div class="nav-container">
+  <nav id="nav">
+    <a href="/" class="nav-logo" aria-label="Onyxx Tech — home" title="Double-click for admin login">
+      <img src="../images/onyxx_logo_transparent.png" alt="Onyxx Tech" class="nav-logo-img" />
+    </a>
+
+    <ul class="nav-links" id="navLinks">
+        <li><a href="../services">Services</a></li>
+        <li><a href="../why">Why Us</a></li>
+        <li><a href="../work">Work</a></li>
+        <li><a href="../process">Process</a></li>
+        <li><a href="../blog" aria-current="page">Blog</a></li>
+        <li><a href="../founders">Founders</a></li>
+        <li class="nav-link-contact"><a href="../contact">Contact</a></li>
+    </ul>
+
+    <div class="nav-right">
+      <a href="../contact" class="nav-email">Contact</a>
+
+      <button id="themeToggleBtn" class="theme-toggle" aria-label="Toggle theme">
+        <svg class="sun-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+          <circle cx="12" cy="12" r="5"></circle>
+          <line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line>
+          <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+          <line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line>
+          <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+        </svg>
+        <svg class="moon-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:none" aria-hidden="true">
+          <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+        </svg>
+      </button>
+    </div>
+
+    <button class="nav-toggle" id="navToggle" aria-label="Toggle menu" aria-expanded="false" aria-controls="navLinks">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+        <line x1="3" y1="8" x2="21" y2="8"/><line x1="3" y1="16" x2="21" y2="16"/>
+      </svg>
+    </button>
+  </nav>
+</div>
+
+<header class="page-header">
+  <div class="crumbs">Home<span>/</span><a href="../blog">Blog</a><span>/</span>Automation</div>
+  <div class="section-label">Automation</div>
+  <h1 class="page-title lines">
+      <span class="line"><span>Automate these five</span></span>
+      <span class="line"><span><em>before you touch AI.</em></span></span>
+  </h1>
+  <p class="page-intro">Everyone wants to start with the impressive thing. The money is almost always in the boring one nobody wants to talk about.</p>
+</header>
+<main id="main-content" class="page-body">
+<section class="section reveal">
+  <div class="post-meta">8 September 2026 · 5 min read</div>
+  <div class="post-body">
+<p>When a business asks us where to start, the answer is rarely the project they came in with. Here is the test we use, and the five processes that pass it most often.</p>
+
+<h2>The test</h2>
+
+<p>A process is worth automating when all four of these are true:</p>
+
+<ul>
+  <li>It happens <strong>often</strong> — daily or several times a week, not quarterly.</li>
+  <li>It follows <strong>rules</strong>, not judgement. If two people would do it differently, it is not ready.</li>
+  <li>It has a <strong>clear start and end</strong>. "Manage the inbox" fails this. "File every receipt from the inbox into the accounting folder" passes.</li>
+  <li>Someone can tell you <strong>how long it currently takes</strong>. If nobody knows, measure it for a week first — otherwise you will never be able to say whether it worked.</li>
+</ul>
+
+<h2>1. Moving data between two systems</h2>
+
+<p>The classic. An order arrives in one place and someone retypes it into another. Every business has at least one of these, and it is usually invisible because it has always been done that way.</p>
+
+<p>It is also the single most reliable win, because there is no ambiguity in the task and the errors it removes — typos in quantities, transposed prices — are the expensive kind.</p>
+
+<h2>2. Chasing the same follow-up</h2>
+
+<p>Unpaid invoices, unsigned quotations, unreturned enquiries. These get chased inconsistently because chasing is uncomfortable, and the ones that slip are pure lost revenue.</p>
+
+<p>A scheduled reminder that fires on day 7, day 14 and day 30 without anyone having to feel awkward about it is not sophisticated. It just works.</p>
+
+<h2>3. The weekly report somebody assembles by hand</h2>
+
+<p>If a person opens four tabs every Monday to copy numbers into one summary, that is a script. The tools already have the numbers; someone is just being the glue.</p>
+
+<h2>4. Receipts and documents</h2>
+
+<p>Photographing a receipt, reading the total off it and filing it under the right category is the sort of task that is genuinely tedious for a person and genuinely easy for a machine now. This is one of the few on this list where a model earns its place, because the input is messy.</p>
+
+<h2>5. Onboarding a new customer or staff member</h2>
+
+<p>The same twelve things happen every time, and one of them always gets forgotten. A checklist that creates itself — accounts, folders, welcome message, first invoice — removes the forgetting rather than relying on someone to remember.</p>
+
+<h2>What not to automate yet</h2>
+
+<p>Anything where the rule is still being argued about internally. Automating a process you have not agreed on just encodes the disagreement and makes it harder to change. Sort out the process on paper first; the software part is the easy half.</p>
+
+<p>And anything that happens twice a year. The build will cost more than the decade of doing it manually.</p>
+
+<h2>Where to start on Monday</h2>
+
+<p>Pick the one thing on this list that made you wince in recognition. Time it honestly for a week. That number is your business case, and it is usually much bigger than people expect once they actually count.</p>
+  </div>
+
+  <div class="post-cta">
+    <h2>Want this built rather than read about?</h2>
+    <p>We are a two-founder studio in Malaysia. Tell us the problem and we will tell you honestly what it takes — or that you do not need us.</p>
+    <a href="../contact" class="btn btn-primary">Start a project <span class="arrow">→</span></a>
+  </div>
+</section>
+</main>
+
+<!-- ============ FOOTER ============ -->
+<footer>
+  <div class="footer-inner">
+    <div>
+      <img src="../images/onyxx_logo_transparent.png" alt="" class="footer-brand-mark" />
+      <p class="footer-tagline">Custom AI agents, chatbots, and automations — engineered to work where your business already lives.</p>
+    </div>
+
+    <div>
+      <div class="footer-col-title">Explore</div>
+      <ul class="footer-links">
+        <li><a href="../">Home</a></li>
+        <li><a href="../services">Services</a></li>
+        <li><a href="../work">Work</a></li>
+        <li><a href="../why">Why Us</a></li>
+        <li><a href="../process">Process</a></li>
+        <li><a href="../blog">Blog</a></li>
+        <li><a href="../founders">Founders</a></li>
+      </ul>
+    </div>
+
+    <div>
+      <div class="footer-col-title">Services</div>
+      <ul class="footer-links">
+        <li><a href="../ai-agents">AI Agents</a></li>
+        <li><a href="../chatbots">Chatbots</a></li>
+        <li><a href="../custom-software">Custom Software</a></li>
+        <li><a href="../web-apps">Web &amp; Apps</a></li>
+        <li><a href="../automations">Automations</a></li>
+      </ul>
+    </div>
+
+    <div>
+      <div class="footer-col-title">Talk to us</div>
+      <div class="footer-contact">
+        <a href="mailto:onyxtech26@gmail.com">onyxtech26@gmail.com</a>
+        <a href="https://wa.me/601139884927" target="_blank" rel="noopener">WhatsApp Kunacosta</a>
+        <a href="https://wa.me/60194688052" target="_blank" rel="noopener">WhatsApp Rooben</a>
+        <a href="../contact">Start a project</a>
+      </div>
+    </div>
+  </div>
+
+  <div class="footer-bottom">
+    <div>© 2026 Onyxx Tech · Located in Malaysia · <a href="../privacy">Privacy</a> · <a href="../cookies">Cookies</a></div>
+    <div>Founder-led · AI-native · Built to ship</div>
+  </div>
+</footer>
+
+</body>
+</html>

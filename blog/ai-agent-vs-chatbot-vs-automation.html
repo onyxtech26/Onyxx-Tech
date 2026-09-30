@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<script>
+  (function() {
+    var root = document.documentElement;
+    root.setAttribute('data-theme', localStorage.getItem('theme') || 'dark');
+    /* Interior pages have no splash, so nothing gates the entrance animations —
+       release them at once. Without this, anything behind `html.splash-done`
+       (the masked line reveals) would never play here. */
+    root.classList.add('splash-done');
+  })();
+</script>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>AI agent, chatbot, or automation — which one do you actually need? | Onyxx Tech</title>
+<meta name="description" content="Three different things get sold as AI. Here is the practical difference between an AI agent, a chatbot and a workflow automation — and how to tell which one fits your problem." />
+<link rel="canonical" href="https://www.onyxxtechhub.com.my/blog/ai-agent-vs-chatbot-vs-automation" />
+
+<meta property="og:title" content="AI agent, chatbot, or automation — which one do you actually need? | Onyxx Tech" />
+<meta property="og:description" content="Three different things get sold as AI. Here is the practical difference between an AI agent, a chatbot and a workflow automation — and how to tell which one fits your problem." />
+<meta property="og:image" content="https://www.onyxxtechhub.com.my/images/onyxx-banner.png" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://www.onyxxtechhub.com.my/blog/ai-agent-vs-chatbot-vs-automation" />
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:title" content="AI agent, chatbot, or automation — which one do you actually need? | Onyxx Tech" />
+<meta name="twitter:description" content="Three different things get sold as AI. Here is the practical difference between an AI agent, a chatbot and a workflow automation — and how to tell which one fits your problem." />
+<meta name="twitter:image" content="https://www.onyxxtechhub.com.my/images/onyxx-banner.png" />
+<meta name="robots" content="index, follow" />
+
+<link rel="icon" type="image/png" href="../images/favicon-white.png" />
+<link rel="icon" type="image/png" href="../images/favicon-black.png" media="(prefers-color-scheme: light)" />
+<link rel="icon" type="image/png" href="../images/favicon-white.png" media="(prefers-color-scheme: dark)" />
+<link rel="preload" as="image" href="../images/onyxx_logo_transparent.png" type="image/png" />
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,400;9..144,500;9..144,600;9..144,700&family=JetBrains+Mono:wght@300;400;500;600&family=Outfit:wght@200;300;400;500;600;700&display=swap" rel="stylesheet">
+
+<link rel="stylesheet" href="../styles.css">
+<!-- Not deferred: matches every other page, and nothing in common.js touches
+     the DOM at parse time — all of it is behind DOMContentLoaded. -->
+<script src="../common.js"></script>
+<script src="https://unpkg.com/@dotlottie/player-component@latest/dist/dotlottie-player.mjs" type="module"></script>
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "BlogPosting",
+      "headline": "AI agent, chatbot, or automation — which one do you actually need?",
+      "description": "Three different things get sold as AI. Here is the practical difference between an AI agent, a chatbot and a workflow automation — and how to tell which one fits your problem.",
+      "datePublished": "2026-09-15",
+      "dateModified": "2026-09-15",
+      "url": "https://www.onyxxtechhub.com.my/blog/ai-agent-vs-chatbot-vs-automation",
+      "mainEntityOfPage": {
+        "@type": "WebPage",
+        "@id": "https://www.onyxxtechhub.com.my/blog/ai-agent-vs-chatbot-vs-automation"
+      },
+      "image": "https://www.onyxxtechhub.com.my/images/onyxx-banner.png",
+      "author": {
+        "@type": "Organization",
+        "name": "Onyxx Tech",
+        "url": "https://www.onyxxtechhub.com.my/"
+      },
+      "publisher": {
+        "@type": "Organization",
+        "name": "Onyxx Tech",
+        "url": "https://www.onyxxtechhub.com.my/",
+        "logo": {
+          "@type": "ImageObject",
+          "url": "https://www.onyxxtechhub.com.my/images/onyxx_logo_transparent.png"
+        }
+      },
+      "articleSection": "Explainers"
+    },
+    {
+      "@context": "https://schema.org",
+      "@type": "BreadcrumbList",
+      "itemListElement": [
+        {
+          "@type": "ListItem",
+          "position": 1,
+          "name": "Home"
+        },
+        {
+          "@type": "ListItem",
+          "position": 2,
+          "name": "Blog",
+          "item": "https://www.onyxxtechhub.com.my/blog"
+        },
+        {
+          "@type": "ListItem",
+          "position": 3,
+          "name": "AI agent, chatbot, or automation — which one do you actually need?",
+          "item": "https://www.onyxxtechhub.com.my/blog/ai-agent-vs-chatbot-vs-automation"
+        }
+      ]
+    }
+  ]
+}
+</script>
+</head>
+<body>
+
+<a href="#main-content" class="skip-link">Skip to main content</a>
+<canvas id="pageGalaxy" aria-hidden="true"></canvas>
+<div class="cursor-glow" id="cursorGlow"></div>
+<div class="noise"></div>
+
+<!-- ============ NAV ============ -->
+<div class="nav-container">
+  <nav id="nav">
+    <a href="/" class="nav-logo" aria-label="Onyxx Tech — home" title="Double-click for admin login">
+      <img src="../images/onyxx_logo_transparent.png" alt="Onyxx Tech" class="nav-logo-img" />
+    </a>
+
+    <ul class="nav-links" id="navLinks">
+        <li><a href="../services">Services</a></li>
+        <li><a href="../why">Why Us</a></li>
+        <li><a href="../work">Work</a></li>
+        <li><a href="../process">Process</a></li>
+        <li><a href="../blog" aria-current="page">Blog</a></li>
+        <li><a href="../founders">Founders</a></li>
+        <li class="nav-link-contact"><a href="../contact">Contact</a></li>
+    </ul>
+
+    <div class="nav-right">
+      <a href="../contact" class="nav-email">Contact</a>
+
+      <button id="themeToggleBtn" class="theme-toggle" aria-label="Toggle theme">
+        <svg class="sun-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+          <circle cx="12" cy="12" r="5"></circle>
+          <line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line>
+          <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+          <line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line>
+          <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+        </svg>
+        <svg class="moon-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:none" aria-hidden="true">
+          <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+        </svg>
+      </button>
+    </div>
+
+    <button class="nav-toggle" id="navToggle" aria-label="Toggle menu" aria-expanded="false" aria-controls="navLinks">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+        <line x1="3" y1="8" x2="21" y2="8"/><line x1="3" y1="16" x2="21" y2="16"/>
+      </svg>
+    </button>
+  </nav>
+</div>
+
+<header class="page-header">
+  <div class="crumbs">Home<span>/</span><a href="../blog">Blog</a><span>/</span>Explainers</div>
+  <div class="section-label">Explainers</div>
+  <h1 class="page-title lines">
+      <span class="line"><span>Agent, chatbot,</span></span>
+      <span class="line"><span><em>or automation?</em></span></span>
+  </h1>
+  <p class="page-intro">These three words get used interchangeably by people selling them. They solve genuinely different problems, and picking the wrong one is how budgets get wasted.</p>
+</header>
+<main id="main-content" class="page-body">
+<section class="section reveal">
+  <div class="post-meta">15 September 2026 · 5 min read</div>
+  <div class="post-body">
+<p>A useful way to tell them apart is to ask what starts the work, and who decides what happens next.</p>
+
+<h2>Automation: fixed trigger, fixed steps</h2>
+
+<p>Something happens, and a predetermined sequence runs. A form is submitted, so a row is added to a sheet, an email goes out and a task appears in your project tool. No judgement is involved. Nothing decides anything.</p>
+
+<p>This is the oldest and least glamorous of the three, and for most businesses it is where the biggest, cheapest wins are. If a person is doing the same eight keystrokes every morning, you do not need AI. You need a workflow.</p>
+
+<h2>Chatbot: a person starts it, and it answers</h2>
+
+<p>A customer sends a message and gets a reply. The bot's job is to understand the question and respond usefully, which may include collecting details or handing over to a human.</p>
+
+<p>The defining constraint is that a chatbot is <em>reactive</em>. It waits. It is measured on how well it responds, not on what it accomplishes. That makes it perfect for enquiries, opening hours, order status and qualifying leads — and a poor fit for anything that has to happen whether or not a customer asks.</p>
+
+<h2>AI agent: given a goal, it works out the steps</h2>
+
+<p>An agent is handed an objective rather than a script. It decides what to do, uses tools to do it, checks the result, and keeps going until the objective is met or it gets stuck and asks for help.</p>
+
+<p>That difference — deciding the steps rather than following them — is the whole thing. It is also why agents are harder to build well and need guardrails that automations do not.</p>
+
+<p>This is no longer experimental. Industry surveys through 2026 put the share of companies using agents in some form at around 79%, with roughly half having them genuinely in production rather than in a pilot. The common production uses are unglamorous: ticket resolution, invoice matching, document processing, lead follow-up.</p>
+
+<h2>A quick way to choose</h2>
+
+<table>
+  <tr><th>If the problem sounds like…</th><th>You want…</th></tr>
+  <tr><td>"The same thing has to happen every time X occurs"</td><td>Automation</td></tr>
+  <tr><td>"Customers keep asking us the same things"</td><td>Chatbot</td></tr>
+  <tr><td>"Someone has to look at each one and decide"</td><td>AI agent</td></tr>
+  <tr><td>"We need all three eventually"</td><td>Start with the automation</td></tr>
+</table>
+
+<h2>The mistake worth avoiding</h2>
+
+<p>Reaching for an agent when an automation would do. Agents cost more to build, cost more to run, and introduce a category of failure that deterministic workflows simply do not have — they can be confidently wrong.</p>
+
+<p>Where the rule is fixed, encode the rule. Save the model for where the input is genuinely messy and a human would otherwise have to read it. The best systems we build are usually mostly plumbing with a small amount of intelligence at the one point that needs it.</p>
+    <p class="form-note">Adoption figures cited are from published 2026 industry surveys and describe the global market, not Malaysia specifically.</p>
+  </div>
+
+  <div class="post-cta">
+    <h2>Want this built rather than read about?</h2>
+    <p>We are a two-founder studio in Malaysia. Tell us the problem and we will tell you honestly what it takes — or that you do not need us.</p>
+    <a href="../contact" class="btn btn-primary">Start a project <span class="arrow">→</span></a>
+  </div>
+</section>
+</main>
+
+<!-- ============ FOOTER ============ -->
+<footer>
+  <div class="footer-inner">
+    <div>
+      <img src="../images/onyxx_logo_transparent.png" alt="" class="footer-brand-mark" />
+      <p class="footer-tagline">Custom AI agents, chatbots, and automations — engineered to work where your business already lives.</p>
+    </div>
+
+    <div>
+      <div class="footer-col-title">Explore</div>
+      <ul class="footer-links">
+        <li><a href="../">Home</a></li>
+        <li><a href="../services">Services</a></li>
+        <li><a href="../work">Work</a></li>
+        <li><a href="../why">Why Us</a></li>
+        <li><a href="../process">Process</a></li>
+        <li><a href="../blog">Blog</a></li>
+        <li><a href="../founders">Founders</a></li>
+      </ul>
+    </div>
+
+    <div>
+      <div class="footer-col-title">Services</div>
+      <ul class="footer-links">
+        <li><a href="../ai-agents">AI Agents</a></li>
+        <li><a href="../chatbots">Chatbots</a></li>
+        <li><a href="../custom-software">Custom Software</a></li>
+        <li><a href="../web-apps">Web &amp; Apps</a></li>
+        <li><a href="../automations">Automations</a></li>
+      </ul>
+    </div>
+
+    <div>
+      <div class="footer-col-title">Talk to us</div>
+      <div class="footer-contact">
+        <a href="mailto:onyxtech26@gmail.com">onyxtech26@gmail.com</a>
+        <a href="https://wa.me/601139884927" target="_blank" rel="noopener">WhatsApp Kunacosta</a>
+        <a href="https://wa.me/60194688052" target="_blank" rel="noopener">WhatsApp Rooben</a>
+        <a href="../contact">Start a project</a>
+      </div>
+    </div>
+  </div>
+
+  <div class="footer-bottom">
+    <div>© 2026 Onyxx Tech · Located in Malaysia · <a href="../privacy">Privacy</a> · <a href="../cookies">Cookies</a></div>
+    <div>Founder-led · AI-native · Built to ship</div>
+  </div>
+</footer>
+
+</body>
+</html>

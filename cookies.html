@@ -13,41 +13,60 @@
 </script>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Why Onyxx Tech — AI-Native, Founder-Led, Fast</title>
-<meta name="description" content="Most agencies are still figuring out what AI is. We grew up with it. AI-native by default, founder-led always, lean and fast." />
-<link rel="canonical" href="https://www.onyxxtechhub.com.my/why" />
+<title>Cookie Notice | Onyxx Tech</title>
+<meta name="description" content="This site sets no tracking cookies. Here is exactly what it does store on your device and why." />
+<link rel="canonical" href="https://www.onyxxtechhub.com.my/cookies" />
 
-<meta property="og:title" content="Why Onyxx Tech — AI-Native, Founder-Led, Fast" />
-<meta property="og:description" content="Most agencies are still figuring out what AI is. We grew up with it. AI-native by default, founder-led always, lean and fast." />
-<meta property="og:image" content="images/onyxx-banner.png" />
+<meta property="og:title" content="Cookie Notice | Onyxx Tech" />
+<meta property="og:description" content="This site sets no tracking cookies. Here is exactly what it does store on your device and why." />
+<meta property="og:image" content="https://www.onyxxtechhub.com.my/images/onyxx-banner.png" />
 <meta property="og:type" content="website" />
-<meta property="og:url" content="https://www.onyxxtechhub.com.my/why" />
+<meta property="og:url" content="https://www.onyxxtechhub.com.my/cookies" />
 <meta name="twitter:card" content="summary_large_image" />
-<meta name="twitter:title" content="Why Onyxx Tech — AI-Native, Founder-Led, Fast" />
-<meta name="twitter:description" content="Most agencies are still figuring out what AI is. We grew up with it. AI-native by default, founder-led always, lean and fast." />
-<meta name="twitter:image" content="images/onyxx-banner.png" />
+<meta name="twitter:title" content="Cookie Notice | Onyxx Tech" />
+<meta name="twitter:description" content="This site sets no tracking cookies. Here is exactly what it does store on your device and why." />
+<meta name="twitter:image" content="https://www.onyxxtechhub.com.my/images/onyxx-banner.png" />
 <meta name="robots" content="index, follow" />
 
 <link rel="icon" type="image/png" href="images/favicon-white.png" />
 <link rel="icon" type="image/png" href="images/favicon-black.png" media="(prefers-color-scheme: light)" />
 <link rel="icon" type="image/png" href="images/favicon-white.png" media="(prefers-color-scheme: dark)" />
 <link rel="preload" as="image" href="images/onyxx_logo_transparent.png" type="image/png" />
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,400;9..144,500;9..144,600;9..144,700&family=JetBrains+Mono:wght@300;400;500;600&family=Outfit:wght@200;300;400;500;600;700&display=swap" rel="stylesheet">
 
 <link rel="stylesheet" href="styles.css">
-<!-- Not deferred: the splash controller below is inline and needs
-     window.onyxGalaxy the moment it runs. Nothing in common.js touches the DOM
-     at parse time — all of it is behind DOMContentLoaded. -->
+<!-- Not deferred: matches every other page, and nothing in common.js touches
+     the DOM at parse time — all of it is behind DOMContentLoaded. -->
 <script src="common.js"></script>
+<script src="https://unpkg.com/@dotlottie/player-component@latest/dist/dotlottie-player.mjs" type="module"></script>
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    {
+      "@type": "ListItem",
+      "position": 1,
+      "name": "Home"
+    },
+    {
+      "@type": "ListItem",
+      "position": 2,
+      "name": "Cookies",
+      "item": "https://www.onyxxtechhub.com.my/cookies"
+    }
+  ]
+}
+</script>
 </head>
-<body data-page="why">
+<body>
 
 <a href="#main-content" class="skip-link">Skip to main content</a>
-<!-- Interior pages carry the galaxy as a dialled-down fixed backdrop. This is
-     what replaced the old fixed gridlines. -->
 <canvas id="pageGalaxy" aria-hidden="true"></canvas>
 <div class="cursor-glow" id="cursorGlow"></div>
 <div class="noise"></div>
@@ -61,7 +80,7 @@
 
     <ul class="nav-links" id="navLinks">
         <li><a href="services">Services</a></li>
-        <li><a href="why" aria-current="page">Why Us</a></li>
+        <li><a href="why">Why Us</a></li>
         <li><a href="work">Work</a></li>
         <li><a href="process">Process</a></li>
         <li><a href="blog">Blog</a></li>
@@ -95,45 +114,48 @@
 </div>
 
 <header class="page-header">
-  <div class="section-label">Why Onyxx</div>
+  <div class="crumbs">Home<span>/</span>Cookies</div>
+  <div class="section-label">Cookies</div>
   <h1 class="page-title lines">
-      <span class="line"><span>Modern problems demand</span></span>
-      <span class="line"><span><em>modern builders.</em></span></span>
+      <span class="line"><span>No cookie banner,</span></span>
+      <span class="line"><span><em>because no cookies.</em></span></span>
   </h1>
-  <p class="page-intro">Most agencies are still figuring out what AI is. We grew up with it. That's the whole difference.</p>
+  <p class="page-intro">There is nothing here to accept or decline. This page explains why.</p>
 </header>
-
 <main id="main-content" class="page-body">
-<section class="why">
-  <div class="section-inner">
-    <div class="why-grid reveal-group">
-      <div class="why-item">
-        <div class="why-num">01</div>
-        <h3 class="why-title">AI-Native by Default</h3>
-        <p class="why-desc">We don't bolt AI onto old workflows. We design with it from the first whiteboard sketch — which means smarter products that actually feel like 2026.</p>
-      </div>
+<section class="section reveal">
+  <div class="post-meta">Last updated 30 September 2026</div>
+  <div class="post-body">
+    <p>Short version: this site sets no tracking cookies, so there is no cookie banner to dismiss.</p>
 
-      <div class="why-item">
-        <div class="why-num">02</div>
-        <h3 class="why-title">Founder-Led Always</h3>
-        <p class="why-desc">No account managers. No handoffs. You talk to the people writing the code. That's why our turnaround is faster and our work is sharper.</p>
-      </div>
+    <h2>What we do not use</h2>
+    <p>No advertising cookies, no third-party tracking cookies, no Google Analytics, no Facebook
+    pixel, no cross-site profiling of any kind. Nothing on this site follows you to another website.</p>
 
-      <div class="why-item">
-        <div class="why-num">03</div>
-        <h3 class="why-title">Lean &amp; Fast</h3>
-        <p class="why-desc">Student-founder pricing without student-founder output. We move fast because we're hungry — and because modern tools let us punch above our weight.</p>
-      </div>
-    </div>
-  </div>
-</section>
+    <h2>What we do store on your device</h2>
+    <p>Two small entries in your browser's local storage — which is not a cookie and is never sent
+    to our server:</p>
+    <ul>
+      <li><strong>Your theme preference</strong> (dark or light), so the site does not flash the
+      wrong one at you on your next visit.</li>
+      <li><strong>Whether you have seen the intro animation</strong> this session.</li>
+    </ul>
+    <p>Both stay on your device. You can clear them at any time through your browser settings, and
+    the site will work exactly as before.</p>
 
-<section class="home-cta reveal">
-  <h2 class="contact-title">Sound like the team you want?</h2>
-  <p class="contact-sub">We'd rather show you than tell you. Start with a conversation.</p>
-  <div class="home-cta-actions">
-    <a href="contact" class="btn btn-primary">Get in Touch <span class="arrow">→</span></a>
-    <a href="founders" class="btn btn-secondary">Meet the founders <span class="arrow">→</span></a>
+    <h2>Analytics</h2>
+    <p>We use Vercel Web Analytics to count page views. It is cookie-less and aggregates data
+    without identifying individual visitors. See our <a href="privacy">privacy notice</a> for
+    detail.</p>
+
+    <h2>Embedded content</h2>
+    <p>We load fonts from Google Fonts and a small number of scripts from public CDNs
+    (jsDelivr, unpkg) to render the site. These providers may log the request as part of serving
+    the file, in the ordinary way any web request is logged. We do not pass them any information
+    about you.</p>
+
+    <h2>Questions</h2>
+    <p>Email <a href="mailto:onyxtech26@gmail.com">onyxtech26@gmail.com</a>.</p>
   </div>
 </section>
 </main>

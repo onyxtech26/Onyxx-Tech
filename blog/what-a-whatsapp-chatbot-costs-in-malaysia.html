@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<script>
+  (function() {
+    var root = document.documentElement;
+    root.setAttribute('data-theme', localStorage.getItem('theme') || 'dark');
+    /* Interior pages have no splash, so nothing gates the entrance animations —
+       release them at once. Without this, anything behind `html.splash-done`
+       (the masked line reveals) would never play here. */
+    root.classList.add('splash-done');
+  })();
+</script>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>What a WhatsApp chatbot actually costs a Malaysian business | Onyxx Tech</title>
+<meta name="description" content="An honest breakdown of WhatsApp chatbot costs for Malaysian businesses — the API fees, the build, the monthly running cost, and where quotes hide things." />
+<link rel="canonical" href="https://www.onyxxtechhub.com.my/blog/what-a-whatsapp-chatbot-costs-in-malaysia" />
+
+<meta property="og:title" content="What a WhatsApp chatbot actually costs a Malaysian business | Onyxx Tech" />
+<meta property="og:description" content="An honest breakdown of WhatsApp chatbot costs for Malaysian businesses — the API fees, the build, the monthly running cost, and where quotes hide things." />
+<meta property="og:image" content="https://www.onyxxtechhub.com.my/images/onyxx-banner.png" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://www.onyxxtechhub.com.my/blog/what-a-whatsapp-chatbot-costs-in-malaysia" />
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:title" content="What a WhatsApp chatbot actually costs a Malaysian business | Onyxx Tech" />
+<meta name="twitter:description" content="An honest breakdown of WhatsApp chatbot costs for Malaysian businesses — the API fees, the build, the monthly running cost, and where quotes hide things." />
+<meta name="twitter:image" content="https://www.onyxxtechhub.com.my/images/onyxx-banner.png" />
+<meta name="robots" content="index, follow" />
+
+<link rel="icon" type="image/png" href="../images/favicon-white.png" />
+<link rel="icon" type="image/png" href="../images/favicon-black.png" media="(prefers-color-scheme: light)" />
+<link rel="icon" type="image/png" href="../images/favicon-white.png" media="(prefers-color-scheme: dark)" />
+<link rel="preload" as="image" href="../images/onyxx_logo_transparent.png" type="image/png" />
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,400;9..144,500;9..144,600;9..144,700&family=JetBrains+Mono:wght@300;400;500;600&family=Outfit:wght@200;300;400;500;600;700&display=swap" rel="stylesheet">
+
+<link rel="stylesheet" href="../styles.css">
+<!-- Not deferred: matches every other page, and nothing in common.js touches
+     the DOM at parse time — all of it is behind DOMContentLoaded. -->
+<script src="../common.js"></script>
+<script src="https://unpkg.com/@dotlottie/player-component@latest/dist/dotlottie-player.mjs" type="module"></script>
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "BlogPosting",
+      "headline": "What a WhatsApp chatbot actually costs a Malaysian business",
+      "description": "An honest breakdown of WhatsApp chatbot costs for Malaysian businesses — the API fees, the build, the monthly running cost, and where quotes hide things.",
+      "datePublished": "2026-09-22",
+      "dateModified": "2026-09-22",
+      "url": "https://www.onyxxtechhub.com.my/blog/what-a-whatsapp-chatbot-costs-in-malaysia",
+      "mainEntityOfPage": {
+        "@type": "WebPage",
+        "@id": "https://www.onyxxtechhub.com.my/blog/what-a-whatsapp-chatbot-costs-in-malaysia"
+      },
+      "image": "https://www.onyxxtechhub.com.my/images/onyxx-banner.png",
+      "author": {
+        "@type": "Organization",
+        "name": "Onyxx Tech",
+        "url": "https://www.onyxxtechhub.com.my/"
+      },
+      "publisher": {
+        "@type": "Organization",
+        "name": "Onyxx Tech",
+        "url": "https://www.onyxxtechhub.com.my/",
+        "logo": {
+          "@type": "ImageObject",
+          "url": "https://www.onyxxtechhub.com.my/images/onyxx_logo_transparent.png"
+        }
+      },
+      "articleSection": "Chatbots"
+    },
+    {
+      "@context": "https://schema.org",
+      "@type": "BreadcrumbList",
+      "itemListElement": [
+        {
+          "@type": "ListItem",
+          "position": 1,
+          "name": "Home"
+        },
+        {
+          "@type": "ListItem",
+          "position": 2,
+          "name": "Blog",
+          "item": "https://www.onyxxtechhub.com.my/blog"
+        },
+        {
+          "@type": "ListItem",
+          "position": 3,
+          "name": "What a WhatsApp chatbot actually costs a Malaysian business",
+          "item": "https://www.onyxxtechhub.com.my/blog/what-a-whatsapp-chatbot-costs-in-malaysia"
+        }
+      ]
+    }
+  ]
+}
+</script>
+</head>
+<body>
+
+<a href="#main-content" class="skip-link">Skip to main content</a>
+<canvas id="pageGalaxy" aria-hidden="true"></canvas>
+<div class="cursor-glow" id="cursorGlow"></div>
+<div class="noise"></div>
+
+<!-- ============ NAV ============ -->
+<div class="nav-container">
+  <nav id="nav">
+    <a href="/" class="nav-logo" aria-label="Onyxx Tech — home" title="Double-click for admin login">
+      <img src="../images/onyxx_logo_transparent.png" alt="Onyxx Tech" class="nav-logo-img" />
+    </a>
+
+    <ul class="nav-links" id="navLinks">
+        <li><a href="../services">Services</a></li>
+        <li><a href="../why">Why Us</a></li>
+        <li><a href="../work">Work</a></li>
+        <li><a href="../process">Process</a></li>
+        <li><a href="../blog" aria-current="page">Blog</a></li>
+        <li><a href="../founders">Founders</a></li>
+        <li class="nav-link-contact"><a href="../contact">Contact</a></li>
+    </ul>
+
+    <div class="nav-right">
+      <a href="../contact" class="nav-email">Contact</a>
+
+      <button id="themeToggleBtn" class="theme-toggle" aria-label="Toggle theme">
+        <svg class="sun-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+          <circle cx="12" cy="12" r="5"></circle>
+          <line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line>
+          <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+          <line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line>
+          <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+        </svg>
+        <svg class="moon-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:none" aria-hidden="true">
+          <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+        </svg>
+      </button>
+    </div>
+
+    <button class="nav-toggle" id="navToggle" aria-label="Toggle menu" aria-expanded="false" aria-controls="navLinks">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+        <line x1="3" y1="8" x2="21" y2="8"/><line x1="3" y1="16" x2="21" y2="16"/>
+      </svg>
+    </button>
+  </nav>
+</div>
+
+<header class="page-header">
+  <div class="crumbs">Home<span>/</span><a href="../blog">Blog</a><span>/</span>Chatbots</div>
+  <div class="section-label">Chatbots</div>
+  <h1 class="page-title lines">
+      <span class="line"><span>What a WhatsApp bot</span></span>
+      <span class="line"><span><em>really costs.</em></span></span>
+  </h1>
+  <p class="page-intro">Nobody quotes this honestly, so here is the whole picture: what you pay once, what you pay monthly, and which line items vendors tend to leave out.</p>
+</header>
+<main id="main-content" class="page-body">
+<section class="section reveal">
+  <div class="post-meta">22 September 2026 · 7 min read</div>
+  <div class="post-body">
+<p>Ask three vendors what a WhatsApp chatbot costs and you will get three numbers that are not comparable, because they are quietly quoting different things. Some quote the build only. Some bundle a platform subscription. Almost nobody separates out the part Meta charges you regardless of who builds it.</p>
+
+<p>There are three costs. Understanding them separately is most of the battle.</p>
+
+<h2>Cost 1: the WhatsApp Business API itself</h2>
+
+<p>This is Meta's charge and it is unavoidable for any automated bot at scale. You cannot run a proper chatbot on the free WhatsApp Business app — that is designed for a human replying by hand, and automating around it puts your number at risk of being banned.</p>
+
+<p>The official API is accessed through a Business Solution Provider. Well-known ones include WATI, AiSensy, Interakt, 360dialog, Twilio and Gupshup. You pay the provider a platform fee, and conversations are billed on top. For a small Malaysian business with moderate volume, this layer typically lands in the low hundreds of ringgit per month.</p>
+
+<p><strong>Ask any vendor: is the API account in my company's name?</strong> It should be. If the bot is built on the vendor's account, moving away from them later means starting over.</p>
+
+<h2>Cost 2: the AI model, if the bot actually thinks</h2>
+
+<p>A rule-based bot that walks people through a fixed menu has no model cost. A bot that understands a question phrased however the customer felt like phrasing it uses a language model, and that is billed per use.</p>
+
+<p>The good news is that this has become dramatically cheaper. Reporting through 2026 puts a complete small-business bot in the region of USD 40–100 a month all-in — roughly half what the equivalent cost a year earlier. For most shops the model is not the expensive part any more.</p>
+
+<h2>Cost 3: the build</h2>
+
+<p>This is the one-off, and it is the one that varies most, because it depends entirely on how much your bot needs to know and do:</p>
+
+<table>
+  <tr><th>Scope</th><th>What it does</th></tr>
+  <tr><td>Simple</td><td>Answers a fixed set of FAQs, captures a name and number, hands over to a human.</td></tr>
+  <tr><td>Connected</td><td>The above, plus live answers from your real data — stock, prices, opening hours, order status.</td></tr>
+  <tr><td>Transactional</td><td>Takes bookings or orders, writes them into your system, sends confirmations, handles payment links.</td></tr>
+</table>
+
+<p>Each step up roughly multiplies the integration work, because each one means touching another system that has its own login, its own API and its own edge cases.</p>
+
+<h2>Where quotes hide things</h2>
+
+<ul>
+  <li><strong>Per-seat inbox fees.</strong> Some platforms charge per agent using the shared inbox. Fine at two people, unpleasant at fifteen.</li>
+  <li><strong>Template message approvals.</strong> Any message you send first (rather than replying) must use a pre-approved template. Ask who handles submissions and rewrites when one is rejected.</li>
+  <li><strong>"Unlimited" conversations.</strong> Meta bills conversations. If a quote says unlimited, someone is absorbing the cost, and that usually shows up as a higher platform fee.</li>
+  <li><strong>Who owns the conversation history.</strong> It is customer data. It should be exportable.</li>
+</ul>
+
+<h2>Is it worth it?</h2>
+
+<p>The honest test is not whether the bot is impressive. It is whether you are currently losing enquiries because nobody replies fast enough.</p>
+
+<p>Count the messages you get outside working hours for one week. Count how many of those people messaged a competitor too. If the first number is meaningful and the second is a guess you would rather not make, the bot pays for itself on response time alone — before anyone talks about AI.</p>
+
+<p>And if the answer is that you get four enquiries a week and answer them all within the hour, you do not need a chatbot. We will tell you that rather than sell you one.</p>
+    <p class="form-note">Pricing described here reflects publicly reported market rates in 2026 and varies by provider, message volume and country. Get a written quote broken into these three layers before committing.</p>
+  </div>
+
+  <div class="post-cta">
+    <h2>Want this built rather than read about?</h2>
+    <p>We are a two-founder studio in Malaysia. Tell us the problem and we will tell you honestly what it takes — or that you do not need us.</p>
+    <a href="../contact" class="btn btn-primary">Start a project <span class="arrow">→</span></a>
+  </div>
+</section>
+</main>
+
+<!-- ============ FOOTER ============ -->
+<footer>
+  <div class="footer-inner">
+    <div>
+      <img src="../images/onyxx_logo_transparent.png" alt="" class="footer-brand-mark" />
+      <p class="footer-tagline">Custom AI agents, chatbots, and automations — engineered to work where your business already lives.</p>
+    </div>
+
+    <div>
+      <div class="footer-col-title">Explore</div>
+      <ul class="footer-links">
+        <li><a href="../">Home</a></li>
+        <li><a href="../services">Services</a></li>
+        <li><a href="../work">Work</a></li>
+        <li><a href="../why">Why Us</a></li>
+        <li><a href="../process">Process</a></li>
+        <li><a href="../blog">Blog</a></li>
+        <li><a href="../founders">Founders</a></li>
+      </ul>
+    </div>
+
+    <div>
+      <div class="footer-col-title">Services</div>
+      <ul class="footer-links">
+        <li><a href="../ai-agents">AI Agents</a></li>
+        <li><a href="../chatbots">Chatbots</a></li>
+        <li><a href="../custom-software">Custom Software</a></li>
+        <li><a href="../web-apps">Web &amp; Apps</a></li>
+        <li><a href="../automations">Automations</a></li>
+      </ul>
+    </div>
+
+    <div>
+      <div class="footer-col-title">Talk to us</div>
+      <div class="footer-contact">
+        <a href="mailto:onyxtech26@gmail.com">onyxtech26@gmail.com</a>
+        <a href="https://wa.me/601139884927" target="_blank" rel="noopener">WhatsApp Kunacosta</a>
+        <a href="https://wa.me/60194688052" target="_blank" rel="noopener">WhatsApp Rooben</a>
+        <a href="../contact">Start a project</a>
+      </div>
+    </div>
+  </div>
+
+  <div class="footer-bottom">
+    <div>© 2026 Onyxx Tech · Located in Malaysia · <a href="../privacy">Privacy</a> · <a href="../cookies">Cookies</a></div>
+    <div>Founder-led · AI-native · Built to ship</div>
+  </div>
+</footer>
+
+</body>
+</html>

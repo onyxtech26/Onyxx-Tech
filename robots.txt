@@ -10,4 +10,4 @@ Disallow: /admin-dashboard
 Disallow: /admin-reset
 
 # Must be absolute. A relative Sitemap: value is ignored by the protocol.
-Sitemap: https://onyxx-tech.vercel.app/sitemap.xml
+Sitemap: https://www.onyxxtechhub.com.my/sitemap.xml
