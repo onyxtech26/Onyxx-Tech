@@ -5,6 +5,62 @@ Format each entry: what was done, why it mattered, and any key decisions.
 
 ---
 
+## 2026-09-30 (blog visuals + the stale-CSS bug)
+
+### The contact form rendered completely unstyled — and it was Cloudflare
+
+Reported with a screenshot: native browser inputs, labels inline, the honeypot
+field **visible** with its "Leave this empty" label. Querying the live page
+proved the CSS was fine — `.form-field` computed `display: flex`, the honeypot
+computed `left: -9999px`. The stylesheet was correct; the browser was using an
+old copy of it.
+
+**Root cause: the domain is proxied through Cloudflare, which overrides
+Vercel's cache policy on static assets.** Vercel serves `styles.css` as
+`public, max-age=0, must-revalidate`. Through the domain it arrives as
+`public, max-age=14400` — four hours. `max-age` instructs the *browser*, not
+just the CDN, so for four hours after a deploy a returning visitor keeps using
+their cached stylesheet **without revalidating at all**.
+
+The result is new HTML paired with an old stylesheet: markup full of classes
+the cached CSS has never heard of, rendering as raw browser defaults. The
+honeypot going visible is the sharpest illustration — a field whose entire
+purpose is to be invisible to humans was on screen, labelled.
+
+**Fix: `tools/stamp_assets.py`**, which appends a content hash to every
+`styles.css` / `common.js` / `admin-dashboard.*` reference across all 29 pages
+(`styles.css?v=51c41b40`). A different URL cannot be served from the cache
+entry of the old one, so a deploy can never again be half-applied. The hash is
+of the file contents, so it only changes when the file does and repeat visits
+still hit cache normally. **Run it after any edit to those files, before
+committing.** `tools/` and `*.py` added to `.vercelignore`.
+
+Purging the Cloudflare cache fixes the symptom once; the stamp is what stops
+it recurring.
+
+### The blog looked like four grey boxes
+
+Fair. It was text-only cards with nothing for the eye to land on.
+
+- **Cover artwork per post**, hand-built SVG in `images/blog/`. Chosen over
+  stock photography deliberately: it matches the palette exactly, weighs ~6KB
+  against ~200KB for a photo, stays sharp at any density, and carries no
+  licensing question. Each is abstract with no text, because text in an SVG
+  depends on a font being present wherever it renders.
+- **Featured layout** — the newest post runs wide with the artwork beside the
+  words; the rest sit in a grid with the cover on top. Gives the page one
+  obvious place to start.
+- **PNG twins for `og:image`.** The SVGs are perfect on-page and useless for
+  sharing: Facebook, LinkedIn and X all refuse SVG og:images, so a shared link
+  would have shown no preview at all. Rasterised to 1200x630 PNG, and each post
+  now carries its own preview image instead of the generic site banner.
+
+Confirmed the posts already opened as their own pages — the user's note about
+opening on a new page turned out to be about the flat visuals, and they chose
+to keep same-tab navigation for internal links.
+
+---
+
 ## 2026-09-30 (conversion, SEO and content build-out)
 
 Prompted by a competitor comparison: the user pointed at a Johor web studio's

@@ -38,10 +38,10 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,400;9..144,500;9..144,600;9..144,700&family=JetBrains+Mono:wght@300;400;500;600&family=Outfit:wght@200;300;400;500;600;700&display=swap" rel="stylesheet">
 
-<link rel="stylesheet" href="styles.css">
+<link rel="stylesheet" href="styles.css?v=51c41b40">
 <!-- Not deferred: matches every other page, and nothing in common.js touches
      the DOM at parse time — all of it is behind DOMContentLoaded. -->
-<script src="common.js"></script>
+<script src="common.js?v=143e7993"></script>
 <script src="https://unpkg.com/@dotlottie/player-component@latest/dist/dotlottie-player.mjs" type="module"></script>
 
 <script type="application/ld+json">
@@ -150,30 +150,50 @@
 <main id="main-content" class="page-body">
 <section class="section">
   <div class="section-inner">
-    <div class="blog-grid">
-      <a class="blog-card reveal" href="blog/ai-and-digital-grants-malaysian-smes-2026">
-        <div class="blog-card-meta">Funding · 29 September 2026</div>
+    <a class="blog-featured reveal" href="blog/ai-and-digital-grants-malaysian-smes-2026">
+      <div class="blog-cover">
+        <img src="images/blog/grants.svg" alt="Ascending bars beneath a rising dotted arc" width="1200" height="630" data-fade decoding="async" />
+      </div>
+      <div class="blog-featured-body">
+        <span class="blog-featured-tag">Latest · Funding</span>
         <h2>The AI and digitalisation grants Malaysian SMEs can claim in 2026</h2>
         <p>Budget 2026 put real money behind SME digitalisation. Most of it goes unclaimed, mostly because the paperwork looks heavier than it is.</p>
-        <div class="blog-card-more">Read the post →</div>
-      </a>
+        <div class="blog-card-more">29 September 2026 · 6 min read · Read the post →</div>
+      </div>
+    </a>
+    <div class="blog-grid">
       <a class="blog-card reveal" href="blog/what-a-whatsapp-chatbot-costs-in-malaysia">
-        <div class="blog-card-meta">Chatbots · 22 September 2026</div>
-        <h2>What a WhatsApp chatbot actually costs a Malaysian business</h2>
-        <p>Nobody quotes this honestly, so here is the whole picture: what you pay once, what you pay monthly, and which line items vendors tend to leave out.</p>
-        <div class="blog-card-more">Read the post →</div>
+        <div class="blog-cover">
+          <img src="images/blog/chatbot-cost.svg" alt="Two chat bubbles above a three-step cost ladder" width="1200" height="630" data-fade loading="lazy" decoding="async" />
+        </div>
+        <div class="blog-card-body">
+          <div class="blog-card-meta">Chatbots · 22 September 2026</div>
+          <h3>What a WhatsApp chatbot actually costs a Malaysian business</h3>
+          <p>Nobody quotes this honestly, so here is the whole picture: what you pay once, what you pay monthly, and which line items vendors tend to leave out.</p>
+          <div class="blog-card-more">7 min read · Read the post →</div>
+        </div>
       </a>
       <a class="blog-card reveal" href="blog/ai-agent-vs-chatbot-vs-automation">
-        <div class="blog-card-meta">Explainers · 15 September 2026</div>
-        <h2>AI agent, chatbot, or automation — which one do you actually need?</h2>
-        <p>These three words get used interchangeably by people selling them. They solve genuinely different problems, and picking the wrong one is how budgets get wasted.</p>
-        <div class="blog-card-more">Read the post →</div>
+        <div class="blog-cover">
+          <img src="images/blog/three-paths.svg" alt="Three tracks: one straight, one looping back, one branching" width="1200" height="630" data-fade loading="lazy" decoding="async" />
+        </div>
+        <div class="blog-card-body">
+          <div class="blog-card-meta">Explainers · 15 September 2026</div>
+          <h3>AI agent, chatbot, or automation — which one do you actually need?</h3>
+          <p>These three words get used interchangeably by people selling them. They solve genuinely different problems, and picking the wrong one is how budgets get wasted.</p>
+          <div class="blog-card-more">5 min read · Read the post →</div>
+        </div>
       </a>
       <a class="blog-card reveal" href="blog/what-to-automate-first">
-        <div class="blog-card-meta">Automation · 8 September 2026</div>
-        <h2>Five processes worth automating before you touch AI</h2>
-        <p>Everyone wants to start with the impressive thing. The money is almost always in the boring one nobody wants to talk about.</p>
-        <div class="blog-card-more">Read the post →</div>
+        <div class="blog-cover">
+          <img src="images/blog/automate-first.svg" alt="A five-step loop with one step lit" width="1200" height="630" data-fade loading="lazy" decoding="async" />
+        </div>
+        <div class="blog-card-body">
+          <div class="blog-card-meta">Automation · 8 September 2026</div>
+          <h3>Five processes worth automating before you touch AI</h3>
+          <p>Everyone wants to start with the impressive thing. The money is almost always in the boring one nobody wants to talk about.</p>
+          <div class="blog-card-more">5 min read · Read the post →</div>
+        </div>
       </a>
     </div>
   </div>

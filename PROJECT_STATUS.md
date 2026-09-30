@@ -8,6 +8,8 @@
 
 ## 📍 Where I left off
 
+**⚠️ CLOUDFLARE CACHES YOUR CSS FOR 4 HOURS.** The domain is proxied through Cloudflare, which rewrites Vercel's `max-age=0` to `max-age=14400` on static assets — so a deploy can land as new HTML with a four-hour-old stylesheet, which renders as a completely unstyled page. `tools/stamp_assets.py` now version-stamps every asset URL; **run it after any edit to `styles.css`, `common.js` or the admin pair, before committing.** Otherwise this comes straight back.
+
 **A large conversion/SEO/content build-out landed on 2026-09-30** — see the changelog. The site went from 7 pages to 29: five service landing pages, ten case studies, a four-post blog, privacy/cookie notices, a real contact form, a sitewide WhatsApp button and analytics.
 
 **⚠️ ONE THING IS OUTSTANDING AND THE CONTACT FORM DOES NOT WORK WITHOUT IT:**

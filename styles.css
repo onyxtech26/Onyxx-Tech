@@ -3444,3 +3444,114 @@ img[data-fade].is-loaded { opacity: 1; transform: scale(1); }
   border: 1px solid var(--glass-border);
   color: var(--bone-dim);
 }
+
+/* ---------- Blog covers + featured post ----------
+   The blog list was four text-only boxes, which gave the eye nothing to land
+   on. Each post now carries hand-built SVG cover art (images/blog/*.svg): it
+   matches the palette exactly, weighs ~6KB against ~200KB for a photograph,
+   stays sharp at any size, and doubles as the post's og:image when a link is
+   shared. */
+.blog-cover {
+  position: relative;
+  overflow: hidden;
+  background: var(--onyx-soft);
+  /* Matches the 1200x630 artwork, so no letterboxing and no layout shift
+     while it loads. */
+  aspect-ratio: 1200 / 630;
+}
+.blog-cover img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  transition: transform var(--dur-slow) var(--ease-out-expo);
+}
+
+/* The newest post, run wide. Artwork on one side, words on the other. */
+.blog-featured {
+  display: grid;
+  grid-template-columns: 1.05fr 1fr;
+  gap: 0;
+  margin-bottom: 2.5rem;
+  border-radius: 18px;
+  overflow: hidden;
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  text-decoration: none;
+  transition: transform var(--dur-base) var(--ease-out-expo),
+              border-color var(--dur-base) ease,
+              box-shadow var(--dur-base) ease;
+}
+.blog-featured .blog-cover { aspect-ratio: auto; min-height: 300px; height: 100%; }
+.blog-featured-body {
+  padding: 2.5rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+.blog-featured-tag {
+  display: inline-block;
+  align-self: flex-start;
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--accent);
+  border: 1px solid var(--accent-dim);
+  border-radius: 999px;
+  padding: 0.28rem 0.7rem;
+  margin-bottom: 1.1rem;
+}
+.blog-featured-body h2 {
+  font-family: var(--font-display);
+  font-size: clamp(1.5rem, 2.6vw, 2.1rem);
+  font-weight: 500;
+  line-height: 1.22;
+  color: var(--bone);
+  margin: 0 0 0.9rem;
+}
+.blog-featured-body p {
+  color: var(--bone-dim);
+  line-height: 1.75;
+  margin: 0 0 1.5rem;
+  font-size: 1rem;
+}
+
+/* The cover sits above the words on the grid cards. */
+.blog-card { padding: 0; overflow: hidden; }
+.blog-card-body { padding: 1.6rem; display: flex; flex-direction: column; flex: 1; }
+
+@media (hover: hover) {
+  .blog-featured:hover {
+    transform: translateY(var(--hover-lift));
+    border-color: var(--accent-dim);
+    box-shadow: var(--hover-glow);
+  }
+  .blog-featured:hover .blog-cover img,
+  .blog-card:hover .blog-cover img { transform: scale(1.04); }
+}
+.blog-featured:focus-visible,
+.blog-card:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+
+@media (max-width: 860px) {
+  .blog-featured { grid-template-columns: 1fr; }
+  .blog-featured .blog-cover { aspect-ratio: 1200 / 630; min-height: 0; }
+  .blog-featured-body { padding: 1.6rem; }
+}
+
+/* Post hero. Same artwork, full width, above the article. */
+.post-cover {
+  max-width: 900px;
+  margin: 0 auto 3rem;
+  border-radius: 18px;
+  overflow: hidden;
+  border: 1px solid var(--glass-border);
+  background: var(--onyx-soft);
+  aspect-ratio: 1200 / 630;
+}
+.post-cover img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+@media (prefers-reduced-motion: reduce) {
+  .blog-featured:hover .blog-cover img,
+  .blog-card:hover .blog-cover img { transform: none !important; }
+}

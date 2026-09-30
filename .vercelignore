@@ -26,3 +26,8 @@ graphify-out/
 # Repo metadata
 .gitignore
 .repomixignore
+
+# Build/maintenance scripts. Not secret, but there is no build step here, so
+# every tracked file becomes a public URL unless it is listed.
+tools/
+*.py
