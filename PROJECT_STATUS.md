@@ -12,8 +12,14 @@
 
 **A large conversion/SEO/content build-out landed on 2026-09-30** — see the changelog. The site went from 7 pages to 29: five service landing pages, ten case studies, a four-post blog, privacy/cookie notices, a real contact form, a sitewide WhatsApp button and analytics.
 
-**⚠️ ONE THING IS OUTSTANDING AND THE CONTACT FORM DOES NOT WORK WITHOUT IT:**
-`supabase_migration_06_contact_messages.sql` has NOT been run. Until it is, submitting the form shows "please WhatsApp us" instead of saving. Run it in the Supabase SQL Editor, then submit the form once and check the Messages tab in the dashboard.
+**The contact form is live and verified end to end (2026-09-30).** Migration 06 is applied. A real submission through the production form saved, appeared in the dashboard Messages tab with the unread badge, and the source page was recorded.
+
+Four security properties were proven against production rather than assumed, and are worth re-checking if the policies are ever edited:
+- **anon SELECT returns zero rows even when a row exists** — proving RLS blocks reads, not that the table is empty. The anon key is in the page source, so this is what stops one visitor reading another's enquiry. (Remember: RLS denial is HTTP 200 + zero rows, so an empty result only proves something when you *know* a row is there.)
+- A submission forging `status: 'archived'` is rejected (RLS `42501`) — otherwise an enquiry could arrive pre-hidden and never be seen.
+- A submission forging `notes` is rejected (RLS `42501`).
+- A 6,000-character message is rejected by the CHECK constraint (`23514`), independently of the client-side cap.
+- The honeypot shows a success message and makes **zero** network calls — confirmed from the network log, not from the on-screen text.
 
 **The canonical-URL bug is fixed but Google needs to catch up.** Every page used to declare `onyxx-tech.vercel.app` as canonical even when served from `www.onyxxtechhub.com.my`, which is why search results showed the Vercel domain. All canonicals now point at the real domain and vercel.app 308-redirects to it. Submit the new sitemap in Google Search Console to speed up re-indexing.
 
