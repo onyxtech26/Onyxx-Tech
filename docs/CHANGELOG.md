@@ -5,6 +5,31 @@ Format each entry: what was done, why it mattered, and any key decisions.
 
 ---
 
+## 2026-10-01 (favicon in Google search)
+
+### Google showed a grey globe instead of the logo
+
+Reported with a screenshot of a search result for `/web-apps`. Three causes,
+any of which is enough on its own:
+
+- **The icons were 298×326.** Google only uses favicons with a 1:1 aspect ratio.
+- **The default `rel="icon"` was `favicon-white.png`** (a white logo on
+  transparent). The light/dark variants used `media=`, which Google ignores, and
+  a white mark on Google's white results page is invisible anyway.
+- **`/favicon.ico` returned 404.** Crawlers and older browsers check it first.
+
+**Fix:** generated a square icon set (white logo on a dark rounded tile, so it
+reads on both light and dark backgrounds) from the existing logo: `/favicon.ico`
+(16/32/48), `/images/favicon-192.png` and `/apple-touch-icon.png` (180, full
+bleed). All 32 pages now link these with root-absolute paths, so the blog and
+case-study subfolders resolve them the same way. The old `favicon-white/black`
+files are left in place but nothing references them.
+
+**Decision:** one icon for both themes, not a light/dark pair. A dark tile reads
+on either background, and search engines only ever take one.
+
+---
+
 ## 2026-09-30 (blog visuals + the stale-CSS bug)
 
 ### The contact form rendered completely unstyled — and it was Cloudflare
