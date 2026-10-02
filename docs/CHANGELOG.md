@@ -28,6 +28,16 @@ files are left in place but nothing references them.
 **Decision:** one icon for both themes, not a light/dark pair. A dark tile reads
 on either background, and search engines only ever take one.
 
+**Follow-up (2026-10-02): the first set was broken.** The generator used
+Pillow's `thumbnail()`, which never scales *up*, so the 245px logo sat
+unscaled in a 1024px canvas. In the `.ico` it was about a quarter of the tile,
+and the browser tab showed a grey speck. Regenerated with `resize()`: the logo
+now fills about 88% of the tile, and the icon links carry `?v=2` to get past browser
+and Cloudflare caches. At the same time, Google's favicon service
+(`t1.gstatic.com/faviconV2`) was confirmed to still hold the **old**
+white-on-transparent PNG. That is the blank white circle in search results;
+it clears when Google re-crawls.
+
 ---
 
 ## 2026-09-30 (blog visuals + the stale-CSS bug)
