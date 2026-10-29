@@ -5,6 +5,71 @@ Format each entry: what was done, why it mattered, and any key decisions.
 
 ---
 
+## 2026-10-29 (site redesign + Johor Bahru SEO)
+
+### Why
+
+The owner makes websites for clients in Johor Bahru and could not find the site
+when searching for website design, and felt the design read as "AI slop".
+Findings: the homepage was positioned as an AI-agents studio, "website",
+"web design" and "Johor Bahru" appeared nowhere on the homepage or the web page,
+the homepage exposed ~370 crawlable words because services and work were
+rendered by JS from Supabase, and copy like "student-founder pricing"
+undercut credibility.
+
+### What changed
+
+- **New design system** (`site.css`, `site.js`): warm paper, near-black ink, one
+  vermilion accent, Archivo + Inter, real project imagery. No galaxy, splash,
+  glow, cursor effects, cyan italics or mono labels. Old `styles.css` and
+  `common.js` deleted.
+- **All 26 public pages rebuilt**, every word in the HTML. Homepage repositioned
+  around website design in Johor Bahru; new `/website-design` page as the main
+  ranking page (`/web-apps` 301s to it).
+- **Founders content removed** at the owner's request: Founders, Why and Process
+  pages deleted and 301'd; founder names removed from CTAs and the WhatsApp button.
+- **Structured data:** ProfessionalService (locality Johor Bahru only, no street
+  address invented), Service, BreadcrumbList, FAQPage, BlogPosting, CreativeWork.
+- **Blog:** new typographic covers (PNG for OG, WebP on page), article layout
+  with a sticky quote panel. **Case studies:** briefs copy-edited from the
+  Supabase rows, no invented metrics.
+- **Contact form** now a plain PostgREST insert (no supabase-js on the page);
+  payload identical; RLS checked (anon INSERT only).
+- `sitemap.xml` regenerated (26 URLs); `tools/stamp_assets.py` now stamps
+  `site.css`/`site.js` with root-absolute paths.
+
+### Verified
+
+Playwright over all 26 pages at 1440 and 390px: no page errors, no failed
+requests, no horizontal overflow, no broken images, all reveals fire. Contact
+form tested against an intercepted Supabase route (validation, success,
+server error, honeypot sends nothing). Links, images and JSON-LD checked
+statically.
+
+### Follow-up the same day
+
+- Live-site links on the Sun Tours (suntoursroma.com) and Conglomerate
+  (conglomerate4u.com) case studies, plus `sameAs` in their structured data.
+- Two new case studies: **SOLE** (staff-only tour agency management system;
+  the public site deliberately does not link its login URL, and the image is a
+  labelled illustration, not a screenshot) and **SlideForge** (offline Windows
+  carousel app, screenshot supplied by the owner). Both on the homepage in place
+  of Walletwise and Carousel Generator.
+- Website maintenance section and FAQ on `/website-design`; "Ongoing care" on
+  the SOLE and Sun Tours case studies (both are on maintenance plans).
+- Custom `404.html` (Vercel serves it automatically). Sitemap now 28 URLs.
+- Real screenshots of the live client sites are still pending: those hosts are
+  blocked by this cloud environment's network policy.
+
+### Still needed from the owner
+
+Google Business Profile (biggest local lever), whether a street address and
+hours may be published, live URLs for client sites (to replace mockup images
+with real screenshots), optional starting prices, and resubmitting the sitemap
+in Search Console. The RSTAR POS image is still hotlinked from Supabase storage.
+
+---
+
 ## 2026-10-29 (maintenance payments)
 
 ### Maintenance gets its own place in the admin dashboard
