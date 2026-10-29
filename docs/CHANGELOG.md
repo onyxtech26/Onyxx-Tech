@@ -46,6 +46,21 @@ form tested against an intercepted Supabase route (validation, success,
 server error, honeypot sends nothing). Links, images and JSON-LD checked
 statically.
 
+### Follow-up the same day
+
+- Live-site links on the Sun Tours (suntoursroma.com) and Conglomerate
+  (conglomerate4u.com) case studies, plus `sameAs` in their structured data.
+- Two new case studies: **SOLE** (staff-only tour agency management system;
+  the public site deliberately does not link its login URL, and the image is a
+  labelled illustration, not a screenshot) and **SlideForge** (offline Windows
+  carousel app, screenshot supplied by the owner). Both on the homepage in place
+  of Walletwise and Carousel Generator.
+- Website maintenance section and FAQ on `/website-design`; "Ongoing care" on
+  the SOLE and Sun Tours case studies (both are on maintenance plans).
+- Custom `404.html` (Vercel serves it automatically). Sitemap now 28 URLs.
+- Real screenshots of the live client sites are still pending: those hosts are
+  blocked by this cloud environment's network policy.
+
 ### Still needed from the owner
 
 Google Business Profile (biggest local lever), whether a street address and
