@@ -5180,3 +5180,16 @@ function getProjectImageUrl(p) {
         };
       });
     })();
+
+    /* ------------------------------------------------------------------
+       NO SCROLL-TO-CHANGE ON AMOUNT FIELDS
+       ------------------------------------------------------------------
+       A focused <input type="number"> steps its value on the mouse wheel,
+       so scrolling the page with the cursor over an amount quietly turned
+       RM400 into RM399 or RM401. Blurring on wheel cancels the step and lets
+       the page scroll as normal. Delegated from document so the fields built
+       at render time (payment and add-on forms) are covered too. */
+    document.addEventListener('wheel', e => {
+      const el = e.target;
+      if (el instanceof HTMLInputElement && el.type === 'number' && document.activeElement === el) el.blur();
+    }, { passive: true });
