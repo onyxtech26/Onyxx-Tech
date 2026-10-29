@@ -10,8 +10,8 @@
   'use strict';
 
   var WA = [
-    { name: 'Kunacosta', role: 'Founder', number: '601139884927' },
-    { name: 'Rooben', role: 'Co-founder', number: '60194688052' }
+    { name: '+60 11-3988 4927', role: 'Quotes and new projects', number: '601139884927' },
+    { name: '+60 19-468 8052', role: 'Quotes and new projects', number: '60194688052' }
   ];
 
   document.documentElement.classList.add('js');
@@ -52,7 +52,7 @@
     var wrap = document.createElement('div');
     wrap.className = 'wa-fab';
     wrap.innerHTML =
-      '<div class="wa-fab-menu" id="waFabMenu" hidden><p>Message a founder on WhatsApp</p>' +
+      '<div class="wa-fab-menu" id="waFabMenu" hidden><p>Chat with us on WhatsApp</p>' +
       WA.map(function (c) {
         return '<a href="https://wa.me/' + c.number + '" target="_blank" rel="noopener">' + c.name +
                '<small>' + c.role + '</small></a>';
@@ -78,6 +78,84 @@
     document.head.appendChild(s);
   }
 
+
+  /* Contact form → Supabase `contact_messages`, read back in the admin
+     dashboard's Messages tab. A plain PostgREST insert with the public anon
+     key: RLS grants anon INSERT and nothing else, and the CHECK constraints
+     cap every field (mirrored below so a long field is explained here rather
+     than arriving as a raw Postgres error). Avoids loading supabase-js on a
+     marketing page for one request. */
+  var SUPABASE_URL = 'https://whjstsgtximknicppllt.supabase.co';
+  var SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndoanN0c2d0eGlta25pY3BwbGx0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI3OTc5NzgsImV4cCI6MjA5ODM3Mzk3OH0.I_GHJG8XcyFO_WamEwWnme_-l1ZPUCUCuZ7roOE-B2U';
+  var FORM_LIMITS = { name: 120, email: 200, phone: 40, company: 160, message: 5000 };
+
+  function initContactForm() {
+    var form = document.getElementById('contactForm');
+    if (!form) return;
+    var status = document.getElementById('formStatus');
+    var submit = form.querySelector('[type="submit"]');
+    var inFlight = false;
+
+    function say(msg, kind) {
+      if (!status) return;
+      status.textContent = msg;
+      status.className = 'form-status is-' + kind;
+    }
+
+    form.addEventListener('submit', function (e) {
+      e.preventDefault();
+      if (inFlight) return;
+      var fd = new FormData(form);
+      var get = function (k) { return String(fd.get(k) || '').trim(); };
+
+      // Honeypot: pretend it worked and send nothing.
+      if (get('website')) { say('Thanks, we will be in touch shortly.', 'ok'); form.reset(); return; }
+
+      var payload = {
+        name: get('name'),
+        email: get('email'),
+        phone: get('phone') || null,
+        company: get('company') || null,
+        project_type: get('project_type') || null,
+        message: get('message'),
+        source_page: location.pathname
+      };
+      if (!payload.name || !payload.email || !payload.message) {
+        say('Please fill in your name, email and a short message.', 'err');
+        return;
+      }
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(payload.email)) { say('That email address does not look right.', 'err'); return; }
+      for (var k in FORM_LIMITS) {
+        if (payload[k] && payload[k].length > FORM_LIMITS[k]) { say('That ' + k + ' is too long. Please shorten it.', 'err'); return; }
+      }
+
+      inFlight = true;
+      if (submit) { submit.disabled = true; submit.dataset.label = submit.textContent; submit.textContent = 'Sending…'; }
+      say('Sending…', 'pending');
+
+      fetch(SUPABASE_URL + '/rest/v1/contact_messages', {
+        method: 'POST',
+        headers: {
+          'apikey': SUPABASE_ANON_KEY,
+          'Authorization': 'Bearer ' + SUPABASE_ANON_KEY,
+          'Content-Type': 'application/json',
+          'Prefer': 'return=minimal'
+        },
+        body: JSON.stringify(payload)
+      }).then(function (res) {
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        form.reset();
+        say('Thank you. We have your message and will reply within one working day.', 'ok');
+      }).catch(function (err) {
+        console.error('contact form:', err);
+        say('Something went wrong sending that. Please WhatsApp us instead.', 'err');
+      }).then(function () {
+        inFlight = false;
+        if (submit) { submit.disabled = false; submit.textContent = submit.dataset.label || 'Send message'; }
+      });
+    });
+  }
+
   function initYear() {
     document.querySelectorAll('[data-year]').forEach(function (el) { el.textContent = String(new Date().getFullYear()); });
   }
@@ -88,6 +166,7 @@
     initWhatsApp();
     initAnalytics();
     initYear();
+    initContactForm();
   }
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);

@@ -1,9 +1,9 @@
-"""Stamp styles.css / common.js with a content hash in every page that links them.
+"""Stamp site.css / site.js with a content hash in every page that links them.
 
 WHY THIS EXISTS
 ---------------
 The domain is proxied through Cloudflare, which overrides Vercel's cache
-policy on static assets: Vercel serves `styles.css` as
+policy on static assets: Vercel serves `site.css` as
 `max-age=0, must-revalidate`, but through the domain it arrives as
 `max-age=14400` — four hours. `max-age` is an instruction to the *browser*,
 not just to the CDN, so for four hours after a deploy a returning visitor
@@ -14,14 +14,14 @@ cached CSS has never heard of, which renders as raw unstyled browser
 defaults. This happened for real on 2026-09-30 with the new contact form.
 
 Purging the Cloudflare cache fixes it once. Versioning the URL fixes it
-permanently: `styles.css?v=a1b2c3d4` is a *different URL*, so a cached copy of
+permanently: `site.css?v=a1b2c3d4` is a *different URL*, so a cached copy of
 the old one can never be substituted for it. The hash is of the file contents,
 so it only changes when the file actually changes and repeat visits still hit
 cache.
 
 USAGE
 -----
-Run from the repo root after ANY edit to styles.css or common.js, before
+Run from the repo root after ANY edit to site.css or site.js, before
 committing:
 
     python tools/stamp_assets.py
@@ -35,7 +35,7 @@ import os
 import re
 import sys
 
-ASSETS = ["styles.css", "common.js",
+ASSETS = ["site.css", "site.js",
           # The admin tool has its own pair and sits behind the same CDN, so it
           # can go stale in exactly the same way.
           "admin-dashboard.css", "admin-dashboard.js"]
@@ -73,10 +73,10 @@ def main():
         c = io.open(path, encoding="utf-8", newline="").read()
         before = c
         for asset, stamp in stamps.items():
-            # Matches href="styles.css", src="../common.js", and any existing
+            # Matches href="site.css", src="../site.js", and any existing
             # ?v=… so re-running replaces rather than appends.
             pattern = re.compile(
-                r'((?:href|src)=")((?:\.\./)*' + re.escape(asset) + r')(\?v=[0-9a-f]+)?(")'
+                r'((?:href|src)=")((?:/|(?:\.\./)*)' + re.escape(asset) + r')(\?v=[0-9a-f]+)?(")'
             )
             c = pattern.sub(lambda m: f"{m.group(1)}{m.group(2)}?v={stamp}{m.group(4)}", c)
         if c != before:

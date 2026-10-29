@@ -7,14 +7,44 @@
       "permanent": true
     },
     {
+      "source": "/web-apps",
+      "destination": "/website-design",
+      "permanent": true
+    },
+    {
+      "source": "/founders",
+      "destination": "/",
+      "permanent": true
+    },
+    {
+      "source": "/why",
+      "destination": "/",
+      "permanent": true
+    },
+    {
+      "source": "/process",
+      "destination": "/",
+      "permanent": true
+    },
+    {
       "source": "/",
-      "has": [{ "type": "host", "value": "onyxx-tech.vercel.app" }],
+      "has": [
+        {
+          "type": "host",
+          "value": "onyxx-tech.vercel.app"
+        }
+      ],
       "destination": "https://www.onyxxtechhub.com.my/",
       "permanent": true
     },
     {
       "source": "/:path*",
-      "has": [{ "type": "host", "value": "onyxx-tech.vercel.app" }],
+      "has": [
+        {
+          "type": "host",
+          "value": "onyxx-tech.vercel.app"
+        }
+      ],
       "destination": "https://www.onyxxtechhub.com.my/:path*",
       "permanent": true
     }

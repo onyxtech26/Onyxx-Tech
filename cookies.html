@@ -1,213 +1,194 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en-MY">
 <head>
-<script>
-  (function() {
-    var root = document.documentElement;
-    root.setAttribute('data-theme', localStorage.getItem('theme') || 'dark');
-    /* Interior pages have no splash, so nothing gates the entrance animations —
-       release them at once. Without this, anything behind `html.splash-done`
-       (the masked line reveals) would never play here. */
-    root.classList.add('splash-done');
-  })();
-</script>
 <meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<script>document.documentElement.classList.add('js');</script>
 <title>Cookie Notice | Onyxx Tech</title>
 <meta name="description" content="This site sets no tracking cookies. Here is exactly what it does store on your device and why." />
 <link rel="canonical" href="https://www.onyxxtechhub.com.my/cookies" />
-
+<meta name="robots" content="index, follow" />
+<meta property="og:type" content="website" />
+<meta property="og:site_name" content="Onyxx Tech" />
 <meta property="og:title" content="Cookie Notice | Onyxx Tech" />
 <meta property="og:description" content="This site sets no tracking cookies. Here is exactly what it does store on your device and why." />
-<meta property="og:image" content="https://www.onyxxtechhub.com.my/images/onyxx-banner.png" />
-<meta property="og:type" content="website" />
 <meta property="og:url" content="https://www.onyxxtechhub.com.my/cookies" />
+<meta property="og:image" content="https://www.onyxxtechhub.com.my/images/onyxx-banner.png" />
+<meta property="og:locale" content="en_MY" />
 <meta name="twitter:card" content="summary_large_image" />
-<meta name="twitter:title" content="Cookie Notice | Onyxx Tech" />
-<meta name="twitter:description" content="This site sets no tracking cookies. Here is exactly what it does store on your device and why." />
-<meta name="twitter:image" content="https://www.onyxxtechhub.com.my/images/onyxx-banner.png" />
-<meta name="robots" content="index, follow" />
-
 <link rel="icon" href="/favicon.ico?v=2" sizes="48x48" />
 <link rel="icon" type="image/png" sizes="192x192" href="/images/favicon-192.png?v=2" />
 <link rel="apple-touch-icon" href="/apple-touch-icon.png?v=2" />
-<link rel="preload" as="image" href="images/onyxx_logo_transparent.png" type="image/png" />
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,400;9..144,500;9..144,600;9..144,700&family=JetBrains+Mono:wght@300;400;500;600&family=Outfit:wght@200;300;400;500;600;700&display=swap" rel="stylesheet">
-
-<link rel="stylesheet" href="styles.css?v=51c41b40">
-<!-- Not deferred: matches every other page, and nothing in common.js touches
-     the DOM at parse time — all of it is behind DOMContentLoaded. -->
-<script src="common.js?v=143e7993"></script>
-<script src="https://unpkg.com/@dotlottie/player-component@latest/dist/dotlottie-player.mjs" type="module"></script>
-
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@100..125,500..800&amp;family=Inter:wght@400;500;600&amp;display=swap" />
+<link rel="stylesheet" href="/site.css?v=dcdbc9e5" />
+<script src="/site.js?v=ae4f0bc0" defer></script>
 <script type="application/ld+json">
 {
-  "@context": "https://schema.org",
-  "@type": "BreadcrumbList",
-  "itemListElement": [
+ "@context": "https://schema.org",
+ "@graph": [
+  {
+   "@type": "ProfessionalService",
+   "@id": "https://www.onyxxtechhub.com.my/#business",
+   "name": "Onyxx Tech",
+   "url": "https://www.onyxxtechhub.com.my/",
+   "logo": "https://www.onyxxtechhub.com.my/images/favicon-192.png",
+   "image": "https://www.onyxxtechhub.com.my/images/onyxx-banner.png",
+   "description": "Web design and development studio in Johor Bahru building custom websites, web apps and WhatsApp chatbots.",
+   "email": "onyxtech26@gmail.com",
+   "telephone": "+60-11-3988-4927",
+   "address": {
+    "@type": "PostalAddress",
+    "addressLocality": "Johor Bahru",
+    "addressRegion": "Johor",
+    "addressCountry": "MY"
+   },
+   "areaServed": [
     {
-      "@type": "ListItem",
-      "position": 1,
-      "name": "Home"
+     "@type": "City",
+     "name": "Johor Bahru"
     },
     {
-      "@type": "ListItem",
-      "position": 2,
-      "name": "Cookies",
-      "item": "https://www.onyxxtechhub.com.my/cookies"
+     "@type": "State",
+     "name": "Johor"
+    },
+    {
+     "@type": "Country",
+     "name": "Malaysia"
     }
-  ]
+   ],
+   "knowsAbout": [
+    "Web design",
+    "Website development",
+    "Web applications",
+    "WhatsApp chatbots",
+    "Business automation",
+    "Search engine optimisation"
+   ]
+  },
+  {
+   "@type": "BreadcrumbList",
+   "itemListElement": [
+    {
+     "@type": "ListItem",
+     "position": 1,
+     "name": "Home",
+     "item": "https://www.onyxxtechhub.com.my/"
+    },
+    {
+     "@type": "ListItem",
+     "position": 2,
+     "name": "Cookie notice",
+     "item": "https://www.onyxxtechhub.com.my/cookies"
+    }
+   ]
+  }
+ ]
 }
 </script>
 </head>
 <body>
+<a class="skip-link" href="#main">Skip to content</a>
 
-<a href="#main-content" class="skip-link">Skip to main content</a>
-<canvas id="pageGalaxy" aria-hidden="true"></canvas>
-<div class="cursor-glow" id="cursorGlow"></div>
-<div class="noise"></div>
-
-<!-- ============ NAV ============ -->
-<div class="nav-container">
-  <nav id="nav">
-    <a href="/" class="nav-logo" aria-label="Onyxx Tech — home" title="Double-click for admin login">
-      <img src="images/onyxx_logo_transparent.png" alt="Onyxx Tech" class="nav-logo-img" />
-    </a>
-
-    <ul class="nav-links" id="navLinks">
-        <li><a href="services">Services</a></li>
-        <li><a href="why">Why Us</a></li>
-        <li><a href="work">Work</a></li>
-        <li><a href="process">Process</a></li>
-        <li><a href="blog">Blog</a></li>
-        <li><a href="founders">Founders</a></li>
-        <li class="nav-link-contact"><a href="contact">Contact</a></li>
-    </ul>
-
-    <div class="nav-right">
-      <a href="contact" class="nav-email">Contact</a>
-
-      <button id="themeToggleBtn" class="theme-toggle" aria-label="Toggle theme">
-        <svg class="sun-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-          <circle cx="12" cy="12" r="5"></circle>
-          <line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line>
-          <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
-          <line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line>
-          <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
-        </svg>
-        <svg class="moon-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:none" aria-hidden="true">
-          <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
-        </svg>
-      </button>
-    </div>
-
-    <button class="nav-toggle" id="navToggle" aria-label="Toggle menu" aria-expanded="false" aria-controls="navLinks">
-      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
-        <line x1="3" y1="8" x2="21" y2="8"/><line x1="3" y1="16" x2="21" y2="16"/>
-      </svg>
+<header class="site-header">
+  <div class="wrap">
+    <a class="brand" href="/" aria-label="Onyxx Tech home"><img src="/images/onyxx-wordmark-ink.png" alt="Onyxx Tech" width="414" height="120" /></a>
+    <nav class="nav" id="site-nav" aria-label="Main">
+      <a href="/website-design">Website design</a>
+      <a href="/services">Services</a>
+      <a href="/work">Work</a>
+      <a href="/blog">Blog</a>
+      <a href="/contact">Contact</a>
+      <a class="btn btn-primary nav-mobile-cta" href="/contact">Get a quote</a>
+    </nav>
+    <a class="btn btn-primary header-cta" href="/contact">Get a quote</a>
+    <button class="nav-toggle" type="button" aria-controls="site-nav" aria-expanded="false" aria-label="Open menu">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
     </button>
-  </nav>
-</div>
-
-<header class="page-header">
-  <div class="crumbs">Home<span>/</span>Cookies</div>
-  <div class="section-label">Cookies</div>
-  <h1 class="page-title lines">
-      <span class="line"><span>No cookie banner,</span></span>
-      <span class="line"><span><em>because no cookies.</em></span></span>
-  </h1>
-  <p class="page-intro">There is nothing here to accept or decline. This page explains why.</p>
+  </div>
 </header>
-<main id="main-content" class="page-body">
-<section class="section reveal">
-  <div class="post-meta">Last updated 30 September 2026</div>
-  <div class="post-body">
-    <p>Short version: this site sets no tracking cookies, so there is no cookie banner to dismiss.</p>
 
-    <h2>What we do not use</h2>
-    <p>No advertising cookies, no third-party tracking cookies, no Google Analytics, no Facebook
+<main id="main">
+  <section class="page-hero">
+    <div class="wrap">
+      <ol class="crumbs"><li><a href="/">Home</a></li><li aria-current="page">Cookie notice</li></ol>
+      <h1>Cookie notice</h1>
+      <p class="article-meta">Last updated 30 September 2026</p>
+    </div>
+  </section>
+  <section class="section" style="padding-top: 0;">
+    <div class="wrap"><div class="prose">
+<p>Short version: this site sets no tracking cookies, so there is no cookie banner to dismiss.</p>
+<h2>What we do not use</h2>
+<p>No advertising cookies, no third-party tracking cookies, no Google Analytics, no Facebook
     pixel, no cross-site profiling of any kind. Nothing on this site follows you to another website.</p>
-
-    <h2>What we do store on your device</h2>
-    <p>Two small entries in your browser's local storage — which is not a cookie and is never sent
+<h2>What we do store on your device</h2>
+<p>Two small entries in your browser's local storage — which is not a cookie and is never sent
     to our server:</p>
-    <ul>
-      <li><strong>Your theme preference</strong> (dark or light), so the site does not flash the
+<ul>
+<li><strong>Your theme preference</strong> (dark or light), so the site does not flash the
       wrong one at you on your next visit.</li>
-      <li><strong>Whether you have seen the intro animation</strong> this session.</li>
-    </ul>
-    <p>Both stay on your device. You can clear them at any time through your browser settings, and
+<li><strong>Whether you have seen the intro animation</strong> this session.</li>
+</ul>
+<p>Both stay on your device. You can clear them at any time through your browser settings, and
     the site will work exactly as before.</p>
-
-    <h2>Analytics</h2>
-    <p>We use Vercel Web Analytics to count page views. It is cookie-less and aggregates data
-    without identifying individual visitors. See our <a href="privacy">privacy notice</a> for
+<h2>Analytics</h2>
+<p>We use Vercel Web Analytics to count page views. It is cookie-less and aggregates data
+    without identifying individual visitors. See our <a href="/privacy">privacy notice</a> for
     detail.</p>
-
-    <h2>Embedded content</h2>
-    <p>We load fonts from Google Fonts and a small number of scripts from public CDNs
+<h2>Embedded content</h2>
+<p>We load fonts from Google Fonts and a small number of scripts from public CDNs
     (jsDelivr, unpkg) to render the site. These providers may log the request as part of serving
     the file, in the ordinary way any web request is logged. We do not pass them any information
     about you.</p>
-
-    <h2>Questions</h2>
-    <p>Email <a href="mailto:onyxtech26@gmail.com">onyxtech26@gmail.com</a>.</p>
-  </div>
-</section>
+<h2>Questions</h2>
+<p>Email <a href="mailto:onyxtech26@gmail.com">onyxtech26@gmail.com</a>.</p>
+    </div></div>
+  </section>
 </main>
 
-<!-- ============ FOOTER ============ -->
-<footer>
-  <div class="footer-inner">
-    <div>
-      <img src="images/onyxx_logo_transparent.png" alt="" class="footer-brand-mark" />
-      <p class="footer-tagline">Custom AI agents, chatbots, and automations — engineered to work where your business already lives.</p>
-    </div>
-
-    <div>
-      <div class="footer-col-title">Explore</div>
-      <ul class="footer-links">
-        <li><a href="">Home</a></li>
-        <li><a href="services">Services</a></li>
-        <li><a href="work">Work</a></li>
-        <li><a href="why">Why Us</a></li>
-        <li><a href="process">Process</a></li>
-        <li><a href="blog">Blog</a></li>
-        <li><a href="founders">Founders</a></li>
-      </ul>
-    </div>
-
-    <div>
-      <div class="footer-col-title">Services</div>
-      <ul class="footer-links">
-        <li><a href="ai-agents">AI Agents</a></li>
-        <li><a href="chatbots">Chatbots</a></li>
-        <li><a href="custom-software">Custom Software</a></li>
-        <li><a href="web-apps">Web &amp; Apps</a></li>
-        <li><a href="automations">Automations</a></li>
-      </ul>
-    </div>
-
-    <div>
-      <div class="footer-col-title">Talk to us</div>
-      <div class="footer-contact">
-        <a href="mailto:onyxtech26@gmail.com">onyxtech26@gmail.com</a>
-        <a href="https://wa.me/601139884927" target="_blank" rel="noopener">WhatsApp Kunacosta</a>
-        <a href="https://wa.me/60194688052" target="_blank" rel="noopener">WhatsApp Rooben</a>
-        <a href="contact">Start a project</a>
+<footer class="site-footer">
+  <div class="wrap">
+    <div class="footer-grid">
+      <div class="footer-brand">
+        <img src="/images/onyxx-wordmark-paper.png" alt="Onyxx Tech" width="414" height="120" loading="lazy" />
+        <p>Web design and development studio in Johor Bahru, Malaysia. Websites, web apps, WhatsApp chatbots and automations.</p>
+      </div>
+      <div>
+        <h4>Services</h4>
+        <ul>
+          <li><a href="/website-design">Website design</a></li>
+          <li><a href="/custom-software">Web apps &amp; systems</a></li>
+          <li><a href="/chatbots">WhatsApp chatbots</a></li>
+          <li><a href="/ai-agents">AI agents</a></li>
+          <li><a href="/automations">Automations</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4>Studio</h4>
+        <ul>
+          <li><a href="/work">Work</a></li>
+          <li><a href="/services">All services</a></li>
+          <li><a href="/blog">Blog</a></li>
+          <li><a href="/contact">Contact</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4>Contact</h4>
+        <ul>
+          <li>Johor Bahru, Johor, Malaysia</li>
+          <li><a href="mailto:onyxtech26@gmail.com">onyxtech26@gmail.com</a></li>
+          <li><a href="https://wa.me/601139884927" target="_blank" rel="noopener">+60 11-3988 4927</a></li>
+          <li><a href="https://wa.me/60194688052" target="_blank" rel="noopener">+60 19-468 8052</a></li>
+        </ul>
       </div>
     </div>
-  </div>
-
-  <div class="footer-bottom">
-    <div>© 2026 Onyxx Tech · Located in Malaysia · <a href="privacy">Privacy</a> · <a href="cookies">Cookies</a></div>
-    <div>Founder-led · AI-native · Built to ship</div>
+    <div class="footer-bottom">
+      <span>&copy; <span data-year>2026</span> Onyxx Tech. All rights reserved.</span>
+      <span><a href="/privacy">Privacy</a> &nbsp;·&nbsp; <a href="/cookies">Cookies</a></span>
+    </div>
   </div>
 </footer>
-
 </body>
 </html>
