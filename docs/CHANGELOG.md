@@ -61,6 +61,19 @@ statically.
 - Real screenshots of the live client sites are still pending: those hosts are
   blocked by this cloud environment's network policy.
 
+### Copy and design pass (owner asked: nothing that reads as AI-written, no em dashes)
+
+- Removed every em dash from the public pages (94 of them), each rewritten
+  with fitting punctuation rather than swapped mechanically. Titles now use
+  `:` or `|`.
+- Slogan headings replaced with plain ones ("Real projects for real clients."
+  became "Recent projects"; service H1s now name the service and place).
+- Dropped the coloured last word in headlines, the dot label above every
+  section heading, and the decorative 01-04 numbering on services.
+- Cut filler words ("honestly", "actually", "genuinely") and "not X, it is Y"
+  lines; renamed aphorism card titles to plain descriptions.
+- Blog cover images re-rendered for the changed post title.
+
 ### Still needed from the owner
 
 Google Business Profile (biggest local lever), whether a street address and
