@@ -109,6 +109,7 @@
         </div>
         <button type="button" class="nav-item" data-tab="messages" data-primary="1" onclick="switchTab('messages')" title="Messages"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg> <span>Messages</span> <span class="nav-badge" id="msgBadge" hidden>0</span></button>
         <button type="button" class="nav-item" data-tab="payments" onclick="switchTab('payments')" title="Payments"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg> <span>Payments</span></button>
+        <button type="button" class="nav-item" data-tab="maintenance" onclick="switchTab('maintenance')" title="Maintenance"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"></path></svg> <span>Maintenance</span></button>
         <button type="button" class="nav-item" data-tab="quotations" onclick="switchTab('quotations')" title="Quotations"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="13" y2="17"/></svg> <span>Quotations</span></button>
         <button type="button" class="nav-item" data-tab="expenses" onclick="switchTab('expenses')" title="Expenses"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"></line><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg> <span>Expenses</span></button>
         <button type="button" class="nav-item" data-tab="cashflow" onclick="switchTab('cashflow')" title="Cash Flow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg> <span>Cash Flow</span></button>
@@ -346,6 +347,66 @@
               </tr>
             </thead>
             <tbody id="paymentsTableBody"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section id="tab-maintenance" class="tab-section">
+        <h1 class="section-title">Maintenance</h1>
+        <p style="color: var(--bone-dim); font-size: 0.88rem; margin-top: -0.5rem; margin-bottom: 1.5rem;">
+          Recurring fees clients pay after a project is delivered. They count as collected cash and
+          go into the partner pool, but never against the project's contract total.
+        </p>
+
+        <div class="section-header" style="margin-bottom: 1.5rem; gap: 0.6rem; flex-wrap: wrap;">
+          <button class="btn-primary" style="width: auto; padding: 0.6rem 1.4rem;"
+                  onclick="openMaintenancePaymentModal()">+ Record payment</button>
+          <button class="btn-outline" style="width: auto; padding: 0.6rem 1.4rem; margin: 0;"
+                  onclick="openMaintenancePlanModal()">Set up plan</button>
+        </div>
+
+        <div class="kpi-grid" style="margin-bottom: 1.5rem;">
+          <div class="glass-card kpi-card">
+            <div class="kpi-val" id="kpiMaintMonthly">RM 0.00</div>
+            <div class="kpi-lbl">Recurring per month (active plans)</div>
+          </div>
+          <div class="glass-card kpi-card">
+            <div class="kpi-val" id="kpiMaintYear" style="color: var(--pos);">RM 0.00</div>
+            <div class="kpi-lbl" id="kpiMaintYearLbl">Collected this year</div>
+          </div>
+          <div class="glass-card kpi-card">
+            <div class="kpi-val" id="kpiMaintAll">RM 0.00</div>
+            <div class="kpi-lbl">Collected all time</div>
+          </div>
+          <div class="glass-card kpi-card">
+            <div class="kpi-val" id="kpiMaintDue" style="color: var(--warn);">0</div>
+            <div class="kpi-lbl">Plans due or overdue</div>
+          </div>
+        </div>
+
+        <h3 style="font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.14em; color: var(--bone-dim); margin: 0 0 0.6rem;">Clients</h3>
+        <div class="glass-card table-container" style="margin-bottom: 2rem;">
+          <table>
+            <thead>
+              <tr>
+                <th>Project</th><th>Client</th><th>Plan</th>
+                <th>Paid through</th><th>Next due</th><th>Status</th><th></th>
+              </tr>
+            </thead>
+            <tbody id="maintPlansBody"></tbody>
+          </table>
+        </div>
+
+        <h3 style="font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.14em; color: var(--bone-dim); margin: 0 0 0.6rem;">Payments</h3>
+        <div class="glass-card table-container">
+          <table>
+            <thead>
+              <tr>
+                <th>Project</th><th>Period</th><th>Amount</th>
+                <th>Method</th><th>Status</th><th></th>
+              </tr>
+            </thead>
+            <tbody id="maintPaymentsBody"></tbody>
           </table>
         </div>
       </section>
@@ -1096,6 +1157,118 @@
       </div>
     </div>
 
+    <!-- Maintenance Payment Modal -->
+    <div class="modal-backdrop" id="maintenancePaymentModal">
+      <div class="custom-modal" style="max-width: 540px;">
+        <div class="modal-header">
+          <h3 class="modal-title" id="maintPayModalTitle">Record maintenance payment</h3>
+          <button class="modal-close-btn" onclick="closeModal('maintenancePaymentModal')" aria-label="Close">&times;</button>
+        </div>
+        <form id="maintenancePaymentForm" onsubmit="saveMaintenancePayment(event)">
+          <input type="hidden" id="maintPayId" />
+          <div class="form-group">
+            <label class="form-label" for="maintPayProject">Project</label>
+            <select id="maintPayProject" class="form-control" required onchange="maintPayProjectChanged()"></select>
+            <div id="maintPayHint" style="font-size: 0.76rem; color: var(--bone-dim); margin-top: 0.35rem;"></div>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="maintPayAmount">Amount (MYR)</label>
+            <input type="number" id="maintPayAmount" step="0.01" min="0.01" class="form-control" required />
+          </div>
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 0 1rem;">
+            <div class="form-group">
+              <label class="form-label" for="maintPayFrom">Covers from</label>
+              <input type="date" id="maintPayFrom" class="form-control" onchange="maintPayFromChanged()" />
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="maintPayTo">Covers until</label>
+              <input type="date" id="maintPayTo" class="form-control" />
+            </div>
+          </div>
+          <div class="form-group">
+            <label style="display: inline-flex; align-items: center; gap: 0.5rem; cursor: pointer; font-size: 0.88rem;">
+              <input type="checkbox" id="maintPayReceived" onchange="syncMaintReceivedFields()" />
+              Money received
+            </label>
+            <div style="font-size: 0.74rem; color: var(--bone-dim); margin-top: 0.25rem;">
+              Untick to log an invoice you have sent but not been paid for yet.
+            </div>
+          </div>
+          <div class="form-group" id="maintPayReceivedDateWrap">
+            <label class="form-label" for="maintPayReceivedDate">Date received</label>
+            <input type="date" id="maintPayReceivedDate" class="form-control" />
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="maintPayMethod">Method</label>
+            <select id="maintPayMethod" class="form-control">
+              <option value="">&mdash;</option>
+              <option>Bank transfer</option>
+              <option>Cash</option>
+              <option>Cheque</option>
+              <option>Card</option>
+              <option>Other</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="maintPayNotes">Notes (Optional)</label>
+            <textarea id="maintPayNotes" class="form-control" rows="2" placeholder="e.g. hosting + minor content updates"></textarea>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn-outline" style="margin-top: 0;" onclick="closeModal('maintenancePaymentModal')">Cancel</button>
+            <button type="submit" class="btn-primary">Save</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Maintenance Plan Modal -->
+    <div class="modal-backdrop" id="maintenancePlanModal">
+      <div class="custom-modal" style="max-width: 500px;">
+        <div class="modal-header">
+          <h3 class="modal-title">Maintenance plan</h3>
+          <button class="modal-close-btn" onclick="closeModal('maintenancePlanModal')" aria-label="Close">&times;</button>
+        </div>
+        <form id="maintenancePlanForm" onsubmit="saveMaintenancePlan(event)">
+          <p style="font-size: 0.8rem; color: var(--bone-dim); margin: 0 0 1rem;">
+            What the client agreed to pay. Used to pre-fill payments and show what is due next &mdash;
+            nothing is charged or recorded automatically.
+          </p>
+          <div class="form-group">
+            <label class="form-label" for="maintPlanProject">Project</label>
+            <select id="maintPlanProject" class="form-control" required onchange="maintPlanProjectChanged()"></select>
+          </div>
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 0 1rem;">
+            <div class="form-group">
+              <label class="form-label" for="maintPlanFee">Fee (MYR)</label>
+              <input type="number" id="maintPlanFee" step="0.01" min="0.01" class="form-control" required />
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="maintPlanCycle">Every</label>
+              <select id="maintPlanCycle" class="form-control" required>
+                <option value="monthly">Month</option>
+                <option value="quarterly">Quarter (3 months)</option>
+                <option value="half-yearly">6 months</option>
+                <option value="yearly">Year</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="maintPlanStart">First period starts</label>
+              <input type="date" id="maintPlanStart" class="form-control" />
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="maintPlanEnd">Ends (optional)</label>
+              <input type="date" id="maintPlanEnd" class="form-control" />
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn-outline" id="maintPlanRemoveBtn" style="margin-top: 0; margin-right: auto; color: var(--neg);" onclick="removeMaintenancePlan()">Remove plan</button>
+            <button type="button" class="btn-outline" style="margin-top: 0;" onclick="closeModal('maintenancePlanModal')">Cancel</button>
+            <button type="submit" class="btn-primary">Save plan</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
     <!-- Team Modal -->
     <div class="modal-backdrop" id="teamModal">
       <div class="custom-modal">
@@ -1228,6 +1401,6 @@
     </div>
   </div>
 
-  <script src="admin-dashboard.js?v=59e12696"></script>
+  <script src="admin-dashboard.js?v=a6758c49"></script>
 </body>
 </html>
