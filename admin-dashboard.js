@@ -925,7 +925,11 @@ function getProjectImageUrl(p) {
           payments: [],
           scheduled: 0, collected: 0, outstanding: 0, overdue: 0,
           contractTotal: 0,
-          quotations: []
+          quotations: [],
+          // Maintenance is kept OUT of the figures above: it is recurring
+          // income on top of the build price, not part of it, so counting it
+          // there made a fully paid project read as overpaid.
+          maintenance: [], maintCollected: 0, maintDue: 0, maintOverdue: 0
         };
       });
 
@@ -946,8 +950,17 @@ function getProjectImageUrl(p) {
       paymentsData.forEach(pay => {
         const t = byProject[pay.project_id];
         if (!t) return;
-        t.payments.push(pay);
         const amt = parseFloat(pay.amount) || 0;
+        if (isMaintenancePayment(pay)) {
+          t.maintenance.push(pay);
+          if (pay.received) t.maintCollected += amt;
+          else {
+            t.maintDue += amt;
+            if (pay.due_date && pay.due_date < today) t.maintOverdue += amt;
+          }
+          return;
+        }
+        t.payments.push(pay);
         t.scheduled += amt;
         if (pay.received) {
           t.collected += amt;
@@ -970,6 +983,7 @@ function getProjectImageUrl(p) {
       // tabs disagree with no indication which was right.
       let collected = 0, scheduled = 0, outstanding = 0, overdue = 0, contractTotal = 0;
       let outstandingOwed = 0, overpaidTotal = 0;
+      let maintenanceCollected = 0, maintenanceDue = 0, maintenanceOverdue = 0;
       Object.values(byProject).forEach(t => {
         // What the client owes in total is the agreed value plus anything added
         // afterwards — not the sum of the payment schedule, which may be
@@ -979,7 +993,16 @@ function getProjectImageUrl(p) {
         t.payments.sort((a, b) =>
           (a.sort_order - b.sort_order) || String(a.due_date || '').localeCompare(String(b.due_date || '')));
 
-        collected += t.collected;
+        t.maintenance.sort((a, b) =>
+          String(a.due_date || a.received_date || '').localeCompare(String(b.due_date || b.received_date || '')));
+
+        // Maintenance money is real cash in the account, so it joins the
+        // collected total that the pool, cash and revenue all derive from —
+        // it just never touches this project's outstanding.
+        collected += t.collected + t.maintCollected;
+        maintenanceCollected += t.maintCollected;
+        maintenanceDue += t.maintDue;
+        maintenanceOverdue += t.maintOverdue;
         scheduled += t.scheduled;
         outstanding += t.outstanding;
         outstandingOwed += Math.max(0, t.outstanding);
@@ -1068,6 +1091,7 @@ function getProjectImageUrl(p) {
       fin = {
         byProject, collected, scheduled, outstanding, outstandingOwed, overpaidTotal,
         overdue, contractTotal,
+        maintenanceCollected, maintenanceDue, maintenanceOverdue,
         expenses, companyExpenses, netProfit, share, withdrawn, balance,
         personalSpend, distributablePool,
         withdrawnTotal, cashInAccount, sstReserved, distributable, unattributed,
@@ -1142,8 +1166,14 @@ function getProjectImageUrl(p) {
     function projectFin(id) {
       return fin.byProject[id] || {
         value: 0, addons: [], addonsTotal: 0, addonsUnbilled: 0, payments: [], quotations: [],
-        scheduled: 0, collected: 0, outstanding: 0, overdue: 0, contractTotal: 0
+        scheduled: 0, collected: 0, outstanding: 0, overdue: 0, contractTotal: 0,
+        maintenance: [], maintCollected: 0, maintDue: 0, maintOverdue: 0
       };
+    }
+
+    /** A maintenance fee rather than part of the build price. See migration 07. */
+    function isMaintenancePayment(pay) {
+      return pay && pay.kind === 'maintenance';
     }
 
     /**
@@ -1242,6 +1272,7 @@ function getProjectImageUrl(p) {
         renderOverview();
         renderProjects();
         renderPayments();
+        renderMaintenance();
         renderQuotations();
         renderExpenses();
         renderCashflow();
@@ -2749,6 +2780,24 @@ function getProjectImageUrl(p) {
           </tr>`).join('') : `<tr><td colspan="5" style="color:var(--bone-dim);padding:0.75rem 0;">
             No add-ons. Add one when the client agrees extra scope after the quote.</td></tr>`;
 
+      const proj = projectsData.find(p => p.id === projectId);
+      const maintPlanText = hasMaintenancePlan(proj)
+        ? `${formatMYR(proj.maintenance_fee)} per ${MAINT_CYCLE_LABEL[proj.maintenance_cycle]}` : '';
+      const maintRows = (maintPlanText
+          ? `<div style="font-size:0.82rem;margin-bottom:0.4rem;">Plan: <strong>${maintPlanText}</strong></div>` : '') +
+        (t.maintenance.length ? `
+        <table style="width:100%;font-size:0.85rem;"><tbody>${t.maintenance.map(pay => `
+          <tr>
+            <td>${esc(maintPeriodLabel(pay.due_date, pay.period_end) || pay.label || 'Maintenance')}</td>
+            <td style="white-space:nowrap;font-weight:500;">${formatMYR(pay.amount)}</td>
+            <td style="white-space:nowrap;">${pay.received
+              ? `<span style="color:var(--pos);font-size:0.8rem;">Received ${formatDate(pay.received_date)}</span>`
+              : `<span style="color:var(--warn);font-size:0.8rem;">Not yet</span>`}</td>
+          </tr>`).join('')}</tbody></table>
+        <div style="font-size:0.78rem;color:var(--bone-dim);margin-top:0.3rem;">
+          ${formatMYR(t.maintCollected)} maintenance collected. Edit or delete rows on the Maintenance tab.
+        </div>` : `<div style="color:var(--bone-dim);font-size:0.82rem;">No maintenance payments yet.</div>`);
+
       const quotes = t.quotations.length ? t.quotations.map(q => `
           <div style="display:flex;align-items:center;gap:0.75rem;flex-wrap:wrap;font-size:0.82rem;">
             <span style="font-family:var(--font-mono);">${esc(q.quote_number || 'no ref')}</span>
@@ -2794,6 +2843,18 @@ function getProjectImageUrl(p) {
           <input name="notes" class="form-control" placeholder="Notes (optional)" style="width:12rem;" />
           <button type="submit" class="btn-primary" style="margin:0;width:auto;padding:0.5rem 1rem;">Add payment</button>
         </form>
+
+        <h4 style="font-size:0.8rem;text-transform:uppercase;letter-spacing:0.14em;color:var(--bone-dim);margin:0 0 0.5rem;">Maintenance</h4>
+        <p style="font-size:0.78rem;color:var(--bone-dim);margin:0 0 0.5rem;">
+          Recurring fees on top of the project price &mdash; counted as collected cash, never against the contract.
+        </p>
+        ${maintRows}
+        <div style="display:flex;gap:0.5rem;flex-wrap:wrap;margin:0.5rem 0 1.75rem;">
+          <button type="button" class="btn-primary" style="margin:0;width:auto;padding:0.4rem 0.9rem;font-size:0.8rem;"
+                  onclick="openMaintenancePaymentModal(null, '${escArg(projectId)}')">Record maintenance payment</button>
+          <button type="button" class="btn-outline" style="margin:0;width:auto;padding:0.4rem 0.9rem;font-size:0.8rem;"
+                  onclick="openMaintenancePlanModal('${escArg(projectId)}')">${maintPlanText ? 'Edit plan' : 'Set up plan'}</button>
+        </div>
 
         <h4 style="font-size:0.8rem;text-transform:uppercase;letter-spacing:0.14em;color:var(--bone-dim);margin:0 0 0.5rem;">Add-ons</h4>
         <table style="width:100%;font-size:0.85rem;margin-bottom:0.5rem;"><tbody>${addonRows}</tbody></table>
@@ -3108,7 +3169,8 @@ function getProjectImageUrl(p) {
         tr.innerHTML = `
           <td style="font-weight:500;white-space:nowrap;">${proj ? esc(proj.name) : '<span style="opacity:0.5;">(deleted project)</span>'}</td>
           <td style="white-space:nowrap;">${proj ? esc(proj.client || '-') : '-'}</td>
-          <td>${esc(pay.label || 'Installment')}</td>
+          <td>${esc(pay.label || 'Installment')}${isMaintenancePayment(pay)
+            ? ' <span class="status-badge status-badge--neutral" style="margin-left:0.3rem;">Maintenance</span>' : ''}</td>
           <td style="white-space:nowrap;font-weight:500;">${formatMYR(pay.amount)}</td>
           <td style="white-space:nowrap;color:${od ? 'var(--neg)' : 'inherit'};">
             ${pay.due_date ? formatDate(pay.due_date) : '<span style="opacity:0.4;">&mdash;</span>'}
@@ -3123,6 +3185,392 @@ function getProjectImageUrl(p) {
         `;
         tbody.appendChild(tr);
       });
+    }
+
+    /* ==================================================================
+       MAINTENANCE TAB — recurring fees on finished projects
+       ==================================================================
+       A maintenance payment is a project_payments row with kind =
+       'maintenance' (migration 07). Keeping it in the same table means cash,
+       revenue-by-month, the Payments tab and the partner pool all pick it up
+       with no second code path; computeFinancials() keeps it out of the
+       project's contract outstanding.
+
+       The optional plan on the project (fee + cycle + start) is only used to
+       pre-fill the form and work out what is due next. Nothing is ever
+       generated automatically — a row exists only once you key it in. */
+
+    const MAINT_CYCLE_MONTHS = { monthly: 1, quarterly: 3, 'half-yearly': 6, yearly: 12 };
+    const MAINT_CYCLE_LABEL = { monthly: 'month', quarterly: 'quarter', 'half-yearly': 'half-year', yearly: 'year' };
+
+    function isoFromDate(d) {
+      return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    }
+
+    /** Add calendar months, clamping to the last day (31 Jan + 1 → 28/29 Feb). */
+    function addMonthsISO(iso, n) {
+      const d = parseLocalDate(iso);
+      if (!d) return null;
+      const day = d.getDate();
+      d.setDate(1);
+      d.setMonth(d.getMonth() + n);
+      const last = new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate();
+      d.setDate(Math.min(day, last));
+      return isoFromDate(d);
+    }
+
+    function addDaysISO(iso, n) {
+      const d = parseLocalDate(iso);
+      if (!d) return null;
+      d.setDate(d.getDate() + n);
+      return isoFromDate(d);
+    }
+
+    /** Last day covered by a period starting `from`, for a given cycle. */
+    function maintPeriodEnd(from, cycle) {
+      const months = MAINT_CYCLE_MONTHS[cycle];
+      if (!from || !months) return null;
+      return addDaysISO(addMonthsISO(from, months), -1);
+    }
+
+    /** "Nov 2026", or "Nov 2026 – Jan 2027" when it spans months. */
+    function maintPeriodLabel(from, to) {
+      const m = iso => { const d = parseLocalDate(iso); return d ? d.toLocaleDateString('en-GB', { month: 'short', year: 'numeric' }) : ''; };
+      if (!from) return '';
+      const a = m(from), b = to ? m(to) : '';
+      return b && b !== a ? `${a} – ${b}` : a;
+    }
+
+    function hasMaintenancePlan(p) {
+      return !!(p && parseFloat(p.maintenance_fee) > 0 && MAINT_CYCLE_MONTHS[p.maintenance_cycle]);
+    }
+
+    /**
+     * Where a project's maintenance stands.
+     *
+     * paidThrough is the latest day covered by a RECEIVED payment — an
+     * unpaid row is an invoice, not cover. A row with no period_end (keyed
+     * before the field existed) is assumed to cover one plan cycle from its
+     * due date.
+     */
+    function maintenanceStatus(p) {
+      const t = projectFin(p.id);
+      const plan = hasMaintenancePlan(p);
+      const today = todayLocal();
+
+      let paidThrough = null, lastPaid = null;
+      t.maintenance.forEach(pay => {
+        if (!pay.received) return;
+        if (!lastPaid || String(pay.received_date) > String(lastPaid.received_date)) lastPaid = pay;
+        const end = pay.period_end || (plan ? maintPeriodEnd(pay.due_date, p.maintenance_cycle) : null);
+        if (end && (!paidThrough || end > paidThrough)) paidThrough = end;
+      });
+
+      const nextDue = plan ? (paidThrough ? addDaysISO(paidThrough, 1) : (p.maintenance_start || null)) : null;
+
+      let state = 'none';
+      if (plan) {
+        if (p.maintenance_end && (p.maintenance_end < today || (nextDue && nextDue > p.maintenance_end))) state = 'ended';
+        else if (!nextDue) state = 'nostart';
+        else if (nextDue < today) state = 'overdue';
+        else if (nextDue <= addDaysISO(today, 7)) state = 'soon';
+        else state = 'ok';
+      }
+      return { plan, paidThrough, nextDue, lastPaid, state, t };
+    }
+
+    function renderMaintenance() {
+      const plansBody = document.getElementById('maintPlansBody');
+      const payBody = document.getElementById('maintPaymentsBody');
+      if (!plansBody || !payBody) return;
+      const today = todayLocal();
+      const year = today.substring(0, 4);
+
+      // Every project that has a plan or has ever paid maintenance.
+      const projects = projectsData.filter(p => hasMaintenancePlan(p) || projectFin(p.id).maintenance.length);
+
+      let monthly = 0, dueCount = 0;
+      const statuses = projects.map(p => {
+        const s = maintenanceStatus(p);
+        if (s.plan && s.state !== 'ended') {
+          monthly += parseFloat(p.maintenance_fee) / MAINT_CYCLE_MONTHS[p.maintenance_cycle];
+        }
+        if (s.state === 'overdue' || s.state === 'soon') dueCount++;
+        return { p, s };
+      });
+
+      const maintRows = paymentsData.filter(isMaintenancePayment);
+      let thisYear = 0;
+      maintRows.forEach(pay => {
+        if (pay.received && String(pay.received_date || '').startsWith(year)) thisYear += parseFloat(pay.amount) || 0;
+      });
+
+      const set = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
+      set('kpiMaintMonthly', formatMYR(monthly));
+      set('kpiMaintYear', formatMYR(thisYear));
+      set('kpiMaintAll', formatMYR(fin.maintenanceCollected || 0));
+      set('kpiMaintDue', String(dueCount));
+      set('kpiMaintYearLbl', `Collected in ${year}`);
+
+      // Most urgent first.
+      const rank = { overdue: 0, soon: 1, nostart: 2, none: 3, ok: 4, ended: 5 };
+      statuses.sort((a, b) => (rank[a.s.state] - rank[b.s.state])
+        || String(a.s.nextDue || '9999').localeCompare(String(b.s.nextDue || '9999')));
+
+      const stateHTML = s => ({
+        overdue: `<span style="color:var(--neg);font-weight:600;">Overdue</span>`,
+        soon:    `<span style="color:var(--warn);font-weight:600;">Due soon</span>`,
+        ok:      `<span style="color:var(--pos);">Up to date</span>`,
+        ended:   `<span style="color:var(--bone-dim);">Ended</span>`,
+        nostart: `<span style="color:var(--bone-dim);">Set a start date</span>`,
+        none:    `<span style="color:var(--bone-dim);">No plan set</span>`
+      })[s.state];
+
+      plansBody.innerHTML = statuses.length ? '' :
+        `<tr><td colspan="7" style="text-align:center;color:var(--bone-dim);padding:2rem;">
+          No maintenance yet. Use <strong>Set up plan</strong> for a client on a retainer, or just
+          <strong>Record payment</strong> when money comes in.</td></tr>`;
+
+      statuses.forEach(({ p, s }) => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td style="font-weight:500;white-space:nowrap;">${esc(p.name)}</td>
+          <td style="white-space:nowrap;">${esc(p.client || '-')}</td>
+          <td style="white-space:nowrap;">${s.plan
+            ? `${formatMYR(p.maintenance_fee)} / ${MAINT_CYCLE_LABEL[p.maintenance_cycle]}`
+            : '<span style="opacity:0.5;">&mdash;</span>'}</td>
+          <td style="white-space:nowrap;">${s.paidThrough ? formatDate(s.paidThrough) : '<span style="opacity:0.5;">&mdash;</span>'}</td>
+          <td style="white-space:nowrap;">${s.nextDue && s.state !== 'ended' ? formatDate(s.nextDue) : '<span style="opacity:0.5;">&mdash;</span>'}</td>
+          <td style="white-space:nowrap;">${stateHTML(s)}</td>
+          <td style="white-space:nowrap;text-align:right;">
+            <button class="btn-primary" style="padding:0.25rem 0.75rem;font-size:0.74rem;margin:0;width:auto;"
+                    onclick="openMaintenancePaymentModal(null, '${escArg(p.id)}')">Record payment</button>
+            <button class="btn-outline" style="padding:0.25rem 0.75rem;font-size:0.74rem;margin:0 0 0 0.35rem;width:auto;"
+                    onclick="openMaintenancePlanModal('${escArg(p.id)}')">${s.plan ? 'Edit plan' : 'Set plan'}</button>
+          </td>`;
+        plansBody.appendChild(tr);
+      });
+
+      // Log: unpaid invoices first, then most recent money first.
+      maintRows.sort((a, b) => {
+        if (a.received !== b.received) return a.received ? 1 : -1;
+        if (!a.received) return String(a.due_date || '9999').localeCompare(String(b.due_date || '9999'));
+        return String(b.received_date || '').localeCompare(String(a.received_date || ''));
+      });
+
+      payBody.innerHTML = maintRows.length ? '' :
+        `<tr><td colspan="6" style="text-align:center;color:var(--bone-dim);padding:2rem;">
+          No maintenance payments recorded yet.</td></tr>`;
+
+      maintRows.forEach(pay => {
+        const proj = projectsData.find(p => p.id === pay.project_id);
+        const od = !pay.received && pay.due_date && pay.due_date < today;
+        const period = maintPeriodLabel(pay.due_date, pay.period_end);
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td style="font-weight:500;white-space:nowrap;">${proj ? esc(proj.name) : '<span style="opacity:0.5;">(deleted project)</span>'}</td>
+          <td>
+            ${period ? esc(period) : '<span style="opacity:0.5;">&mdash;</span>'}
+            ${pay.notes ? `<div style="font-size:0.75rem;color:var(--bone-dim);margin-top:0.15rem;">${esc(pay.notes)}</div>` : ''}
+          </td>
+          <td style="white-space:nowrap;font-weight:500;">${formatMYR(pay.amount)}</td>
+          <td style="white-space:nowrap;">${pay.method ? esc(pay.method) : '<span style="opacity:0.5;">&mdash;</span>'}</td>
+          <td style="white-space:nowrap;">
+            ${pay.received
+              ? `<span style="color:var(--pos);">Received ${formatDate(pay.received_date)}</span>`
+              : `<span style="color:${od ? 'var(--neg)' : 'var(--bone-dim)'};">${od ? 'Overdue' : 'Invoiced'}${pay.due_date ? ' · due ' + formatDate(pay.due_date) : ''}</span>
+                 <button class="btn-outline" style="padding:0.2rem 0.7rem;font-size:0.74rem;margin:0 0 0 0.4rem;width:auto;"
+                    onclick="setPaymentReceived('${escArg(pay.id)}', true)">Mark received</button>`}
+          </td>
+          <td style="white-space:nowrap;text-align:right;">
+            <button class="action-btn" title="Edit" onclick="openMaintenancePaymentModal('${escArg(pay.id)}')">
+              <svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+            </button>
+            <button class="action-btn delete-btn" title="Delete" onclick="deletePayment('${escArg(pay.id)}')">
+              <svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/></svg>
+            </button>
+          </td>`;
+        payBody.appendChild(tr);
+      });
+    }
+
+    /** Fill the project <select> in a maintenance modal, plan holders first. */
+    function fillMaintProjectSelect(sel, selectedId) {
+      const sorted = [...projectsData].sort((a, b) =>
+        (hasMaintenancePlan(b) - hasMaintenancePlan(a)) || String(a.name).localeCompare(String(b.name)));
+      sel.innerHTML = '<option value="">Choose a project…</option>' + sorted.map(p =>
+        `<option value="${esc(p.id)}">${esc(p.name)}${p.client ? ' — ' + esc(p.client) : ''}</option>`).join('');
+      sel.value = selectedId || '';
+    }
+
+    function syncMaintReceivedFields() {
+      const on = document.getElementById('maintPayReceived').checked;
+      document.getElementById('maintPayReceivedDateWrap').style.display = on ? '' : 'none';
+      document.getElementById('maintPayReceivedDate').required = on;
+    }
+
+    /** Pre-fill amount and period from the chosen project's plan. New rows only. */
+    function maintPayProjectChanged() {
+      if (document.getElementById('maintPayId').value) return;
+      const p = projectsData.find(x => x.id === document.getElementById('maintPayProject').value);
+      const hint = document.getElementById('maintPayHint');
+      if (!p) { hint.textContent = ''; return; }
+      const s = maintenanceStatus(p);
+      if (s.plan) {
+        document.getElementById('maintPayAmount').value = parseFloat(p.maintenance_fee);
+        const from = s.nextDue || todayLocal();
+        document.getElementById('maintPayFrom').value = from;
+        document.getElementById('maintPayTo').value = maintPeriodEnd(from, p.maintenance_cycle) || '';
+        hint.textContent = `Plan: ${formatMYR(p.maintenance_fee)} per ${MAINT_CYCLE_LABEL[p.maintenance_cycle]}` +
+          (s.paidThrough ? ` · paid through ${formatDate(s.paidThrough)}` : '');
+      } else {
+        hint.textContent = 'No plan on this project — enter the amount and period by hand.';
+      }
+    }
+
+    /** Moving the start keeps the end one cycle later, when there is a plan. */
+    function maintPayFromChanged() {
+      const p = projectsData.find(x => x.id === document.getElementById('maintPayProject').value);
+      const from = document.getElementById('maintPayFrom').value;
+      if (p && hasMaintenancePlan(p) && from) {
+        document.getElementById('maintPayTo').value = maintPeriodEnd(from, p.maintenance_cycle) || '';
+      }
+    }
+
+    function openMaintenancePaymentModal(id = null, projectId = null) {
+      const form = document.getElementById('maintenancePaymentForm');
+      form.reset();
+      document.getElementById('maintPayId').value = '';
+      document.getElementById('maintPayHint').textContent = '';
+      const sel = document.getElementById('maintPayProject');
+
+      const pay = id ? paymentsData.find(x => x.id === id) : null;
+      if (pay) {
+        document.getElementById('maintPayModalTitle').textContent = 'Edit maintenance payment';
+        fillMaintProjectSelect(sel, pay.project_id);
+        document.getElementById('maintPayId').value = pay.id;
+        document.getElementById('maintPayAmount').value = pay.amount;
+        document.getElementById('maintPayFrom').value = pay.due_date || '';
+        document.getElementById('maintPayTo').value = pay.period_end || '';
+        document.getElementById('maintPayReceived').checked = !!pay.received;
+        document.getElementById('maintPayReceivedDate').value = pay.received_date || todayLocal();
+        document.getElementById('maintPayMethod').value = pay.method || '';
+        document.getElementById('maintPayNotes').value = pay.notes || '';
+      } else {
+        document.getElementById('maintPayModalTitle').textContent = 'Record maintenance payment';
+        fillMaintProjectSelect(sel, projectId);
+        document.getElementById('maintPayReceived').checked = true;
+        document.getElementById('maintPayReceivedDate').value = todayLocal();
+        document.getElementById('maintPayMethod').value = 'Bank transfer';
+        maintPayProjectChanged();
+      }
+      document.getElementById('maintPayReceivedDate').max = todayLocal();
+      syncMaintReceivedFields();
+      openModal('maintenancePaymentModal');
+    }
+
+    async function saveMaintenancePayment(e) {
+      e.preventDefault();
+      const id = document.getElementById('maintPayId').value;
+      const projectId = document.getElementById('maintPayProject').value;
+      const amount = parseFloat(document.getElementById('maintPayAmount').value);
+      const from = document.getElementById('maintPayFrom').value || null;
+      const to = document.getElementById('maintPayTo').value || null;
+      const received = document.getElementById('maintPayReceived').checked;
+      const receivedDate = document.getElementById('maintPayReceivedDate').value || null;
+      const method = document.getElementById('maintPayMethod').value || null;
+      const notes = document.getElementById('maintPayNotes').value.trim() || null;
+
+      if (!projectId) { showToast('Choose a project', 'error'); return; }
+      if (!(amount > 0)) { showToast('Amount must be greater than zero', 'error'); return; }
+      if (from && to && to < from) { showToast('The period ends before it starts', 'error'); return; }
+      // Same rule as the DB constraint: received money must say when.
+      if (received && !receivedDate) { showToast('Enter the date the money arrived', 'error'); return; }
+      if (received && receivedDate > todayLocal()) { showToast('That received date is in the future', 'warning'); return; }
+
+      const period = maintPeriodLabel(from, to);
+      const row = {
+        project_id: projectId,
+        kind: 'maintenance',
+        label: period ? `Maintenance · ${period}` : 'Maintenance',
+        amount,
+        due_date: from,
+        period_end: to,
+        received,
+        received_date: received ? receivedDate : null,
+        method,
+        notes
+      };
+
+      try {
+        const res = id
+          ? await supabaseClient.from('project_payments').update(row).eq('id', id)
+          : await supabaseClient.from('project_payments').insert([row]);
+        if (res.error) throw res.error;
+        closeModal('maintenancePaymentModal');
+        showToast(id ? 'Maintenance payment updated' : 'Maintenance payment recorded', 'success');
+        await loadAllData();
+      } catch (err) {
+        const hint = /kind|period_end/.test(err.message || '') ? ' — run supabase_migration_07_maintenance.sql' : '';
+        showToast('Failed: ' + err.message + hint, 'error');
+      }
+    }
+
+    function openMaintenancePlanModal(projectId = null) {
+      const form = document.getElementById('maintenancePlanForm');
+      form.reset();
+      const sel = document.getElementById('maintPlanProject');
+      fillMaintProjectSelect(sel, projectId);
+      maintPlanProjectChanged();
+      openModal('maintenancePlanModal');
+    }
+
+    function maintPlanProjectChanged() {
+      const p = projectsData.find(x => x.id === document.getElementById('maintPlanProject').value);
+      document.getElementById('maintPlanFee').value = p && p.maintenance_fee ? parseFloat(p.maintenance_fee) : '';
+      document.getElementById('maintPlanCycle').value = (p && p.maintenance_cycle) || 'monthly';
+      document.getElementById('maintPlanStart').value = (p && p.maintenance_start) || '';
+      document.getElementById('maintPlanEnd').value = (p && p.maintenance_end) || '';
+      document.getElementById('maintPlanRemoveBtn').style.display = p && hasMaintenancePlan(p) ? '' : 'none';
+    }
+
+    async function saveMaintenancePlan(e) {
+      e.preventDefault();
+      const projectId = document.getElementById('maintPlanProject').value;
+      const fee = parseFloat(document.getElementById('maintPlanFee').value);
+      const cycle = document.getElementById('maintPlanCycle').value;
+      const start = document.getElementById('maintPlanStart').value || null;
+      const end = document.getElementById('maintPlanEnd').value || null;
+      if (!projectId) { showToast('Choose a project', 'error'); return; }
+      if (!(fee > 0)) { showToast('Fee must be greater than zero', 'error'); return; }
+      if (!MAINT_CYCLE_MONTHS[cycle]) { showToast('Choose how often they pay', 'error'); return; }
+      if (start && end && end < start) { showToast('The plan ends before it starts', 'error'); return; }
+      await writeMaintenancePlan(projectId, {
+        maintenance_fee: fee, maintenance_cycle: cycle, maintenance_start: start, maintenance_end: end
+      }, 'Maintenance plan saved');
+    }
+
+    /** Clears the plan only. Payments already recorded are kept. */
+    async function removeMaintenancePlan() {
+      const projectId = document.getElementById('maintPlanProject').value;
+      if (!projectId) return;
+      if (!confirm('Remove this maintenance plan? Payments already recorded are kept.')) return;
+      await writeMaintenancePlan(projectId, {
+        maintenance_fee: null, maintenance_cycle: null, maintenance_start: null, maintenance_end: null
+      }, 'Maintenance plan removed');
+    }
+
+    async function writeMaintenancePlan(projectId, patch, okMsg) {
+      try {
+        const { error } = await supabaseClient.from('projects').update(patch).eq('id', projectId);
+        if (error) throw error;
+        closeModal('maintenancePlanModal');
+        showToast(okMsg, 'success');
+        await loadAllData();
+      } catch (err) {
+        const hint = /maintenance_/.test(err.message || '') ? ' — run supabase_migration_07_maintenance.sql' : '';
+        showToast('Failed: ' + err.message + hint, 'error');
+      }
     }
 
     /* ==================================================================
@@ -4046,7 +4494,9 @@ function getProjectImageUrl(p) {
       const name = proj ? proj.name : 'this project';
 
       let warning = `Delete "${name}"?`;
-      if (t.payments.length || t.addons.length || t.collected > 0.01) {
+      // Maintenance rows cascade too, and their cash is just as real.
+      const receivedTotal = t.collected + t.maintCollected;
+      if (t.payments.length || t.addons.length || t.maintenance.length || receivedTotal > 0.01) {
         const received = t.payments.filter(p => p.received);
         const bits = [];
         if (t.payments.length) {
@@ -4054,10 +4504,14 @@ function getProjectImageUrl(p) {
             (received.length ? ` (${received.length} already received, ${formatMYR(t.collected)})` : ''));
         }
         if (t.addons.length) bits.push(`${t.addons.length} add-on${t.addons.length === 1 ? '' : 's'} worth ${formatMYR(t.addonsTotal)}`);
+        if (t.maintenance.length) {
+          bits.push(`${t.maintenance.length} maintenance payment${t.maintenance.length === 1 ? '' : 's'}` +
+            (t.maintCollected > 0.01 ? ` (${formatMYR(t.maintCollected)} received)` : ''));
+        }
         warning += `\n\nThis permanently deletes ${bits.join(' and ')}.`;
-        if (t.collected > 0.01) {
-          const perPartner = (t.collected * 0.5);
-          warning += `\n\n${formatMYR(t.collected)} of RECEIVED money will disappear from ` +
+        if (receivedTotal > 0.01) {
+          const perPartner = (receivedTotal * 0.5);
+          warning += `\n\n${formatMYR(receivedTotal)} of RECEIVED money will disappear from ` +
             `Overview, Cash Flow and Reports, reducing each partner's share by about ` +
             `${formatMYR(perPartner)}. Reconciliation will still read "Balanced" afterwards, ` +
             `so this will not show up as an error anywhere.`;
@@ -4068,8 +4522,8 @@ function getProjectImageUrl(p) {
 
       // Second gate, only when real money is involved — a single OK on a long
       // dialog is too easy to click through.
-      if (t.collected > 0.01) {
-        const typed = prompt(`This will erase ${formatMYR(t.collected)} of received payments.\n\nType the project name to confirm:`);
+      if (receivedTotal > 0.01) {
+        const typed = prompt(`This will erase ${formatMYR(receivedTotal)} of received payments.\n\nType the project name to confirm:`);
         if (typed === null) return;
         if (typed.trim() !== String(name).trim()) {
           showToast('Name did not match — nothing was deleted', 'warning');
@@ -4677,7 +5131,8 @@ function getProjectImageUrl(p) {
     (function installSubmitGuards() {
       const submitHandlers = [
         'saveProject', 'saveExpense', 'saveWithdrawal', 'saveShowcaseProject',
-        'saveTeamMember', 'saveService', 'saveQuotation'
+        'saveTeamMember', 'saveService', 'saveQuotation',
+        'saveMaintenancePayment', 'saveMaintenancePlan'
       ];
 
       function lock(form) {

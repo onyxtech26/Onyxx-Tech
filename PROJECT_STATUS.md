@@ -2,7 +2,7 @@
 
 > **Living board.** Read at the start of every session; updated when significant tasks finish. Newest state on top.
 
-**Last updated:** 2026-10-01
+**Last updated:** 2026-10-29
 
 ---
 
@@ -95,6 +95,7 @@ Verified in Chrome via Playwright: 7 pages × dark/light with zero errors, 28 pa
 ## 🗂️ Board
 
 ### ✅ Done
+- [x] **Maintenance payments** — `project_payments.kind = 'maintenance'` plus an optional per-project plan (migration 07, applied). New Maintenance tab; maintenance counts as collected cash but never against a project's contract, so SOLE no longer reads as overpaid. *(2026-10-29)*
 - [x] **Favicon fixed for Google search** — Google showed a grey globe because the icons were 298×326 (Google rejects non-square favicons), the default one was white-on-transparent, and `/favicon.ico` was 404. Now: square dark-tile icons — `/favicon.ico` (16/32/48), `/images/favicon-192.png`, `/apple-touch-icon.png` — on all 32 pages, with root-absolute paths. *(2026-10-01)*
 - [x] **Conversion + SEO + content build-out** — fixed the canonical tags that were telling
   Google the vercel.app domain was the real site; added a contact form writing to Supabase
@@ -266,6 +267,7 @@ leaves you unable to onboard Rooben.
 ---
 
 ## 📝 Session log
+- **2026-10-29 (maintenance)** — The user needed to record maintenance from SOLE and SUNTOURS; SOLE's RM400 sat in its payment schedule and made the project look overpaid. Added a `kind` column rather than a new table so every cash figure keeps working, plus an optional plan (fee/cycle/start/end) that pre-fills the form and shows next due. Migration 07 applied and verified. **Still for the user:** set the actual plans for SOLE and SUNTOURS (fee and cycle were not known). Also noticed SUNTOURS has an "ADD ons" RM500 *payment* with no matching add-on row, so it reads overpaid by RM500 — adding a RM500 invoiced add-on would fix it. Full write-up in `docs/CHANGELOG.md`.
 - **2026-10-01 (missing favicon in Google)** — The user noticed Google results showed a generic globe instead of the logo. Three causes: the icons were not square (298×326), the default `rel="icon"` was white on transparent (Google ignores the `media` variants), and there was no `/favicon.ico`. Replaced the three-tag light/dark set with a square white-logo-on-dark-tile icon set. Google re-crawls favicons on its own schedule, so the result can take days to weeks to show; requesting indexing of the homepage in Search Console speeds it up. Full write-up in `docs/CHANGELOG.md`.
 - **2026-09-30 (competitor gap → build-out)** — The user pointed at a Johor competitor's site and asked what theirs lacked. The honest answer was that the design was not the problem — ours reads better — but the site had no way to capture an enquiry, nothing specific for Google to rank, and no visible proof anyone had hired them. Also found, while checking: their real domain `www.onyxxtechhub.com.my` was live but **every page on it declared the vercel.app URL as canonical**, which is exactly why search showed the Vercel domain. Built the whole list: canonical/redirect fix, contact form + `contact_messages` table + dashboard inbox, five service landing pages with location in the title and FAQ schema, ten real case-study pages generated from the live Supabase rows, a four-post blog researched against current sources, privacy/cookie notices, a floating WhatsApp button, Vercel Analytics and a trust band built from real client names already in the database. **Case studies deliberately carry no invented metrics** — the brief, the build and the stack are all facts from the DB; real outcome numbers have to come from the clients. Migration 06 still needs running. Full write-up in `docs/CHANGELOG.md`.
 - **2026-09-17 (Sign Out reachability)** — The user reported Sign Out was only visible at 80% browser zoom. Root cause: `.sidebar` is `height: 100vh; overflow: hidden` and nothing in its flex column could shrink or scroll, so `.user-profile` (`margin-top: auto`) sat at the bottom of the *content* and was clipped — measured 926px of content in a 610px viewport, button ~250px off-screen. Zooming out only bought viewport height. Fixed by making `<nav>` the scroll region (`flex: 1 1 auto; min-height: 0; overflow-y: auto` — the `min-height: 0` is what makes it work) and pinning the profile, plus a short-screen compaction pass. Phones had **no** sign-out at all (`.user-profile` hidden below 860px, More sheet cloned from tabs only) — the sheet now ends with the email and a second Sign Out sharing one `signOutNow()` handler. Found in passing: two phone-modal width rules were dead, beaten by a later `.custom-modal { width: 100% }` at equal specificity, so every phone modal was flush to the screen edges. Full write-up in `docs/CHANGELOG.md`.

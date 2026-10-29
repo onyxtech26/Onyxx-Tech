@@ -5,6 +5,41 @@ Format each entry: what was done, why it mattered, and any key decisions.
 
 ---
 
+## 2026-10-29 (maintenance payments)
+
+### Maintenance gets its own place in the admin dashboard
+
+The user needed to key in maintenance fees from SOLE and SUNTOURS. The only
+place to put one was a project's payment schedule, and SOLE's RM400 was already
+there — which made a fully paid RM3,500 project read as **overpaid by RM400**
+and the schedule warn "scheduled RM400 more than the contract total".
+
+**Decision: a `kind` on `project_payments`, not a new table.** Maintenance rows
+(`kind = 'maintenance'`) still live with every other payment, so cash,
+revenue-by-month, Cash Flow's expected income, the Payments tab and the partner
+pool all count them with no second code path. `computeFinancials()` routes them
+into `t.maintenance` / `t.maintCollected` and keeps them out of the project's
+`scheduled` / `collected` / `outstanding`, while still adding them to the global
+`fin.collected`. New `fin.maintenanceCollected/Due/Overdue`.
+
+- **Migration 07** (`supabase_migration_07_maintenance.sql`, applied to
+  production): `project_payments.kind` + `period_end`; optional plan on
+  `projects` (`maintenance_fee`, `maintenance_cycle` monthly/quarterly/
+  half-yearly/yearly, `maintenance_start`, `maintenance_end`). SOLE's existing
+  row reclassified by label.
+- **Maintenance tab:** KPIs (recurring per month, collected this year / all
+  time, plans due), a Clients table (plan, paid through, next due, status) and a
+  payment log with edit/delete/mark-received.
+- **Record payment modal** pre-fills amount and the next period from the plan;
+  unticking "Money received" logs an unpaid invoice instead.
+- **Plans are optional and never generate rows.** They only pre-fill and work
+  out "next due". A received row with no `period_end` is assumed to cover one
+  plan cycle from its due date.
+- Project detail panel gained a Maintenance section; the Payments tab tags
+  maintenance rows; delete-project warnings include maintenance money.
+
+---
+
 ## 2026-10-01 (favicon in Google search)
 
 ### Google showed a grey globe instead of the logo
