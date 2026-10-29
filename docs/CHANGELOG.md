@@ -74,6 +74,17 @@ statically.
   lines; renamed aphorism card titles to plain descriptions.
 - Blog cover images re-rendered for the changed post title.
 
+### Dark brand version (owner's choice)
+
+The owner asked why the dark star design had gone and chose a dark design
+built on the brand, with the old cyan. Changes: near-black palette with cyan
+used only for actions and accents; logo-derived circuit motif (trace marker
+above section headings, the X's traces behind the CTA, ring-node bullets);
+the original galaxy restored in the homepage hero only, lightened, paused
+when off screen or in a background tab, and drawn as one still frame for
+reduced motion (verified both ways). Blog covers and the SOLE illustration
+re-rendered in the dark palette. No light/dark toggle: one theme.
+
 ### Still needed from the owner
 
 Google Business Profile (biggest local lever), whether a street address and
