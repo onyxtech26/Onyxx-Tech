@@ -27,6 +27,11 @@
       "permanent": true
     },
     {
+      "source": "/case-studies/carousel-generator",
+      "destination": "/work",
+      "permanent": true
+    },
+    {
       "source": "/case-studies/xcraft-cloud",
       "destination": "/work",
       "permanent": true
