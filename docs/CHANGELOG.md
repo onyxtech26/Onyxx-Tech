@@ -126,6 +126,15 @@ request. Added a consent line (English and Malay) under the contact form.
 Open: confirm the registered business name, permission to name each client
 in "Trusted by", and whether Policy Snap was for Great Eastern or an agent.
 
+### Client logos in "Trusted by"
+
+At the owner's request the homepage "Trusted by" strip now shows the real
+logos of Sun Tours Roma, Conglomerate Appraisal Consultancy and RStar Mini
+Mart (supplied by the owner; RStar cropped from its POS loading screen, the
+CAC file had a transparent background flattened onto white), on white tiles
+so the brand colours read on the dark page. Great Eastern and Million
+Precision Time were removed from the strip.
+
 ### Still needed from the owner
 
 Google Business Profile (biggest local lever), whether a street address and
