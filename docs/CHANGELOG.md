@@ -152,6 +152,19 @@ the projects section is grouped under "Websites" (Sun Tours, Conglomerate)
 then "Apps and tools" (SlideForge, Policy Snap). Rule going forward: no
 image on the homepage without a heading that explains it.
 
+### Metadata pass, school removed from Trusted by
+
+"A Malaysian government school" removed from the Trusted by strip at the
+owner's request (it stays as LogicLens.AI's client on that case study).
+Metadata audit of all public pages: canonicals, single H1s, JSON-LD and
+uniqueness were already fine. Fixed: six titles over ~62 characters
+(Website Design, Services, long case study and blog titles), three
+over-long descriptions, thin Terms/Cookies descriptions, and the default
+share image. The old `onyxx-banner.png` was 2.6:1 and got cropped in link
+previews; replaced by `images/og-default.png` (1200x630, brand style, says
+"Website design in Johor Bahru") with width, height and alt tags, also
+used as the business image in structured data.
+
 ### Still needed from the owner
 
 Google Business Profile (biggest local lever), whether a street address and
