@@ -111,6 +111,21 @@ match the live sites. At the owner's request: Xcraft Cloud and Walletwise
 removed (301 to /work), SOLE keeps its labelled illustration. Wide screenshots
 are anchored top-left in cards so the headline stays visible.
 
+### Malaysian legal pass (owner asked about lawsuits)
+
+Not legal advice; the owner was told to have a Malaysian lawyer review.
+Rewrote the privacy notice to cover the PDPA notice items (identity, purpose,
+required vs optional data, disclosure, retention, rights and complaints) and
+added a full Bahasa Malaysia version on the same page, since the notice
+principle requires both languages. Rewrote the cookie notice, which still
+described the old site (theme switch, intro animation, CDNs); the site now
+sets no cookies and no local storage. Added `/terms`. Added the SSM
+registration number to every footer, the contact page and the business
+structured data, with the address kept to Johor Bahru at the owner's
+request. Added a consent line (English and Malay) under the contact form.
+Open: confirm the registered business name, permission to name each client
+in "Trusted by", and whether Policy Snap was for Great Eastern or an agent.
+
 ### Still needed from the owner
 
 Google Business Profile (biggest local lever), whether a street address and
