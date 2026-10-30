@@ -552,3 +552,12 @@ a.contact-card:hover { border-color: var(--ink); }
   background-size: 48px 48px; background-position: -1px -1px; }
 .shot-pending strong { display: block; font-family: var(--font-display); font-stretch: 112%; font-size: clamp(1.5rem, 3vw, 2.2rem); letter-spacing: -0.02em; color: var(--ink); }
 .shot-pending span { display: block; margin-top: 6px; color: var(--muted); font-size: 0.95rem; }
+
+/* Client logos: the real marks on white tiles so their own colours read
+   correctly on the dark page. */
+.clients .client-logos { display: flex; flex-wrap: wrap; align-items: center; gap: 14px; list-style: none; margin: 0; padding: 0; }
+.client-logos li { height: 112px; padding: 10px 20px; background: #fff; border-radius: 12px; display: flex; align-items: center; justify-content: center; }
+.client-logos img { height: 100%; width: auto; max-width: 240px; object-fit: contain; }
+.client-logos .client-text { background: transparent; border: 1px solid var(--line); color: var(--ink-2); font-family: var(--font-display); font-stretch: 105%; font-weight: 600; font-size: 1rem; padding: 0 20px; }
+@media (max-width: 560px) { .client-logos li { height: 84px; padding: 8px 12px; } .client-logos img { max-width: 150px; } }
+.client-logos img[src*="logo-mpt"] { height: 58%; }
