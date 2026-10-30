@@ -27,6 +27,16 @@
       "permanent": true
     },
     {
+      "source": "/case-studies/xcraft-cloud",
+      "destination": "/work",
+      "permanent": true
+    },
+    {
+      "source": "/case-studies/walletwise",
+      "destination": "/work",
+      "permanent": true
+    },
+    {
       "source": "/",
       "has": [
         {

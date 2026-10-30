@@ -99,6 +99,18 @@ homepage project grid shows only projects with real screens. Live-site
 screenshots are still blocked by this environment's network policy; a public
 screenshot service was considered and correctly refused as a way around it.
 
+### Real website screenshots supplied
+
+The owner sent real screenshots of suntoursroma.com and conglomerate4u.com.
+Both case studies now use them, and Sun Tours is back in the homepage hero.
+The screenshots showed the old descriptions were wrong: Conglomerate is
+Conglomerate Appraisal Consultancy, a property forensic consultancy founded in
+2009 (not a multinational with energy and manufacturing divisions), and Sun
+Tours sells self-guided audio tours of Rome sent as a link. Copy rewritten to
+match the live sites. At the owner's request: Xcraft Cloud and Walletwise
+removed (301 to /work), SOLE keeps its labelled illustration. Wide screenshots
+are anchored top-left in cards so the headline stays visible.
+
 ### Still needed from the owner
 
 Google Business Profile (biggest local lever), whether a street address and
