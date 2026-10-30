@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640" fill="none" stroke="#2fd6f5" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+  <!-- Traces from the Onyxx X: straight runs with 45° kinks ending in ring nodes -->
+  <g opacity=".55">
+    <path d="M320 250V120"/><circle cx="320" cy="100" r="18"/>
+    <path d="M290 262L200 172"/><circle cx="186" cy="158" r="18"/>
+    <path d="M352 262L400 214V168"/><circle cx="400" cy="148" r="18"/>
+    <path d="M320 390V520"/><circle cx="320" cy="540" r="18"/>
+    <path d="M290 378L200 468"/><circle cx="186" cy="482" r="18"/>
+    <path d="M352 378L400 426V472"/><circle cx="400" cy="492" r="18"/>
+  </g>
+  <g opacity=".22">
+    <path d="M410 320H560L600 280"/><circle cx="612" cy="268" r="12"/>
+    <path d="M230 320H90L50 360"/><circle cx="38" cy="372" r="12"/>
+    <path d="M186 140V60L226 20"/><path d="M400 130V70H520"/><circle cx="534" cy="70" r="12"/>
+    <path d="M186 500V580L146 620"/><path d="M400 510V580H500"/><circle cx="514" cy="580" r="12"/>
+  </g>
+  <path opacity=".8" d="M262 320L320 278L378 320L320 362Z"/>
+</svg>

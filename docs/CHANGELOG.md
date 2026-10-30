@@ -61,6 +61,30 @@ statically.
 - Real screenshots of the live client sites are still pending: those hosts are
   blocked by this cloud environment's network policy.
 
+### Copy and design pass (owner asked: nothing that reads as AI-written, no em dashes)
+
+- Removed every em dash from the public pages (94 of them), each rewritten
+  with fitting punctuation rather than swapped mechanically. Titles now use
+  `:` or `|`.
+- Slogan headings replaced with plain ones ("Real projects for real clients."
+  became "Recent projects"; service H1s now name the service and place).
+- Dropped the coloured last word in headlines, the dot label above every
+  section heading, and the decorative 01-04 numbering on services.
+- Cut filler words ("honestly", "actually", "genuinely") and "not X, it is Y"
+  lines; renamed aphorism card titles to plain descriptions.
+- Blog cover images re-rendered for the changed post title.
+
+### Dark brand version (owner's choice)
+
+The owner asked why the dark star design had gone and chose a dark design
+built on the brand, with the old cyan. Changes: near-black palette with cyan
+used only for actions and accents; logo-derived circuit motif (trace marker
+above section headings, the X's traces behind the CTA, ring-node bullets);
+the original galaxy restored in the homepage hero only, lightened, paused
+when off screen or in a background tab, and drawn as one still frame for
+reduced motion (verified both ways). Blog covers and the SOLE illustration
+re-rendered in the dark palette. No light/dark toggle: one theme.
+
 ### Still needed from the owner
 
 Google Business Profile (biggest local lever), whether a street address and

@@ -156,6 +156,97 @@
     });
   }
 
+
+  /* Homepage hero sky: the original Onyxx galaxy, lightened. Two spiral arms
+     around a core at 78% / 32% (where it always sat), a soft background
+     field, the occasional shooting star. It only runs while the hero is on
+     screen and the tab is visible, and draws a single still frame for
+     visitors who prefer reduced motion. setTransform, not scale(), so a
+     resize never compounds the DPR. */
+  function initHeroSky() {
+    var canvas = document.querySelector('.hero-sky');
+    if (!canvas || !canvas.getContext) return;
+    var ctx = canvas.getContext('2d');
+    var still = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    var stars = [], shots = [], w = 0, h = 0, raf = 0, onScreen = true, lastShot = 0;
+    var CORE_X = 0.78, CORE_Y = 0.32;
+
+    function size() {
+      var dpr = Math.min(window.devicePixelRatio || 1, 2);
+      w = canvas.offsetWidth; h = canvas.offsetHeight;
+      if (!w || !h) return;
+      canvas.width = Math.round(w * dpr); canvas.height = Math.round(h * dpr);
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    }
+    function build() {
+      stars = [];
+      if (!w || !h) return;
+      var bg = Math.round(Math.min(220, w * h / 6000)), arm = Math.round(bg * 0.6);
+      for (var i = 0; i < bg; i++) {
+        stars.push({ x: Math.random() * w, y: Math.random() * h, r: Math.random() * 1.2 + 0.2,
+          b: Math.random() * 0.8 + 0.1, sp: Math.random() * 0.02 + 0.006, o: Math.random() * 6.3,
+          c: Math.random() < 0.15 ? 'c' : 'w' });
+      }
+      var cx = w * CORE_X, cy = h * CORE_Y;
+      for (var j = 0; j < arm; j++) {
+        var a = Math.floor(Math.random() * 2), t = Math.random();
+        var ang = a * Math.PI + t * Math.PI * 3 + (Math.random() - 0.5) * 0.7;
+        var rad = t * Math.min(w * 0.22, h * 0.38) * (0.5 + Math.random() * 0.5), spread = rad * 0.18;
+        stars.push({ x: cx + Math.cos(ang) * rad + (Math.random() - 0.5) * spread,
+          y: cy + Math.sin(ang) * rad * 0.55 + (Math.random() - 0.5) * spread,
+          r: Math.random() * 1.5 + 0.3, b: 0.45 + Math.random() * 0.5, sp: Math.random() * 0.025 + 0.008,
+          o: Math.random() * 6.3, c: Math.random() < 0.35 ? 'c' : 'w' });
+      }
+    }
+    function draw(ts) {
+      raf = 0;
+      if (!w || !h) return;
+      ctx.clearRect(0, 0, w, h);
+      var gx = w * CORE_X, gy = h * CORE_Y;
+      var core = ctx.createRadialGradient(gx, gy, 0, gx, gy, w * 0.16);
+      core.addColorStop(0, 'rgba(47,214,245,0.10)');
+      core.addColorStop(0.5, 'rgba(70,40,160,0.05)');
+      core.addColorStop(1, 'rgba(0,0,0,0)');
+      ctx.fillStyle = core;
+      ctx.beginPath(); ctx.ellipse(gx, gy, w * 0.16, h * 0.12, 0, 0, Math.PI * 2); ctx.fill();
+      var t = (ts || 0) * 0.001;
+      for (var i = 0; i < stars.length; i++) {
+        var s = stars[i];
+        var f = still ? 1 : 0.45 + 0.55 * (0.5 + 0.5 * Math.sin(t * s.sp * 60 + s.o));
+        ctx.fillStyle = s.c === 'c' ? 'rgba(47,214,245,' + (s.b * f) + ')' : 'rgba(225,232,245,' + (s.b * f) + ')';
+        ctx.beginPath(); ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2); ctx.fill();
+      }
+      if (!still) {
+        if (ts - lastShot > 5000 + Math.random() * 4000) {
+          var an = Math.PI * 0.18 + Math.random() * 0.2;
+          shots.push({ x: Math.random() * w * 0.8, y: Math.random() * h * 0.5, vx: Math.cos(an) * 6, vy: Math.sin(an) * 3, life: 1 });
+          lastShot = ts;
+        }
+        shots = shots.filter(function (sh) { return sh.life > 0; });
+        shots.forEach(function (sh) {
+          var g = ctx.createLinearGradient(sh.x - sh.vx * 14, sh.y - sh.vy * 14, sh.x, sh.y);
+          g.addColorStop(0, 'rgba(180,240,255,0)'); g.addColorStop(1, 'rgba(180,240,255,' + sh.life * 0.8 + ')');
+          ctx.strokeStyle = g; ctx.lineWidth = 1.1;
+          ctx.beginPath(); ctx.moveTo(sh.x - sh.vx * 14, sh.y - sh.vy * 14); ctx.lineTo(sh.x, sh.y); ctx.stroke();
+          sh.x += sh.vx; sh.y += sh.vy; sh.life -= 0.025;
+        });
+        if (onScreen && !document.hidden) raf = requestAnimationFrame(draw);
+      }
+    }
+    function start() { if (!still && !raf && onScreen && !document.hidden) raf = requestAnimationFrame(draw); }
+
+    size(); build(); draw(0); start();
+    if ('IntersectionObserver' in window) {
+      new IntersectionObserver(function (en) { onScreen = en[0].isIntersecting; start(); }).observe(canvas);
+    }
+    document.addEventListener('visibilitychange', start);
+    var rt;
+    window.addEventListener('resize', function () {
+      clearTimeout(rt);
+      rt = setTimeout(function () { size(); build(); draw(performance.now()); }, 150);
+    });
+  }
+
   function initYear() {
     document.querySelectorAll('[data-year]').forEach(function (el) { el.textContent = String(new Date().getFullYear()); });
   }
@@ -166,6 +257,7 @@
     initWhatsApp();
     initAnalytics();
     initYear();
+    initHeroSky();
     initContactForm();
   }
 
