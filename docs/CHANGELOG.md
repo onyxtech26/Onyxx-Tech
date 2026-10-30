@@ -165,6 +165,11 @@ previews; replaced by `images/og-default.png` (1200x630, brand style, says
 "Website design in Johor Bahru") with width, height and alt tags, also
 used as the business image in structured data.
 
+### Carousel Generator removed
+
+Removed at the owner's request: case study deleted, `/case-studies/carousel-generator`
+301s to `/work`, sitemap updated. Nine case studies remain.
+
 ### Still needed from the owner
 
 Google Business Profile (biggest local lever), whether a street address and
