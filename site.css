@@ -544,3 +544,11 @@ a.contact-card:hover { border-color: var(--ink); }
 }
 .frame { transition: border-color .25s ease; }
 .post-card .cover { transition: border-color .25s ease; }
+
+/* A project without a genuine screenshot yet. Plain text, never a mockup:
+   the site only shows real screens of real work. */
+.shot-pending { display: flex; align-items: flex-end; padding: clamp(20px, 3vw, 32px); background: var(--paper-2);
+  background-image: linear-gradient(var(--line) 1px, transparent 1px), linear-gradient(90deg, var(--line) 1px, transparent 1px);
+  background-size: 48px 48px; background-position: -1px -1px; }
+.shot-pending strong { display: block; font-family: var(--font-display); font-stretch: 112%; font-size: clamp(1.5rem, 3vw, 2.2rem); letter-spacing: -0.02em; color: var(--ink); }
+.shot-pending span { display: block; margin-top: 6px; color: var(--muted); font-size: 0.95rem; }

@@ -85,6 +85,20 @@ when off screen or in a background tab, and drawn as one still frame for
 reduced motion (verified both ways). Blog covers and the SOLE illustration
 re-rendered in the dark palette. No light/dark toggle: one theme.
 
+### Real screenshots only (owner's rule)
+
+The owner asked that every project image be a real screenshot of the real
+work. Audit: Policy Snap, MPT OmniPortal, MPT Watch Sales Bot, Carousel
+Generator and SlideForge are genuine. Sun Tours, Conglomerate (Gemini
+watermark visible) and Walletwise were AI-generated mockups, LogicLens was AI
+artwork, Xcraft was a logo and SOLE was an illustration I drew. All six were
+removed from the public site and replaced by a plain text card ("Live at
+suntoursroma.com", "Private staff system, screens not public", "Screenshot
+to follow"). The homepage hero no longer shows the Sun Tours mockup, and the
+homepage project grid shows only projects with real screens. Live-site
+screenshots are still blocked by this environment's network policy; a public
+screenshot service was considered and correctly refused as a way around it.
+
 ### Still needed from the owner
 
 Google Business Profile (biggest local lever), whether a street address and
