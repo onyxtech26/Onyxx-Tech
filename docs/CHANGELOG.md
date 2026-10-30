@@ -135,6 +135,13 @@ CAC file had a transparent background flattened onto white), on white tiles
 so the brand colours read on the dark page. Great Eastern and Million
 Precision Time were removed from the strip.
 
+### Client names anonymised
+
+At the owner's request: Policy Snap's client is now "An insurance company"
+and the two MPT projects' client "A watch retailer" (case studies, Work page
+description). The MPT logo (cropped from the real OmniPortal screenshot) is in
+the Trusted by strip; the Million Precision Time name is not shown anywhere.
+
 ### Still needed from the owner
 
 Google Business Profile (biggest local lever), whether a street address and

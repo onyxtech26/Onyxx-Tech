@@ -560,3 +560,4 @@ a.contact-card:hover { border-color: var(--ink); }
 .client-logos img { height: 100%; width: auto; max-width: 240px; object-fit: contain; }
 .client-logos .client-text { background: transparent; border: 1px solid var(--line); color: var(--ink-2); font-family: var(--font-display); font-stretch: 105%; font-weight: 600; font-size: 1rem; padding: 0 20px; }
 @media (max-width: 560px) { .client-logos li { height: 84px; padding: 8px 12px; } .client-logos img { max-width: 150px; } }
+.client-logos img[src*="logo-mpt"] { height: 58%; }
