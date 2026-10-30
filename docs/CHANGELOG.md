@@ -85,6 +85,32 @@ when off screen or in a background tab, and drawn as one still frame for
 reduced motion (verified both ways). Blog covers and the SOLE illustration
 re-rendered in the dark palette. No light/dark toggle: one theme.
 
+### Real screenshots only (owner's rule)
+
+The owner asked that every project image be a real screenshot of the real
+work. Audit: Policy Snap, MPT OmniPortal, MPT Watch Sales Bot, Carousel
+Generator and SlideForge are genuine. Sun Tours, Conglomerate (Gemini
+watermark visible) and Walletwise were AI-generated mockups, LogicLens was AI
+artwork, Xcraft was a logo and SOLE was an illustration I drew. All six were
+removed from the public site and replaced by a plain text card ("Live at
+suntoursroma.com", "Private staff system, screens not public", "Screenshot
+to follow"). The homepage hero no longer shows the Sun Tours mockup, and the
+homepage project grid shows only projects with real screens. Live-site
+screenshots are still blocked by this environment's network policy; a public
+screenshot service was considered and correctly refused as a way around it.
+
+### Real website screenshots supplied
+
+The owner sent real screenshots of suntoursroma.com and conglomerate4u.com.
+Both case studies now use them, and Sun Tours is back in the homepage hero.
+The screenshots showed the old descriptions were wrong: Conglomerate is
+Conglomerate Appraisal Consultancy, a property forensic consultancy founded in
+2009 (not a multinational with energy and manufacturing divisions), and Sun
+Tours sells self-guided audio tours of Rome sent as a link. Copy rewritten to
+match the live sites. At the owner's request: Xcraft Cloud and Walletwise
+removed (301 to /work), SOLE keeps its labelled illustration. Wide screenshots
+are anchored top-left in cards so the headline stays visible.
+
 ### Still needed from the owner
 
 Google Business Profile (biggest local lever), whether a street address and
