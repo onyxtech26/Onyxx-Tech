@@ -142,6 +142,16 @@ and the two MPT projects' client "A watch retailer" (case studies, Work page
 description). The MPT logo (cropped from the real OmniPortal screenshot) is in
 the Trusted by strip; the Million Precision Time name is not shown anywhere.
 
+### Homepage structure fix
+
+The owner found a large Sun Tours screenshot under the hero "for no reason".
+A page review (SEO pack's one-page review skill) confirmed it: an unlabelled
+client screenshot inside the hero, and a projects grid mixing websites with
+tools in no order. The hero is now headline, calls to action and facts only;
+the projects section is grouped under "Websites" (Sun Tours, Conglomerate)
+then "Apps and tools" (SlideForge, Policy Snap). Rule going forward: no
+image on the homepage without a heading that explains it.
+
 ### Still needed from the owner
 
 Google Business Profile (biggest local lever), whether a street address and
