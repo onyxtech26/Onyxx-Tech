@@ -170,6 +170,13 @@ used as the business image in structured data.
 Removed at the owner's request: case study deleted, `/case-studies/carousel-generator`
 301s to `/work`, sitemap updated. Nine case studies remain.
 
+### Search Console: Missing field "item" (in "itemListElement")
+
+Google flagged the ItemList markup on `/services` and `/work`: each
+ListItem carried `url` instead of `item`. Switched both lists to `item`
+(plus `position` and `name`); every BreadcrumbList and ItemList entry on
+the site now has all three, checked across all public pages.
+
 ### Still needed from the owner
 
 Google Business Profile (biggest local lever), whether a street address and
