@@ -90,7 +90,7 @@ In `index.html`, search for `We build the` to find the hero headline. Edit the t
 ## 📞 Pre-Configured Contact
 
 - **Email:** onyxtech26@gmail.com (mailto link with pre-filled subject)
-- **Kunacosta WhatsApp:** +60 11-3988 4927 (wa.me link with pre-filled message)
+- **Kunacosta WhatsApp:** +60 10-253 8873 (wa.me link with pre-filled message)
 - **Rooben WhatsApp:** +60 19-468 8052 (wa.me link with pre-filled message)
 
 ---

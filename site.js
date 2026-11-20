@@ -10,7 +10,7 @@
   'use strict';
 
   var WA = [
-    { name: '+60 11-3988 4927', role: 'Quotes and new projects', number: '601139884927' },
+    { name: '+60 10-253 8873', role: 'Quotes and new projects', number: '60102538873' },
     { name: '+60 19-468 8052', role: 'Quotes and new projects', number: '60194688052' }
   ];
 
