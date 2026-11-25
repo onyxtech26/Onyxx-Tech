@@ -5,6 +5,12 @@ Format each entry: what was done, why it mattered, and any key decisions.
 
 ---
 
+## 2026-11-25 (two more guide posts: order systems, website prices)
+
+- New posts `/blog/stop-retyping-whatsapp-orders` (Automation) and `/blog/how-much-does-a-website-cost-in-malaysia` (Websites), the free guides for the ORDERS and PRICE Reels, each with a PDF in `/guides/`. The price post is now the featured card on `/blog`.
+- Prices in the price post are other Malaysian agencies' published 2026 figures (Walk Production, Rebrand, Kangxiang, Jumix), each linked and labelled as theirs. No Onyxx prices are stated. The order post's survey figure links to The Borneo Post and notes that the survey came from a software vendor.
+- Print fix in `site.css`: ordered lists get more left padding so two-digit numbers are not clipped in the PDFs. All three guide PDFs were rebuilt. Assets restamped.
+
 ## 2026-11-25 (blog post as a free guide: Google Maps)
 
 - New post `/blog/get-found-on-google-maps` ("Are you on Google Maps? Three free steps to get found"), written for the Instagram Reel of the same topic. Commenting MAPS on the Reel triggers an automatic DM with this link, so the post is the free guide.
