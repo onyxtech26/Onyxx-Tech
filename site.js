@@ -251,6 +251,21 @@
     document.querySelectorAll('[data-year]').forEach(function (el) { el.textContent = String(new Date().getFullYear()); });
   }
 
+  function initCopyBlocks() {
+    if (!navigator.clipboard) return;
+    document.querySelectorAll('.prose pre').forEach(function (pre) {
+      var b = document.createElement('button');
+      b.type = 'button'; b.className = 'copy'; b.textContent = 'Copy';
+      b.addEventListener('click', function () {
+        navigator.clipboard.writeText(pre.querySelector('code').innerText).then(function () {
+          b.textContent = 'Copied';
+          setTimeout(function () { b.textContent = 'Copy'; }, 1500);
+        });
+      });
+      pre.appendChild(b);
+    });
+  }
+
   function init() {
     initHeader();
     initReveals();
@@ -259,6 +274,7 @@
     initYear();
     initHeroSky();
     initContactForm();
+    initCopyBlocks();
   }
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);

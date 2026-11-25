@@ -5,6 +5,14 @@ Format each entry: what was done, why it mattered, and any key decisions.
 
 ---
 
+## 2026-11-25 (blog post as a free guide: Google Maps)
+
+- New post `/blog/get-found-on-google-maps` ("Are you on Google Maps? Three free steps to get found"), written for the Instagram Reel of the same topic. Commenting MAPS on the Reel triggers an automatic DM with this link, so the post is the free guide.
+- Each guide post has a "Download as PDF" button linking to a static PDF in `/guides/` (printed from the same post). It is a plain file on Vercel's CDN: no Supabase, and it opens inside Instagram's in-app browser, where print-on-click does not.
+- `site.css`: styles for prompt blocks, the PDF row and a light print layout. `site.js`: `initCopyBlocks()` adds a Copy button to prompt blocks (no storage, no cookies). Assets restamped, so every page changed and every sitemap `lastmod` is now 2026-11-25.
+- Header image: an AI-generated scene with the title drawn in code. It illustrates a topic, not a client project, so the "only real screenshots of real work" rule does not apply.
+- Facts in the post link to Google's own help pages. Posts are built in the video studio (`video editor/tools/blog_build.py`, rules in `video editor/playbook/blog.md`) from a copy of an existing post page.
+
 ## 2026-10-29 (site redesign + Johor Bahru SEO)
 
 ### Why
