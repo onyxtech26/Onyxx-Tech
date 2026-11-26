@@ -2,7 +2,7 @@
 
 > **Living board.** Read at the start of every session; updated when significant tasks finish. Newest state on top.
 
-**Last updated:** 2026-11-25
+**Last updated:** 2026-11-26
 
 ---
 
@@ -270,6 +270,7 @@ leaves you unable to onboard Rooben.
 ---
 
 ## 📝 Session log
+- **2026-11-26** — Eight batch-2 guide posts with PDFs on branch `claude/blog-batch-2` (PR, waiting for the owner's yes). Phone-width fix for wide tables in posts.
 - **2026-11-25** — Published the order-system and website-price guide posts with PDFs; the price post is featured on /blog. PDF list-number print fix.
 - **2026-11-25** — Published the Google Maps guide post (`/blog/get-found-on-google-maps`) with a static PDF in `/guides/`, Copy buttons on prompts and print styles. Blog posts are now the free guides that Instagram keyword DMs link to (made in the video studio project).
 - **2026-10-29 (redesign)** — The owner could not find the site when searching for website design and felt it looked AI-generated. Rebuilt every public page in a new light editorial system, repositioned around website design in Johor Bahru, put all content in the HTML, removed founder content and the thin why/process pages. **Waiting on the owner:** Google Business Profile, address/hours, live client-site URLs, optional prices, Search Console sitemap resubmission. Full write-up in `docs/CHANGELOG.md`.

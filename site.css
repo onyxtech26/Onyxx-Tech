@@ -565,6 +565,8 @@ a.contact-card:hover { border-color: var(--ink); }
 /* Blog posts used as free guides: copyable prompt blocks, the "Download as PDF"
    row, and a light print layout (the PDF in /guides is printed from the post). */
 .prose pre{background:var(--paper-2);border:1px solid var(--line);border-radius:12px;padding:44px 18px 16px;white-space:pre-wrap;word-break:break-word;font-size:.95rem;line-height:1.6;color:var(--ink);position:relative}
+.prose p code,.prose li code,.prose td code{overflow-wrap:anywhere}
+.article-layout > .prose{min-width:0}   /* wide tables scroll inside the post instead of stretching the page on phones */   /* long file names / links wrap on phones */
 .prose pre code{font-family:ui-monospace,Consolas,monospace}
 .prose .copy{position:absolute;top:8px;right:8px;font:600 .8rem var(--font-body, Inter, sans-serif);background:var(--accent-soft);color:var(--accent);border:1px solid transparent;border-radius:8px;padding:4px 10px;cursor:pointer}
 .prose .copy:hover{border-color:var(--accent)}

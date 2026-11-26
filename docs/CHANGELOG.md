@@ -5,6 +5,12 @@ Format each entry: what was done, why it mattered, and any key decisions.
 
 ---
 
+## 2026-11-26 (eight more guide posts)
+
+- New guide posts for the batch-2 Instagram Reels, each with a PDF in `/guides/`: `/blog/get-mentioned-by-chatgpt-and-google-ai` (featured on /blog), `/blog/e-invoice-exemption-rm3-million`, `/blog/n8n-automations-for-small-business`, `/blog/whatsapp-business-away-message-quick-replies`, `/blog/whatsapp-button-website-prefilled-message`, `/blog/one-inbox-whatsapp-instagram-facebook-chatwoot`, `/blog/test-website-speed-pagespeed-insights`, `/blog/outgrown-excel-nocodb-or-custom-system`.
+- Facts link to official pages: LHDN guideline v4.8 and FAQ, Google Search/PageSpeed help, the WhatsApp Help Center, and the GitHub repos for star counts and licences.
+- `site.css`: `.article-layout > .prose{min-width:0}` so a wide table scrolls inside the post instead of stretching the page on phones (the comparison table on the Excel post made it 477 px wide at 390). Long inline code words wrap too. Assets were restamped, so every page's sitemap `lastmod` is 2026-11-26.
+
 ## 2026-11-25 (two more guide posts: order systems, website prices)
 
 - New posts `/blog/stop-retyping-whatsapp-orders` (Automation) and `/blog/how-much-does-a-website-cost-in-malaysia` (Websites), the free guides for the ORDERS and PRICE Reels, each with a PDF in `/guides/`. The price post is now the featured card on `/blog`.

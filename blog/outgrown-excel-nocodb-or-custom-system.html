@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="en-MY">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<script>document.documentElement.classList.add('js');</script>
+<title>Outgrown Excel? Excel vs NocoDB vs a custom system | Onyxx Tech</title>
+<meta name="description" content="Signs you have outgrown Excel, what NocoDB (free, open source, 65,000+ GitHub stars) does, and a checklist to choose between Excel, a no-code tool or a custom system." />
+<link rel="canonical" href="https://www.onyxxtechhub.com.my/blog/outgrown-excel-nocodb-or-custom-system" />
+<meta name="robots" content="index, follow" />
+<meta property="og:type" content="article" />
+<meta property="og:site_name" content="Onyxx Tech" />
+<meta property="og:title" content="Outgrown Excel? Excel vs NocoDB vs a custom system | Onyxx Tech" />
+<meta property="og:description" content="Signs you have outgrown Excel, what NocoDB (free, open source, 65,000+ GitHub stars) does, and a checklist to choose between Excel, a no-code tool or a custom system." />
+<meta property="og:url" content="https://www.onyxxtechhub.com.my/blog/outgrown-excel-nocodb-or-custom-system" />
+<meta property="og:image" content="https://www.onyxxtechhub.com.my/images/blog/outgrown-excel-nocodb-or-custom-system.png" />
+<meta property="og:image:alt" content="Outgrown Excel? Excel vs NocoDB vs a custom system | Onyxx Tech" />
+<meta property="og:locale" content="en_MY" />
+<meta name="twitter:card" content="summary_large_image" />
+<link rel="icon" href="/favicon.ico?v=2" sizes="48x48" />
+<link rel="icon" type="image/png" sizes="192x192" href="/images/favicon-192.png?v=2" />
+<link rel="apple-touch-icon" href="/apple-touch-icon.png?v=2" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@100..125,500..800&amp;family=Inter:wght@400;500;600&amp;display=swap" />
+<link rel="stylesheet" href="/site.css?v=ca7b92f7" />
+<script src="/site.js?v=4baa82bc" defer></script>
+<script type="application/ld+json">
+{
+ "@context": "https://schema.org",
+ "@graph": [
+  {
+   "@type": "ProfessionalService",
+   "@id": "https://www.onyxxtechhub.com.my/#business",
+   "name": "Onyxx Tech",
+   "url": "https://www.onyxxtechhub.com.my/",
+   "logo": "https://www.onyxxtechhub.com.my/images/favicon-192.png",
+   "image": "https://www.onyxxtechhub.com.my/images/og-default.png",
+   "description": "Web design and development studio in Johor Bahru building custom websites, web apps and WhatsApp chatbots.",
+   "email": "onyxtech26@gmail.com",
+   "telephone": "+60-10-253-8873",
+   "identifier": {
+    "@type": "PropertyValue",
+    "propertyID": "SSM registration number",
+    "value": "202603038643 (003822277-T)"
+   },
+   "address": {
+    "@type": "PostalAddress",
+    "addressLocality": "Johor Bahru",
+    "addressRegion": "Johor",
+    "addressCountry": "MY"
+   },
+   "areaServed": [
+    {
+     "@type": "City",
+     "name": "Johor Bahru"
+    },
+    {
+     "@type": "State",
+     "name": "Johor"
+    },
+    {
+     "@type": "Country",
+     "name": "Malaysia"
+    }
+   ],
+   "knowsAbout": [
+    "Web design",
+    "Website development",
+    "Web applications",
+    "WhatsApp chatbots",
+    "Business automation",
+    "Search engine optimisation"
+   ]
+  },
+  {
+   "@type": "BreadcrumbList",
+   "itemListElement": [
+    {
+     "@type": "ListItem",
+     "position": 1,
+     "name": "Home",
+     "item": "https://www.onyxxtechhub.com.my/"
+    },
+    {
+     "@type": "ListItem",
+     "position": 2,
+     "name": "Blog",
+     "item": "https://www.onyxxtechhub.com.my/blog"
+    },
+    {
+     "@type": "ListItem",
+     "position": 3,
+     "name": "Three people, one Excel file, nobody knows which is right",
+     "item": "https://www.onyxxtechhub.com.my/blog/outgrown-excel-nocodb-or-custom-system"
+    }
+   ]
+  },
+  {
+   "@type": "BlogPosting",
+   "headline": "Three people, one Excel file, nobody knows which is right",
+   "description": "Signs you have outgrown Excel, what NocoDB (free, open source, 65,000+ GitHub stars) does, and a checklist to choose between Excel, a no-code tool or a custom system.",
+   "datePublished": "2026-11-26",
+   "dateModified": "2026-11-26",
+   "url": "https://www.onyxxtechhub.com.my/blog/outgrown-excel-nocodb-or-custom-system",
+   "mainEntityOfPage": "https://www.onyxxtechhub.com.my/blog/outgrown-excel-nocodb-or-custom-system",
+   "image": "https://www.onyxxtechhub.com.my/images/blog/outgrown-excel-nocodb-or-custom-system.png",
+   "author": {
+    "@id": "https://www.onyxxtechhub.com.my/#business"
+   },
+   "publisher": {
+    "@id": "https://www.onyxxtechhub.com.my/#business"
+   },
+   "articleSection": "Systems",
+   "inLanguage": "en-MY"
+  },
+  {
+   "@type": "FAQPage",
+   "mainEntity": [
+    {
+     "@type": "Question",
+     "name": "Is NocoDB really free?",
+     "acceptedAnswer": {
+      "@type": "Answer",
+      "text": "The self-hosted version is free for your own internal business use under its Sustainable Use License. Hosted plans cost money."
+     }
+    },
+    {
+     "@type": "Question",
+     "name": "Can I import my Excel file?",
+     "acceptedAnswer": {
+      "@type": "Answer",
+      "text": "Yes, NocoDB can import spreadsheets. Clean up the columns first: one type of information per column."
+     }
+    },
+    {
+     "@type": "Question",
+     "name": "Is it safe for customer data?",
+     "acceptedAnswer": {
+      "@type": "Answer",
+      "text": "On your own server, with logins, permissions, updates and backups, yes. Treat customer data as personal data under the PDPA."
+     }
+    },
+    {
+     "@type": "Question",
+     "name": "When should I go custom instead?",
+     "acceptedAnswer": {
+      "@type": "Answer",
+      "text": "When you need your own rules (stock, approvals, pricing), connections to e-invoicing or payments, or a customer-facing part. That is where we usually come in."
+     }
+    }
+   ]
+  }
+ ]
+}
+</script>
+</head>
+<body>
+<a class="skip-link" href="#main">Skip to content</a>
+
+<header class="site-header">
+  <div class="wrap">
+    <a class="brand" href="/" aria-label="Onyxx Tech home"><img src="/images/onyxx-wordmark-paper.png" alt="Onyxx Tech" width="414" height="120" /></a>
+    <nav class="nav" id="site-nav" aria-label="Main">
+      <a href="/website-design">Website design</a>
+      <a href="/services">Services</a>
+      <a href="/work">Work</a>
+      <a href="/blog" aria-current="page">Blog</a>
+      <a href="/contact">Contact</a>
+      <a class="btn btn-primary nav-mobile-cta" href="/contact">Get a quote</a>
+    </nav>
+    <a class="btn btn-primary header-cta" href="/contact">Get a quote</a>
+    <button class="nav-toggle" type="button" aria-controls="site-nav" aria-expanded="false" aria-label="Open menu">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+    </button>
+  </div>
+</header>
+
+<main id="main">
+  <article>
+    <section class="page-hero" style="padding-bottom: 0;">
+      <div class="wrap">
+        <ol class="crumbs"><li><a href="/">Home</a></li><li><a href="/blog">Blog</a></li><li aria-current="page">Three people, one Excel file, nobody knows which is right</li></ol>
+        <div class="article-head">
+          <p class="eyebrow">Systems</p>
+          <h1>Three people, one Excel file, nobody knows which is right</h1>
+          <p class="lead">When a spreadsheet is shared by the whole team, it starts to break. NocoDB is a free GitHub tool that turns it into a shared database. Here is when it is enough, and when you need a proper system.</p>
+          <p class="article-meta"><span>By Onyxx Tech</span><span><time datetime="2026-11-26">26 November 2026</time></span><span>7 min read</span></p>
+          <div class="pdf-row"><a class="btn btn-primary" href="/guides/outgrown-excel-nocodb-or-custom-system.pdf" download>Download as PDF</a><span class="note">Free. Save it, print it, share it with your team.</span></div>
+        </div>
+        <div class="article-cover"><img src="/images/blog/outgrown-excel-nocodb-or-custom-system.webp" alt="Two laptops on an office table, one with a crowded spreadsheet and one showing the same data as cards on a board" width="1200" height="630" fetchpriority="high" /></div>
+      </div>
+    </section>
+    <section class="section" style="padding-top: 0;">
+      <div class="wrap article-layout">
+        <div class="prose">
+<p><code>orders_final.xlsx</code>, <code>orders_final_v2.xlsx</code>, <code>orders_final_REAL.xlsx</code>. When three people work from three copies of the same file, nobody knows which one is right, and mistakes follow. You do not always need a big system to fix it. <a href="https://github.com/nocodb/nocodb" target="_blank" rel="noopener">NocoDB</a>, a free tool with over 65,000 stars on GitHub, turns a spreadsheet into a shared database that still looks like a spreadsheet. This post covers the signs you have outgrown Excel, what NocoDB does, and how to choose between Excel, a tool like NocoDB, or a custom system.</p>
+<h2>Signs you have outgrown Excel</h2>
+<ul>
+<li>More than one version of the same file exists.</li>
+<li>Two people need to edit at the same time.</li>
+<li>Someone has to ask "is this the latest?" every day.</li>
+<li>Formulas break when someone sorts or adds a row.</li>
+<li>Staff can see data they should not, like costs or salaries.</li>
+<li>You cannot tell who changed what, or when.</li>
+</ul>
+<p>Two or more of these, and it is time to look at something else.</p>
+<h2>What NocoDB does</h2>
+<p>According to its <a href="https://github.com/nocodb/nocodb" target="_blank" rel="noopener">README</a>, NocoDB gives you:</p>
+<ul>
+<li><strong>A spreadsheet view</strong> that your team already understands.</li>
+<li><strong>Other views of the same data</strong>: forms for adding records, a <strong>kanban</strong> board for status, a <strong>calendar</strong>, and a gallery.</li>
+<li><strong>Proper field types</strong>: links between tables, attachments, currency, formulas.</li>
+<li><strong>Logins</strong>: everyone works on the same data at the same time, with their own account.</li>
+</ul>
+<p>It is free to run on your own server for your own business under its Sustainable Use License, and the company also offers a hosted version.</p>
+<h2>Excel, NocoDB or a custom system?</h2>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>Excel / Google Sheets</th>
+<th>NocoDB (no-code database)</th>
+<th>Custom system</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Best for</td>
+<td>One person, simple lists</td>
+<td>A team sharing records, forms and status</td>
+<td>Your exact process, rules and integrations</td>
+</tr>
+<tr>
+<td>Cost</td>
+<td>Low</td>
+<td>Free software + a server or hosted plan</td>
+<td>A build, plus maintenance</td>
+</tr>
+<tr>
+<td>Logins and permissions</td>
+<td>Basic</td>
+<td>Yes</td>
+<td>Exactly as you need</td>
+</tr>
+<tr>
+<td>Rules ("can't confirm without stock")</td>
+<td>Formulas, easily broken</td>
+<td>Limited</td>
+<td>Built in</td>
+</tr>
+<tr>
+<td>Connects to e-invoicing, payments, WhatsApp</td>
+<td>Manual</td>
+<td>Through automations</td>
+<td>Built in</td>
+</tr>
+</tbody>
+</table>
+<p>A good path for many businesses: move from Excel to a tool like NocoDB, learn what you need, then build a custom system when the rules and integrations matter. Your data is already organised by then, which makes the move easier.</p>
+<h2>Where to start</h2>
+<ol>
+<li>List the spreadsheets your team shares, and who edits each one.</li>
+<li>Pick the one that causes the most mistakes.</li>
+<li>Write down its columns and who needs to see what.</li>
+<li>Try it in NocoDB with sample data first, never with real customer details until logins and backups are set up.</li>
+</ol>
+<h2>Questions people ask</h2>
+<h3>Is NocoDB really free?</h3>
+<p>The self-hosted version is free for your own internal business use under its Sustainable Use License. Hosted plans cost money.</p>
+<h3>Can I import my Excel file?</h3>
+<p>Yes, NocoDB can import spreadsheets. Clean up the columns first: one type of information per column.</p>
+<h3>Is it safe for customer data?</h3>
+<p>On your own server, with logins, permissions, updates and backups, yes. Treat customer data as personal data under the PDPA.</p>
+<h3>When should I go custom instead?</h3>
+<p>When you need your own rules (stock, approvals, pricing), connections to e-invoicing or payments, or a customer-facing part. That is where we usually come in.</p>
+<div class="pdf-row"><a class="btn btn-primary" href="/guides/outgrown-excel-nocodb-or-custom-system.pdf" download>Download as PDF</a><span class="note">Free. Save it, print it, share it with your team.</span></div>
+<p class="print-only">Onyxx Tech · web and software studio in Johor Bahru · www.onyxxtechhub.com.my/blog/outgrown-excel-nocodb-or-custom-system · WhatsApp +60 10-253 8873 · onyxtech26@gmail.com</p>
+        </div>
+        <aside class="article-aside">
+          <h3>Need this built?</h3>
+          <p>We are a web and software studio in Johor Bahru. Tell us what you need and get a fixed quote, or a straight answer if you do not need us.</p>
+          <a class="btn btn-primary" href="/contact">Get a fixed quote</a>
+        </aside>
+      </div>
+    </section>
+  </article>
+
+  <section class="section section-alt">
+    <div class="wrap">
+      <div class="related-head">
+        <div><h2>More from the blog</h2></div>
+        <a class="btn btn-ghost" href="/blog">All posts</a>
+      </div>
+      <div class="post-list">
+        <a class="post-card reveal" href="/blog/stop-retyping-whatsapp-orders">
+          <div class="cover"><img src="/images/blog/stop-retyping-whatsapp-orders.webp" alt="" width="1200" height="630" loading="lazy" /></div>
+          <p class="meta">Automation · 7 min read</p>
+          <h3>Still copying WhatsApp orders into Excel? Map your order flow first</h3>
+        </a>
+        <a class="post-card reveal" href="/blog/n8n-automations-for-small-business">
+          <div class="cover"><img src="/images/blog/n8n-automations-for-small-business.webp" alt="" width="1200" height="630" loading="lazy" /></div>
+          <p class="meta">Automation · 7 min read</p>
+          <h3>This free tool does your boring admin: 5 automations to set up first</h3>
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <section class="cta-band section-dark">
+    <div class="wrap">
+      <h2>Get a quote for your project</h2>
+      <p class="lead">Send a message with what you need and get a clear, fixed quote. You will hear back from the person who will build it, not a sales team.</p>
+      <div class="btn-row">
+        <a class="btn btn-primary" href="/contact">Get a fixed quote</a>
+        <a class="btn btn-outline-light" href="https://wa.me/60102538873" target="_blank" rel="noopener">WhatsApp us</a>
+      </div>
+      <div class="cta-contacts">
+        <a href="mailto:onyxtech26@gmail.com"><span>Email</span>onyxtech26@gmail.com</a>
+        <a href="https://wa.me/60102538873" target="_blank" rel="noopener"><span>WhatsApp</span>+60 10-253 8873</a>
+        <a href="https://wa.me/60194688052" target="_blank" rel="noopener"><span>WhatsApp</span>+60 19-468 8052</a>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer class="site-footer">
+  <div class="wrap">
+    <div class="footer-grid">
+      <div class="footer-brand">
+        <img src="/images/onyxx-wordmark-paper.png" alt="Onyxx Tech" width="414" height="120" loading="lazy" />
+        <p>Web design and development studio in Johor Bahru, Malaysia. Websites, web apps, WhatsApp chatbots and automations.</p>
+      </div>
+      <div>
+        <h4>Services</h4>
+        <ul>
+          <li><a href="/website-design">Website design</a></li>
+          <li><a href="/custom-software">Web apps &amp; systems</a></li>
+          <li><a href="/chatbots">WhatsApp chatbots</a></li>
+          <li><a href="/ai-agents">AI agents</a></li>
+          <li><a href="/automations">Automations</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4>Studio</h4>
+        <ul>
+          <li><a href="/work">Work</a></li>
+          <li><a href="/services">All services</a></li>
+          <li><a href="/blog">Blog</a></li>
+          <li><a href="/contact">Contact</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4>Contact</h4>
+        <ul>
+          <li>Johor Bahru, Johor, Malaysia</li>
+          <li><a href="mailto:onyxtech26@gmail.com">onyxtech26@gmail.com</a></li>
+          <li><a href="https://wa.me/60102538873" target="_blank" rel="noopener">+60 10-253 8873</a></li>
+          <li><a href="https://wa.me/60194688052" target="_blank" rel="noopener">+60 19-468 8052</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <span>&copy; <span data-year>2026</span> Onyxx Tech (202603038643 (003822277-T)). All rights reserved.</span>
+      <span><a href="/privacy">Privacy</a> &nbsp;·&nbsp; <a href="/cookies">Cookies</a> &nbsp;·&nbsp; <a href="/terms">Terms</a></span>
+    </div>
+  </div>
+</footer>
+</body>
+</html>
