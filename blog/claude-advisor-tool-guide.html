@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="en-MY">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<script>document.documentElement.classList.add('js');</script>
+<title>Claude&#x27;s advisor tool: a plain-English setup guide | Onyxx Tech</title>
+<meta name="description" content="Claude&#x27;s advisor tool lets a fast, low-cost model ask a smarter one for a plan mid-task. What it is, when it saves money, and the code to switch it on." />
+<link rel="canonical" href="https://www.onyxxtechhub.com.my/blog/claude-advisor-tool-guide" />
+<meta name="robots" content="index, follow" />
+<meta property="og:type" content="article" />
+<meta property="og:site_name" content="Onyxx Tech" />
+<meta property="og:title" content="Claude&#x27;s advisor tool: a plain-English setup guide | Onyxx Tech" />
+<meta property="og:description" content="Claude&#x27;s advisor tool lets a fast, low-cost model ask a smarter one for a plan mid-task. What it is, when it saves money, and the code to switch it on." />
+<meta property="og:url" content="https://www.onyxxtechhub.com.my/blog/claude-advisor-tool-guide" />
+<meta property="og:image" content="https://www.onyxxtechhub.com.my/images/blog/claude-advisor-tool-guide.png" />
+<meta property="og:image:alt" content="Claude&#x27;s advisor tool: a plain-English setup guide | Onyxx Tech" />
+<meta property="og:locale" content="en_MY" />
+<meta name="twitter:card" content="summary_large_image" />
+<link rel="icon" href="/favicon.ico?v=2" sizes="48x48" />
+<link rel="icon" type="image/png" sizes="192x192" href="/images/favicon-192.png?v=2" />
+<link rel="apple-touch-icon" href="/apple-touch-icon.png?v=2" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@100..125,500..800&amp;family=Inter:wght@400;500;600&amp;display=swap" />
+<link rel="stylesheet" href="/site.css?v=ca7b92f7" />
+<script src="/site.js?v=4baa82bc" defer></script>
+<script type="application/ld+json">
+{
+ "@context": "https://schema.org",
+ "@graph": [
+  {
+   "@type": "ProfessionalService",
+   "@id": "https://www.onyxxtechhub.com.my/#business",
+   "name": "Onyxx Tech",
+   "url": "https://www.onyxxtechhub.com.my/",
+   "logo": "https://www.onyxxtechhub.com.my/images/favicon-192.png",
+   "image": "https://www.onyxxtechhub.com.my/images/og-default.png",
+   "description": "Web design and development studio in Johor Bahru building custom websites, web apps and WhatsApp chatbots.",
+   "email": "onyxtech26@gmail.com",
+   "telephone": "+60-10-253-8873",
+   "identifier": {
+    "@type": "PropertyValue",
+    "propertyID": "SSM registration number",
+    "value": "202603038643 (003822277-T)"
+   },
+   "address": {
+    "@type": "PostalAddress",
+    "addressLocality": "Johor Bahru",
+    "addressRegion": "Johor",
+    "addressCountry": "MY"
+   },
+   "areaServed": [
+    {
+     "@type": "City",
+     "name": "Johor Bahru"
+    },
+    {
+     "@type": "State",
+     "name": "Johor"
+    },
+    {
+     "@type": "Country",
+     "name": "Malaysia"
+    }
+   ],
+   "knowsAbout": [
+    "Web design",
+    "Website development",
+    "Web applications",
+    "WhatsApp chatbots",
+    "Business automation",
+    "Search engine optimisation"
+   ]
+  },
+  {
+   "@type": "BreadcrumbList",
+   "itemListElement": [
+    {
+     "@type": "ListItem",
+     "position": 1,
+     "name": "Home",
+     "item": "https://www.onyxxtechhub.com.my/"
+    },
+    {
+     "@type": "ListItem",
+     "position": 2,
+     "name": "Blog",
+     "item": "https://www.onyxxtechhub.com.my/blog"
+    },
+    {
+     "@type": "ListItem",
+     "position": 3,
+     "name": "Claude's advisor tool: pay for the expert only when you need one",
+     "item": "https://www.onyxxtechhub.com.my/blog/claude-advisor-tool-guide"
+    }
+   ]
+  },
+  {
+   "@type": "BlogPosting",
+   "headline": "Claude's advisor tool: pay for the expert only when you need one",
+   "description": "Claude's advisor tool lets a fast, low-cost model ask a smarter one for a plan mid-task. What it is, when it saves money, and the code to switch it on.",
+   "datePublished": "2026-11-27",
+   "dateModified": "2026-11-27",
+   "url": "https://www.onyxxtechhub.com.my/blog/claude-advisor-tool-guide",
+   "mainEntityOfPage": "https://www.onyxxtechhub.com.my/blog/claude-advisor-tool-guide",
+   "image": "https://www.onyxxtechhub.com.my/images/blog/claude-advisor-tool-guide.png",
+   "author": {
+    "@id": "https://www.onyxxtechhub.com.my/#business"
+   },
+   "publisher": {
+    "@id": "https://www.onyxxtechhub.com.my/#business"
+   },
+   "articleSection": "AI tools",
+   "inLanguage": "en-MY"
+  },
+  {
+   "@type": "FAQPage",
+   "mainEntity": [
+    {
+     "@type": "Question",
+     "name": "Is the advisor tool free?",
+     "acceptedAnswer": {
+      "@type": "Answer",
+      "text": "No. Each advisor call is billed at the advisor model's normal rates, and the executor is billed at its own. The saving comes from the cheaper model writing most of the output."
+     }
+    },
+    {
+     "@type": "Question",
+     "name": "Which models can be the advisor?",
+     "acceptedAnswer": {
+      "@type": "Answer",
+      "text": "The advisor has to be at least as capable as the executor, and Claude Sonnet 4.6 or newer. Anthropic's advisor tool page lists every valid pair."
+     }
+    },
+    {
+     "@type": "Question",
+     "name": "Does it work with Claude Code or the Claude app?",
+     "acceptedAnswer": {
+      "@type": "Answer",
+      "text": "It is a Claude API feature for developers building their own apps and agents. It is in beta on the Claude API, Claude Platform on AWS and Claude Models on Google Cloud (Anthropic managed)."
+     }
+    },
+    {
+     "@type": "Question",
+     "name": "Can the advisor use tools or search the web?",
+     "acceptedAnswer": {
+      "@type": "Answer",
+      "text": "No. It only reads the conversation and gives advice. The executor does all the tool calls."
+     }
+    }
+   ]
+  }
+ ]
+}
+</script>
+</head>
+<body>
+<a class="skip-link" href="#main">Skip to content</a>
+
+<header class="site-header">
+  <div class="wrap">
+    <a class="brand" href="/" aria-label="Onyxx Tech home"><img src="/images/onyxx-wordmark-paper.png" alt="Onyxx Tech" width="414" height="120" /></a>
+    <nav class="nav" id="site-nav" aria-label="Main">
+      <a href="/website-design">Website design</a>
+      <a href="/services">Services</a>
+      <a href="/work">Work</a>
+      <a href="/blog" aria-current="page">Blog</a>
+      <a href="/contact">Contact</a>
+      <a class="btn btn-primary nav-mobile-cta" href="/contact">Get a quote</a>
+    </nav>
+    <a class="btn btn-primary header-cta" href="/contact">Get a quote</a>
+    <button class="nav-toggle" type="button" aria-controls="site-nav" aria-expanded="false" aria-label="Open menu">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+    </button>
+  </div>
+</header>
+
+<main id="main">
+  <article>
+    <section class="page-hero" style="padding-bottom: 0;">
+      <div class="wrap">
+        <ol class="crumbs"><li><a href="/">Home</a></li><li><a href="/blog">Blog</a></li><li aria-current="page">Claude&#x27;s advisor tool: pay for the expert only when you need one</li></ol>
+        <div class="article-head">
+          <p class="eyebrow">AI tools</p>
+          <h1>Claude&#x27;s advisor tool: pay for the expert only when you need one</h1>
+          <p class="lead">A cheaper Claude model does the work and calls a smarter one only for the hard decisions. Here is what that means, what it costs and how to switch it on.</p>
+          <p class="article-meta"><span>By Onyxx Tech</span><span><time datetime="2026-11-27">27 November 2026</time></span><span>6 min read</span></p>
+          <div class="pdf-row"><a class="btn btn-primary" href="/guides/claude-advisor-tool-guide.pdf" download>Download as PDF</a><span class="note">Free. Save it, print it, share it with your team.</span></div>
+        </div>
+        <div class="article-cover"><img src="/images/blog/claude-advisor-tool-guide.webp" alt="A laptop running code at night beside a desk phone lit up in cyan, next to the title Claude&#x27;s advisor tool" width="1200" height="630" fetchpriority="high" /></div>
+      </div>
+    </section>
+    <section class="section" style="padding-top: 0;">
+      <div class="wrap article-layout">
+        <div class="prose">
+<p>The advisor tool lets a fast, low-cost Claude model do the work and call a smarter Claude model, such as Claude Opus, only when it reaches a hard decision. The smart model reads everything so far, sends back a short plan, and the cheaper model carries on. You get results close to the smart model's quality while most of the writing is billed at the cheaper model's price. It is in beta on the Claude API, and switching it on takes one extra tool in your request.</p>
+<h2>The problem: paying expert rates for easy work</h2>
+<p>Most AI agents run one model for every step. If that model is the smartest one, you pay top price to rename files, reformat text and read search results. If it is a cheaper one, it does those steps well but sometimes picks the wrong plan on the hard part, and the whole job goes off course.</p>
+<p>Think of an office. You would not pay a senior consultant to do data entry. You would let a junior do the work and call the consultant for twenty minutes when a real decision comes up. The advisor tool is that arrangement, built into the API.</p>
+<h2>How does the advisor tool work?</h2>
+<p>There are two models in one request:</p>
+<ol>
+<li><strong>The executor</strong> is the model you call as usual (for example Claude Sonnet 5.5). It does the work and writes the final answer.</li>
+<li><strong>The advisor</strong> is a smarter model you name inside the tool (for example Claude Opus 5.5).</li>
+</ol>
+<p>The executor decides when to ask, the same way it decides to use any other tool. When it does, the advisor runs on Anthropic's side and receives the whole conversation so far: your instructions, the tools, earlier turns, tool results and the work in progress. The advisor has no tools of its own. Its reply is a short piece of advice, and only that advice goes back to the executor (the advisor's own thinking is dropped). The executor then continues. All of this happens inside one API request, so you do not write any extra back-and-forth code.</p>
+<p>Anthropic's <a href="https://platform.claude.com/docs/en/agents-and-tools/tool-use/advisor-tool" target="_blank" rel="noopener">advisor tool page</a> has a diagram of the full flow.</p>
+<h2>What do you actually get?</h2>
+<p><strong>Quality close to the smart model, at a price close to the cheap one.</strong> The advisor usually writes a short note, roughly 400 to 700 tokens of advice per call according to Anthropic, while the executor writes everything else at its lower rate.</p>
+<p>Anthropic's own tests, reported on the same page, give a feel for it:</p>
+<ul>
+<li>A Claude Sonnet executor at medium effort with an Opus advisor reached about the same intelligence as Sonnet at its default effort, at a lower cost.</li>
+<li>Capping each piece of advice at 2,048 tokens cut the advisor's output about seven times, with almost no advice cut short.</li>
+</ul>
+<p>Each advisor call is billed separately at the advisor model's rates, and it shows up in the response's <code>usage.iterations</code> list, so you can see exactly what the advice cost.</p>
+<h2>When is it worth it, and when is it not?</h2>
+<p>Use it for <strong>long, multi-step jobs</strong> where getting the plan right matters: coding agents, research that takes many steps, computer use. Anthropic suggests two common setups:</p>
+<ul>
+<li>You already run Sonnet on complex tasks: add an Opus advisor and keep a similar or lower total cost.</li>
+<li>You run a small model like Haiku and want it smarter: add a bigger advisor. That costs more than Haiku alone but less than switching everything to the bigger model.</li>
+</ul>
+<p>Skip it for <strong>simple one-shot questions</strong>, where there is nothing to plan, and for jobs where every single step needs the top model anyway.</p>
+<h2>How do I turn it on?</h2>
+<p>Three things go into a normal Messages API request:</p>
+<ol>
+<li>The beta flag <code>advisor-tool-2026-03-01</code>.</li>
+<li>A tool with <code>type: "advisor_20260301"</code>, <code>name: "advisor"</code> and the advisor <code>model</code>.</li>
+<li>A top-level <code>model</code> for the executor.</li>
+</ol>
+<p>The advisor must be at least as capable as the executor, or the API returns an error. A Claude Sonnet 5.5 executor with a Claude Opus 5.5 advisor is a valid pair.</p>
+<p><strong>Python</strong></p>
+<pre><code>import anthropic
+
+client = anthropic.Anthropic()
+
+response = client.beta.messages.create(
+    model=&quot;claude-sonnet-5-5&quot;,          # the executor: does the work
+    max_tokens=16000,
+    betas=[&quot;advisor-tool-2026-03-01&quot;],
+    tools=[{
+        &quot;type&quot;: &quot;advisor_20260301&quot;,
+        &quot;name&quot;: &quot;advisor&quot;,
+        &quot;model&quot;: &quot;claude-opus-5-5&quot;,     # the advisor: asked only for hard decisions
+        &quot;max_uses&quot;: 3,                  # at most 3 consultations per turn
+        &quot;max_tokens&quot;: 2048,             # keep each piece of advice short
+    }],
+    messages=[{&quot;role&quot;: &quot;user&quot;, &quot;content&quot;: &quot;Plan and write a booking system for a small clinic.&quot;}],
+)
+</code></pre>
+<p><strong>TypeScript</strong></p>
+<pre><code>import Anthropic from &quot;@anthropic-ai/sdk&quot;;
+
+const client = new Anthropic();
+
+const response = await client.beta.messages.create({
+  model: &quot;claude-sonnet-5-5&quot;,
+  max_tokens: 16000,
+  betas: [&quot;advisor-tool-2026-03-01&quot;],
+  tools: [{ type: &quot;advisor_20260301&quot;, name: &quot;advisor&quot;, model: &quot;claude-opus-5-5&quot;, max_uses: 3, max_tokens: 2048 }],
+  messages: [{ role: &quot;user&quot;, content: &quot;Plan and write a booking system for a small clinic.&quot; }],
+});
+</code></pre>
+<p>A few things worth knowing before you ship it:</p>
+<ul>
+<li><strong>You may not be able to read the advice.</strong> Newer advisors such as Claude Opus 5.5 return it encrypted (<code>advisor_redacted_result</code>). The executor can use it; your code just passes it back in the conversation. If you need to read the advice while testing, Anthropic names <code>claude-opus-4-8</code> as an advisor that returns plain text.</li>
+<li><strong>Streaming pauses</strong> while the advisor thinks. The stream sends keep-alive pings, so do not treat the silence as a timeout.</li>
+<li><strong>Turn on caching for long jobs.</strong> The tool has a <code>caching</code> option (<code>{"type": "ephemeral", "ttl": "5m"}</code>); Anthropic says it pays off from about three advisor calls in a conversation.</li>
+<li><strong>Some newer executors cannot be forced to call it</strong> (<code>tool_choice</code> of type <code>tool</code> or <code>any</code> is rejected). Ask for it in your system prompt instead, for example "Consult the advisor before you commit to a plan."</li>
+</ul>
+<h2>What not to do</h2>
+<ul>
+<li>Do not add an advisor to a chatbot that answers simple questions. You pay for advice nobody needed.</li>
+<li>Do not pair a smart executor with a weaker advisor. The API rejects it, and it would not help anyway.</li>
+<li>Do not build your own "ask the big model" loop for this. The tool already sends the full context and returns in one request.</li>
+</ul>
+<h2>Where to start on Monday</h2>
+<p>Pick one long task your team already runs with a single model, the one that sometimes goes off track. Run it ten times as it is, then ten times with a cheaper executor and the advisor switched on, with <code>max_tokens</code> at 2,048. Compare the results and the cost in <code>usage.iterations</code>. Keep whichever wins.</p>
+<h2>Questions people ask</h2>
+<h3>Is the advisor tool free?</h3>
+<p>No. Each advisor call is billed at the advisor model's normal rates, and the executor is billed at its own. The saving comes from the cheaper model writing most of the output.</p>
+<h3>Which models can be the advisor?</h3>
+<p>The advisor has to be at least as capable as the executor, and Claude Sonnet 4.6 or newer. Anthropic's advisor tool page lists every valid pair.</p>
+<h3>Does it work with Claude Code or the Claude app?</h3>
+<p>It is a Claude API feature for developers building their own apps and agents. It is in beta on the Claude API, Claude Platform on AWS and Claude Models on Google Cloud (Anthropic managed).</p>
+<h3>Can the advisor use tools or search the web?</h3>
+<p>No. It only reads the conversation and gives advice. The executor does all the tool calls.</p>
+<div class="pdf-row"><a class="btn btn-primary" href="/guides/claude-advisor-tool-guide.pdf" download>Download as PDF</a><span class="note">Free. Save it, print it, share it with your team.</span></div>
+<p class="print-only">Onyxx Tech · web and software studio in Johor Bahru · www.onyxxtechhub.com.my/blog/claude-advisor-tool-guide · WhatsApp +60 10-253 8873 · onyxtech26@gmail.com</p>
+        </div>
+        <aside class="article-aside">
+          <h3>Need this built?</h3>
+          <p>We are a web and software studio in Johor Bahru. Tell us what you need and get a fixed quote, or a straight answer if you do not need us.</p>
+          <a class="btn btn-primary" href="/contact">Get a fixed quote</a>
+        </aside>
+      </div>
+    </section>
+  </article>
+
+  <section class="section section-alt">
+    <div class="wrap">
+      <div class="related-head">
+        <div><h2>More from the blog</h2></div>
+        <a class="btn btn-ghost" href="/blog">All posts</a>
+      </div>
+      <div class="post-list">
+        <a class="post-card reveal" href="/blog/ai-and-digital-grants-malaysian-smes-2026">
+          <div class="cover"><img src="/images/blog/grants.webp" alt="" width="1200" height="630" loading="lazy" /></div>
+          <p class="meta">Funding · 6 min read</p>
+          <h3>The AI and digitalisation grants Malaysian SMEs can claim in 2026</h3>
+        </a>
+        <a class="post-card reveal" href="/blog/what-a-whatsapp-chatbot-costs-in-malaysia">
+          <div class="cover"><img src="/images/blog/chatbot-cost.webp" alt="" width="1200" height="630" loading="lazy" /></div>
+          <p class="meta">Chatbots · 7 min read</p>
+          <h3>What a WhatsApp chatbot actually costs a Malaysian business</h3>
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <section class="cta-band section-dark">
+    <div class="wrap">
+      <h2>Get a quote for your project</h2>
+      <p class="lead">Send a message with what you need and get a clear, fixed quote. You will hear back from the person who will build it, not a sales team.</p>
+      <div class="btn-row">
+        <a class="btn btn-primary" href="/contact">Get a fixed quote</a>
+        <a class="btn btn-outline-light" href="https://wa.me/60102538873" target="_blank" rel="noopener">WhatsApp us</a>
+      </div>
+      <div class="cta-contacts">
+        <a href="mailto:onyxtech26@gmail.com"><span>Email</span>onyxtech26@gmail.com</a>
+        <a href="https://wa.me/60102538873" target="_blank" rel="noopener"><span>WhatsApp</span>+60 10-253 8873</a>
+        <a href="https://wa.me/60194688052" target="_blank" rel="noopener"><span>WhatsApp</span>+60 19-468 8052</a>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer class="site-footer">
+  <div class="wrap">
+    <div class="footer-grid">
+      <div class="footer-brand">
+        <img src="/images/onyxx-wordmark-paper.png" alt="Onyxx Tech" width="414" height="120" loading="lazy" />
+        <p>Web design and development studio in Johor Bahru, Malaysia. Websites, web apps, WhatsApp chatbots and automations.</p>
+      </div>
+      <div>
+        <h4>Services</h4>
+        <ul>
+          <li><a href="/website-design">Website design</a></li>
+          <li><a href="/custom-software">Web apps &amp; systems</a></li>
+          <li><a href="/chatbots">WhatsApp chatbots</a></li>
+          <li><a href="/ai-agents">AI agents</a></li>
+          <li><a href="/automations">Automations</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4>Studio</h4>
+        <ul>
+          <li><a href="/work">Work</a></li>
+          <li><a href="/services">All services</a></li>
+          <li><a href="/blog">Blog</a></li>
+          <li><a href="/contact">Contact</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4>Contact</h4>
+        <ul>
+          <li>Johor Bahru, Johor, Malaysia</li>
+          <li><a href="mailto:onyxtech26@gmail.com">onyxtech26@gmail.com</a></li>
+          <li><a href="https://wa.me/60102538873" target="_blank" rel="noopener">+60 10-253 8873</a></li>
+          <li><a href="https://wa.me/60194688052" target="_blank" rel="noopener">+60 19-468 8052</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <span>&copy; <span data-year>2026</span> Onyxx Tech (202603038643 (003822277-T)). All rights reserved.</span>
+      <span><a href="/privacy">Privacy</a> &nbsp;·&nbsp; <a href="/cookies">Cookies</a> &nbsp;·&nbsp; <a href="/terms">Terms</a></span>
+    </div>
+  </div>
+</footer>
+</body>
+</html>

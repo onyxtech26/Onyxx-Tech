@@ -2,7 +2,7 @@
 
 > **Living board.** Read at the start of every session; updated when significant tasks finish. Newest state on top.
 
-**Last updated:** 2026-11-26
+**Last updated:** 2026-11-27
 
 ---
 
@@ -97,6 +97,7 @@ Verified in Chrome via Playwright: 7 pages × dark/light with zero errors, 28 pa
 ## 🗂️ Board
 
 ### ✅ Done
+- [x] 2026-11-27: advisor tool guide post (`/blog/claude-advisor-tool-guide`) + PDF, featured on /blog (branch `claude/blog-claude-advisor-tool-guide`).
 - [x] **Public site redesigned + repositioned for "web design Johor Bahru"** — new `site.css`/`site.js`, 26 static pages, new `/website-design` page, founders/why/process removed with 301s, all content crawlable, local structured data. *(2026-10-29)*
 - [x] **Maintenance payments** — `project_payments.kind = 'maintenance'` plus an optional per-project plan (migration 07, applied). New Maintenance tab; maintenance counts as collected cash but never against a project's contract, so SOLE no longer reads as overpaid. *(2026-10-29)*
 - [x] **Favicon fixed for Google search** — Google showed a grey globe because the icons were 298×326 (Google rejects non-square favicons), the default one was white-on-transparent, and `/favicon.ico` was 404. Now: square dark-tile icons — `/favicon.ico` (16/32/48), `/images/favicon-192.png`, `/apple-touch-icon.png` — on all 32 pages, with root-absolute paths. *(2026-10-01)*
