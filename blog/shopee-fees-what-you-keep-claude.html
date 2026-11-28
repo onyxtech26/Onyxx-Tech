@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="en-MY">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<script>document.documentElement.classList.add('js');</script>
+<title>Shopee fees: let Claude work out what you keep per item | Onyxx Tech</title>
+<meta name="description" content="Shopee fees changed again in 2026. Paste the fee notice and your price list into Claude and get a table of what you keep per item. Exact prompt inside." />
+<link rel="canonical" href="https://www.onyxxtechhub.com.my/blog/shopee-fees-what-you-keep-claude" />
+<meta name="robots" content="index, follow" />
+<meta property="og:type" content="article" />
+<meta property="og:site_name" content="Onyxx Tech" />
+<meta property="og:title" content="Shopee fees: let Claude work out what you keep per item | Onyxx Tech" />
+<meta property="og:description" content="Shopee fees changed again in 2026. Paste the fee notice and your price list into Claude and get a table of what you keep per item. Exact prompt inside." />
+<meta property="og:url" content="https://www.onyxxtechhub.com.my/blog/shopee-fees-what-you-keep-claude" />
+<meta property="og:image" content="https://www.onyxxtechhub.com.my/images/blog/shopee-fees-what-you-keep-claude.png" />
+<meta property="og:image:alt" content="Shopee fees: let Claude work out what you keep per item | Onyxx Tech" />
+<meta property="og:locale" content="en_MY" />
+<meta name="twitter:card" content="summary_large_image" />
+<link rel="icon" href="/favicon.ico?v=2" sizes="48x48" />
+<link rel="icon" type="image/png" sizes="192x192" href="/images/favicon-192.png?v=2" />
+<link rel="apple-touch-icon" href="/apple-touch-icon.png?v=2" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@100..125,500..800&amp;family=Inter:wght@400;500;600&amp;display=swap" />
+<link rel="stylesheet" href="/site.css?v=ca7b92f7" />
+<script src="/site.js?v=4baa82bc" defer></script>
+<script type="application/ld+json">
+{
+ "@context": "https://schema.org",
+ "@graph": [
+  {
+   "@type": "ProfessionalService",
+   "@id": "https://www.onyxxtechhub.com.my/#business",
+   "name": "Onyxx Tech",
+   "url": "https://www.onyxxtechhub.com.my/",
+   "logo": "https://www.onyxxtechhub.com.my/images/favicon-192.png",
+   "image": "https://www.onyxxtechhub.com.my/images/og-default.png",
+   "description": "Web design and development studio in Johor Bahru building custom websites, web apps and WhatsApp chatbots.",
+   "email": "onyxtech26@gmail.com",
+   "telephone": "+60-10-253-8873",
+   "identifier": {
+    "@type": "PropertyValue",
+    "propertyID": "SSM registration number",
+    "value": "202603038643 (003822277-T)"
+   },
+   "address": {
+    "@type": "PostalAddress",
+    "addressLocality": "Johor Bahru",
+    "addressRegion": "Johor",
+    "addressCountry": "MY"
+   },
+   "areaServed": [
+    {
+     "@type": "City",
+     "name": "Johor Bahru"
+    },
+    {
+     "@type": "State",
+     "name": "Johor"
+    },
+    {
+     "@type": "Country",
+     "name": "Malaysia"
+    }
+   ],
+   "knowsAbout": [
+    "Web design",
+    "Website development",
+    "Web applications",
+    "WhatsApp chatbots",
+    "Business automation",
+    "Search engine optimisation"
+   ]
+  },
+  {
+   "@type": "BreadcrumbList",
+   "itemListElement": [
+    {
+     "@type": "ListItem",
+     "position": 1,
+     "name": "Home",
+     "item": "https://www.onyxxtechhub.com.my/"
+    },
+    {
+     "@type": "ListItem",
+     "position": 2,
+     "name": "Blog",
+     "item": "https://www.onyxxtechhub.com.my/blog"
+    },
+    {
+     "@type": "ListItem",
+     "position": 3,
+     "name": "You sold a RM20 item on Shopee. How much actually reaches your bank?",
+     "item": "https://www.onyxxtechhub.com.my/blog/shopee-fees-what-you-keep-claude"
+    }
+   ]
+  },
+  {
+   "@type": "BlogPosting",
+   "headline": "You sold a RM20 item on Shopee. How much actually reaches your bank?",
+   "description": "Shopee fees changed again in 2026. Paste the fee notice and your price list into Claude and get a table of what you keep per item. Exact prompt inside.",
+   "datePublished": "2026-11-28",
+   "dateModified": "2026-11-28",
+   "url": "https://www.onyxxtechhub.com.my/blog/shopee-fees-what-you-keep-claude",
+   "mainEntityOfPage": "https://www.onyxxtechhub.com.my/blog/shopee-fees-what-you-keep-claude",
+   "image": "https://www.onyxxtechhub.com.my/images/blog/shopee-fees-what-you-keep-claude.png",
+   "author": {
+    "@id": "https://www.onyxxtechhub.com.my/#business"
+   },
+   "publisher": {
+    "@id": "https://www.onyxxtechhub.com.my/#business"
+   },
+   "articleSection": "AI Tools",
+   "inLanguage": "en-MY"
+  },
+  {
+   "@type": "FAQPage",
+   "mainEntity": [
+    {
+     "@type": "Question",
+     "name": "Do I need the paid version of Claude?",
+     "acceptedAnswer": {
+      "@type": "Answer",
+      "text": "No. The free plan at claude.ai can read the notice and your list and build the table. Paid plans give you more use per day if you run it often."
+     }
+    },
+    {
+     "@type": "Question",
+     "name": "Can Claude read a screenshot of the fee notice?",
+     "acceptedAnswer": {
+      "@type": "Answer",
+      "text": "Yes. You can paste text or upload a screenshot or PDF. Text is the most reliable, so copy it if you can."
+     }
+    },
+    {
+     "@type": "Question",
+     "name": "Does this work for Lazada or TikTok Shop?",
+     "acceptedAnswer": {
+      "@type": "Answer",
+      "text": "The method does. Paste that platform's own fee notice and change \"Shopee\" in the prompt. Each platform calculates its fees differently, which is why the notice matters more than the prompt."
+     }
+    },
+    {
+     "@type": "Question",
+     "name": "Is Claude's answer always right?",
+     "acceptedAnswer": {
+      "@type": "Answer",
+      "text": "It is only as good as the rates you give it. That is why the prompt asks it to show the rates it used and to flag anything unclear, and why you check one row yourself."
+     }
+    }
+   ]
+  }
+ ]
+}
+</script>
+</head>
+<body>
+<a class="skip-link" href="#main">Skip to content</a>
+
+<header class="site-header">
+  <div class="wrap">
+    <a class="brand" href="/" aria-label="Onyxx Tech home"><img src="/images/onyxx-wordmark-paper.png" alt="Onyxx Tech" width="414" height="120" /></a>
+    <nav class="nav" id="site-nav" aria-label="Main">
+      <a href="/website-design">Website design</a>
+      <a href="/services">Services</a>
+      <a href="/work">Work</a>
+      <a href="/blog" aria-current="page">Blog</a>
+      <a href="/contact">Contact</a>
+      <a class="btn btn-primary nav-mobile-cta" href="/contact">Get a quote</a>
+    </nav>
+    <a class="btn btn-primary header-cta" href="/contact">Get a quote</a>
+    <button class="nav-toggle" type="button" aria-controls="site-nav" aria-expanded="false" aria-label="Open menu">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+    </button>
+  </div>
+</header>
+
+<main id="main">
+  <article>
+    <section class="page-hero" style="padding-bottom: 0;">
+      <div class="wrap">
+        <ol class="crumbs"><li><a href="/">Home</a></li><li><a href="/blog">Blog</a></li><li aria-current="page">You sold a RM20 item on Shopee. How much actually reaches your bank?</li></ol>
+        <div class="article-head">
+          <p class="eyebrow">AI Tools</p>
+          <h1>You sold a RM20 item on Shopee. How much actually reaches your bank?</h1>
+          <p class="lead">Commission after your vouchers, SST on the fee, a transaction fee on top. Here is how to get Claude to do that maths for every item, with the exact prompt.</p>
+          <p class="article-meta"><span>By Onyxx Tech</span><span><time datetime="2026-11-28">28 November 2026</time></span><span>6 min read</span></p>
+          <div class="pdf-row"><a class="btn btn-primary" href="/guides/shopee-fees-what-you-keep-claude.pdf" download>Download as PDF</a><span class="note">Free. Save it, print it, share it with your team.</span></div>
+        </div>
+        <div class="article-cover"><img src="/images/blog/shopee-fees-what-you-keep-claude.webp" alt="A laptop showing a price table with one row highlighted in red, beside shipping parcels, a calculator and a printed fee notice, next to the title What you actually keep on Shopee" width="1200" height="630" fetchpriority="high" /></div>
+      </div>
+    </section>
+    <section class="section" style="padding-top: 0;">
+      <div class="wrap article-layout">
+        <div class="prose">
+<p>Less than RM20, and usually by more than you think. Shopee takes a commission on the price after the vouchers you paid for, charges 8% SST on that commission, and takes a transaction fee as well. The rates have also changed more than once this year. Most sellers never work this out per item, so they price by feel. You do not have to do the maths yourself: paste Shopee's fee notice and your price list into Claude, ask one clear question, and you get a table of what you keep on every product.</p>
+<h2>Why the number in your head is wrong</h2>
+<p>When you list a product at RM20, it is natural to think of it as a RM20 sale minus "some fees". The problem is where those fees are calculated from.</p>
+<p>Shopee's Marketplace commission is worked out on the final product price after seller-funded discounts, so on the price after the voucher you paid for, not your listing price (<a href="https://www.bigseller.com/blog/articleDetails/3391/shopee-marketplace-commission-fee.htm" target="_blank" rel="noopener">BigSeller, Shopee Malaysia commission update</a>). On top of that, all commission fees are subject to 8% SST (<a href="https://www.zetpy.com/2026/05/22/shopee-commission-fee-adjustments-21-may-2026/" target="_blank" rel="noopener">Zetpy, Shopee commission fee adjustments, 21 May 2026</a>). Then there is a separate transaction fee for processing the payment.</p>
+<p>None of these is huge on its own. Together, on a cheap item with a voucher, they can eat most of your profit.</p>
+<h2>The rates keep moving</h2>
+<p>Shopee Malaysia changed its Marketplace commission from 1 February 2026 (<a href="https://www.bigseller.com/blog/articleDetails/3391/shopee-marketplace-commission-fee.htm" target="_blank" rel="noopener">BigSeller</a>) and again from 21 May 2026 (<a href="https://www.zetpy.com/2026/05/22/shopee-commission-fee-adjustments-21-may-2026/" target="_blank" rel="noopener">Zetpy</a>). Rates also differ by category and by which seller programmes you are in, so there is no single number that is right for every shop.</p>
+<p>That is why a sum you did last year is probably out of date. The only rates that count are the ones in your own Seller Centre today.</p>
+<h2>Why nobody does this by hand</h2>
+<p>Be honest: when did you last work out, for every product, price minus voucher minus commission minus SST on commission minus transaction fee minus your cost? With 30 products and three voucher levels, that is a spreadsheet afternoon. So most of us guess, and the guess is usually generous.</p>
+<p>This is exactly the kind of job Claude is good at. It reads a fee notice in plain language, follows the rules you give it, does the same calculation on every row without getting bored, and shows its working so you can check it.</p>
+<h2>How to do it with Claude, step by step</h2>
+<p>You can use the free plan at claude.ai. It takes about ten minutes the first time.</p>
+<ol>
+<li><strong>Get the current rates.</strong> Open Shopee Seller Centre and find the latest commission and fee notice for your category. Copy the text, or take a screenshot. Claude can read both.</li>
+<li><strong>Get your price list.</strong> For each product: name, selling price, the voucher or discount you fund, and what the item costs you (stock plus packaging). A copy from your spreadsheet is fine, columns and all.</li>
+<li><strong>Open a new chat in Claude.</strong> Paste the fee notice first, then your price list.</li>
+<li><strong>Paste the prompt below</strong> and send.</li>
+<li><strong>Check one row yourself</strong> with a calculator. If it matches, trust the rest. If it does not, tell Claude which number is wrong and why.</li>
+</ol>
+<h2>The exact prompt</h2>
+<p>Copy this as it is. Change nothing except the bits in brackets if you want to.</p>
+<blockquote>
+<p>I sell on Shopee Malaysia. Above is Shopee's current fee notice for my category, and my price list.</p>
+<p>For each product, work out:
+1. The price after my seller-funded voucher or discount.
+2. The commission, calculated on the price after the voucher, using the rate from the notice for my category.
+3. 8% SST on the commission.
+4. The transaction fee, using the rate in the notice.
+5. What I keep: price after voucher, minus commission, minus SST, minus transaction fee.
+6. My profit: what I keep, minus my cost.
+7. Profit as a percentage of the selling price.</p>
+<p>Put it in one table, one row per product, amounts in RM to 2 decimals. Sort it from lowest profit to highest. Under the table, tell me which products make less than [RM2] profit, and which voucher costs me the most. Show the rates you used, and say if anything in the notice was unclear instead of guessing.</p>
+</blockquote>
+<p>The last line matters. If the notice does not say something, you want Claude to ask, not to invent a rate.</p>
+<h2>What the table looks like</h2>
+<p>Here is an example with made-up products and <strong>example rates only</strong> (10% commission, 3.5% transaction fee, both on the price after voucher). Use your own rates from Seller Centre, not these.</p>
+<table>
+<thead>
+<tr>
+<th>Product</th>
+<th>Price</th>
+<th>Your voucher</th>
+<th>After voucher</th>
+<th>Commission</th>
+<th>SST on commission</th>
+<th>Transaction fee</th>
+<th>You keep</th>
+<th>Your cost</th>
+<th>Profit</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Keychain</td>
+<td>RM12.00</td>
+<td>RM2.00</td>
+<td>RM10.00</td>
+<td>RM1.00</td>
+<td>RM0.08</td>
+<td>RM0.35</td>
+<td>RM8.57</td>
+<td>RM7.50</td>
+<td><strong>RM1.07</strong></td>
+</tr>
+<tr>
+<td>Tudung bawal</td>
+<td>RM20.00</td>
+<td>RM2.00</td>
+<td>RM18.00</td>
+<td>RM1.80</td>
+<td>RM0.14</td>
+<td>RM0.63</td>
+<td>RM15.43</td>
+<td>RM9.00</td>
+<td>RM6.43</td>
+</tr>
+<tr>
+<td>Phone case</td>
+<td>RM25.00</td>
+<td>none</td>
+<td>RM25.00</td>
+<td>RM2.50</td>
+<td>RM0.20</td>
+<td>RM0.88</td>
+<td>RM21.43</td>
+<td>RM10.00</td>
+<td>RM11.43</td>
+</tr>
+</tbody>
+</table>
+<p>The keychain is the one to look at. It sells, it gets reviews, and it makes about a ringgit. The RM2 voucher on it costs more than the profit that is left.</p>
+<h2>What to do with the answer</h2>
+<ul>
+<li><strong>Raise or drop the voucher</strong> on the products at the top of the list. A voucher on a low-margin item is often the whole profit.</li>
+<li><strong>Bundle</strong> cheap items with better ones, so the fees are paid once on a bigger order.</li>
+<li><strong>Reprice</strong> anything below your floor. If a product cannot make your minimum after fees, it is advertising, not income. That can be fine, as long as you choose it.</li>
+<li><strong>Run it again</strong> every time Shopee sends a fee notice. Keep the chat, paste the new notice, and ask Claude to redo the table with the new rates.</li>
+</ul>
+<h2>What not to do</h2>
+<ul>
+<li><strong>Do not use rates from a blog post</strong> (including this one). Use the notice in your own Seller Centre.</li>
+<li><strong>Do not skip checking one row.</strong> Claude is good at maths, but it works from what you paste. A wrong rate in gives a wrong table out.</li>
+<li><strong>Do not paste customer data.</strong> Product names and prices are all it needs.</li>
+</ul>
+<h2>Where to start on Monday</h2>
+<p>Pick your ten best-selling products. Put the price, your voucher and your cost for each in a list. Open Claude, paste the fee notice and the list, then the prompt. You will have the table before your coffee is cold, and you will probably change at least one voucher that day.</p>
+<h2>Questions people ask</h2>
+<h3>Do I need the paid version of Claude?</h3>
+<p>No. The free plan at claude.ai can read the notice and your list and build the table. Paid plans give you more use per day if you run it often.</p>
+<h3>Can Claude read a screenshot of the fee notice?</h3>
+<p>Yes. You can paste text or upload a screenshot or PDF. Text is the most reliable, so copy it if you can.</p>
+<h3>Does this work for Lazada or TikTok Shop?</h3>
+<p>The method does. Paste that platform's own fee notice and change "Shopee" in the prompt. Each platform calculates its fees differently, which is why the notice matters more than the prompt.</p>
+<h3>Is Claude's answer always right?</h3>
+<p>It is only as good as the rates you give it. That is why the prompt asks it to show the rates it used and to flag anything unclear, and why you check one row yourself.</p>
+<h2>Need this built?</h2>
+<p>If the table shows that marketplace fees are taking a big share, it may be time to sell some orders through your own website as well, where there is no commission on each sale. Onyxx Tech builds websites and online order systems for Malaysian businesses. Tell us how you sell today and we will show you what it would take.</p>
+<div class="pdf-row"><a class="btn btn-primary" href="/guides/shopee-fees-what-you-keep-claude.pdf" download>Download as PDF</a><span class="note">Free. Save it, print it, share it with your team.</span></div>
+<p class="print-only">Onyxx Tech · web and software studio in Johor Bahru · www.onyxxtechhub.com.my/blog/shopee-fees-what-you-keep-claude · WhatsApp +60 10-253 8873 · onyxtech26@gmail.com</p>
+        </div>
+        <aside class="article-aside">
+          <h3>Need this built?</h3>
+          <p>We are a web and software studio in Johor Bahru. Tell us what you need and get a fixed quote, or a straight answer if you do not need us.</p>
+          <a class="btn btn-primary" href="/contact">Get a fixed quote</a>
+        </aside>
+      </div>
+    </section>
+  </article>
+
+  <section class="section section-alt">
+    <div class="wrap">
+      <div class="related-head">
+        <div><h2>More from the blog</h2></div>
+        <a class="btn btn-ghost" href="/blog">All posts</a>
+      </div>
+      <div class="post-list">
+        <a class="post-card reveal" href="/blog/ai-and-digital-grants-malaysian-smes-2026">
+          <div class="cover"><img src="/images/blog/grants.webp" alt="" width="1200" height="630" loading="lazy" /></div>
+          <p class="meta">Funding · 6 min read</p>
+          <h3>The AI and digitalisation grants Malaysian SMEs can claim in 2026</h3>
+        </a>
+        <a class="post-card reveal" href="/blog/what-a-whatsapp-chatbot-costs-in-malaysia">
+          <div class="cover"><img src="/images/blog/chatbot-cost.webp" alt="" width="1200" height="630" loading="lazy" /></div>
+          <p class="meta">Chatbots · 7 min read</p>
+          <h3>What a WhatsApp chatbot actually costs a Malaysian business</h3>
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <section class="cta-band section-dark">
+    <div class="wrap">
+      <h2>Get a quote for your project</h2>
+      <p class="lead">Send a message with what you need and get a clear, fixed quote. You will hear back from the person who will build it, not a sales team.</p>
+      <div class="btn-row">
+        <a class="btn btn-primary" href="/contact">Get a fixed quote</a>
+        <a class="btn btn-outline-light" href="https://wa.me/60102538873" target="_blank" rel="noopener">WhatsApp us</a>
+      </div>
+      <div class="cta-contacts">
+        <a href="mailto:onyxtech26@gmail.com"><span>Email</span>onyxtech26@gmail.com</a>
+        <a href="https://wa.me/60102538873" target="_blank" rel="noopener"><span>WhatsApp</span>+60 10-253 8873</a>
+        <a href="https://wa.me/60194688052" target="_blank" rel="noopener"><span>WhatsApp</span>+60 19-468 8052</a>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer class="site-footer">
+  <div class="wrap">
+    <div class="footer-grid">
+      <div class="footer-brand">
+        <img src="/images/onyxx-wordmark-paper.png" alt="Onyxx Tech" width="414" height="120" loading="lazy" />
+        <p>Web design and development studio in Johor Bahru, Malaysia. Websites, web apps, WhatsApp chatbots and automations.</p>
+      </div>
+      <div>
+        <h4>Services</h4>
+        <ul>
+          <li><a href="/website-design">Website design</a></li>
+          <li><a href="/custom-software">Web apps &amp; systems</a></li>
+          <li><a href="/chatbots">WhatsApp chatbots</a></li>
+          <li><a href="/ai-agents">AI agents</a></li>
+          <li><a href="/automations">Automations</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4>Studio</h4>
+        <ul>
+          <li><a href="/work">Work</a></li>
+          <li><a href="/services">All services</a></li>
+          <li><a href="/blog">Blog</a></li>
+          <li><a href="/contact">Contact</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4>Contact</h4>
+        <ul>
+          <li>Johor Bahru, Johor, Malaysia</li>
+          <li><a href="mailto:onyxtech26@gmail.com">onyxtech26@gmail.com</a></li>
+          <li><a href="https://wa.me/60102538873" target="_blank" rel="noopener">+60 10-253 8873</a></li>
+          <li><a href="https://wa.me/60194688052" target="_blank" rel="noopener">+60 19-468 8052</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <span>&copy; <span data-year>2026</span> Onyxx Tech (202603038643 (003822277-T)). All rights reserved.</span>
+      <span><a href="/privacy">Privacy</a> &nbsp;·&nbsp; <a href="/cookies">Cookies</a> &nbsp;·&nbsp; <a href="/terms">Terms</a></span>
+    </div>
+  </div>
+</footer>
+</body>
+</html>
