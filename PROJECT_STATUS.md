@@ -97,6 +97,7 @@ Verified in Chrome via Playwright: 7 pages × dark/light with zero errors, 28 pa
 ## 🗂️ Board
 
 ### ✅ Done
+- [x] Guide post `/blog/shopee-fees-what-you-keep-claude` (FEES Reel) + PDF, 2026-11-28
 - [x] 2026-11-28: pre-order no-shows guide post (`/blog/stop-whatsapp-preorder-no-shows`) + PDF, featured on /blog (branch `claude/blog-stop-whatsapp-preorder-no-shows`, PR waiting for the owner's yes).
 - [x] 2026-11-27: advisor tool guide post (`/blog/claude-advisor-tool-guide`) + PDF, featured on /blog (branch `claude/blog-claude-advisor-tool-guide`).
 - [x] **Public site redesigned + repositioned for "web design Johor Bahru"** — new `site.css`/`site.js`, 26 static pages, new `/website-design` page, founders/why/process removed with 301s, all content crawlable, local structured data. *(2026-10-29)*

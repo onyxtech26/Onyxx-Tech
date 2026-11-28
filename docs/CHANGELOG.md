@@ -5,6 +5,11 @@ Format each entry: what was done, why it mattered, and any key decisions.
 
 ---
 
+## 2026-11-28 (Shopee fees guide)
+
+- New guide post for the FEES Instagram Reel: `/blog/shopee-fees-what-you-keep-claude` (featured on /blog), with a PDF in `/guides/`. Why the take-home on a Shopee sale is lower than sellers think (commission on the price after seller-funded vouchers, 8% SST on the commission, a transaction fee, rates changed more than once in 2026), and how to get Claude to work out what you keep per item, with the exact prompt and an example table.
+- Facts link to BigSeller and Zetpy. The example table uses made-up products and rates, and says so. No Onyxx prices are stated.
+
 ## 2026-11-28 (pre-order no-shows guide)
 
 - New guide post for the PAYFIRST Instagram Reel: `/blog/stop-whatsapp-preorder-no-shows` (featured on /blog), with a PDF in `/guides/`. Why WhatsApp pre-order customers do not collect, why "transfer first" is not enough, what a pre-order system is, how it works in three steps, what it fixes, and what an owner can do this week without one.
