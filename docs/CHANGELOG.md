@@ -5,6 +5,11 @@ Format each entry: what was done, why it mattered, and any key decisions.
 
 ---
 
+## 2026-11-28 (pre-order no-shows guide)
+
+- New guide post for the PAYFIRST Instagram Reel: `/blog/stop-whatsapp-preorder-no-shows` (featured on /blog), with a PDF in `/guides/`. Why WhatsApp pre-order customers do not collect, why "transfer first" is not enough, what a pre-order system is, how it works in three steps, what it fixes, and what an owner can do this week without one.
+- Facts link to their sources (The Star, 10 Nov 2026, on COD complaints and the proposed E-Commerce Bill; World of Buzz on an edited payment receipt; the toyyibPay plugin page for FPX and DuitNow QR). No Onyxx prices or results; example numbers are labelled.
+
 ## 2026-11-27 (advisor tool guide)
 
 - New guide post for the ADVISOR Instagram Reel: `/blog/claude-advisor-tool-guide` (featured on /blog), with a PDF in `/guides/`. A plain-English explanation of Claude's advisor tool: what it is, what you get, when it is worth it, and the setup code in Python and TypeScript.

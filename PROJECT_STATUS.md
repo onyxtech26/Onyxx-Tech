@@ -2,7 +2,7 @@
 
 > **Living board.** Read at the start of every session; updated when significant tasks finish. Newest state on top.
 
-**Last updated:** 2026-11-27
+**Last updated:** 2026-11-28
 
 ---
 
@@ -97,6 +97,7 @@ Verified in Chrome via Playwright: 7 pages × dark/light with zero errors, 28 pa
 ## 🗂️ Board
 
 ### ✅ Done
+- [x] 2026-11-28: pre-order no-shows guide post (`/blog/stop-whatsapp-preorder-no-shows`) + PDF, featured on /blog (branch `claude/blog-stop-whatsapp-preorder-no-shows`, PR waiting for the owner's yes).
 - [x] 2026-11-27: advisor tool guide post (`/blog/claude-advisor-tool-guide`) + PDF, featured on /blog (branch `claude/blog-claude-advisor-tool-guide`).
 - [x] **Public site redesigned + repositioned for "web design Johor Bahru"** — new `site.css`/`site.js`, 26 static pages, new `/website-design` page, founders/why/process removed with 301s, all content crawlable, local structured data. *(2026-10-29)*
 - [x] **Maintenance payments** — `project_payments.kind = 'maintenance'` plus an optional per-project plan (migration 07, applied). New Maintenance tab; maintenance counts as collected cash but never against a project's contract, so SOLE no longer reads as overpaid. *(2026-10-29)*
@@ -271,6 +272,7 @@ leaves you unable to onboard Rooben.
 ---
 
 ## 📝 Session log
+- **2026-11-28** — Pre-order no-shows guide post with PDF on branch `claude/blog-stop-whatsapp-preorder-no-shows` (PR, waiting for the owner's yes).
 - **2026-11-26** — Eight batch-2 guide posts with PDFs on branch `claude/blog-batch-2` (PR, waiting for the owner's yes). Phone-width fix for wide tables in posts.
 - **2026-11-25** — Published the order-system and website-price guide posts with PDFs; the price post is featured on /blog. PDF list-number print fix.
 - **2026-11-25** — Published the Google Maps guide post (`/blog/get-found-on-google-maps`) with a static PDF in `/guides/`, Copy buttons on prompts and print styles. Blog posts are now the free guides that Instagram keyword DMs link to (made in the video studio project).
